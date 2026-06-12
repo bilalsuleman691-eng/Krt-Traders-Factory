@@ -5,6 +5,23 @@ const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
 // Check karein ki pehle se to nahi bana hua
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ============================================================
+// LOGIN / LOGOUT
+// ============================================================
+function login() {
+  if (document.getElementById('pass').value === '123') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function logout() { location.reload(); }
+document.getElementById('pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+
+
 
 async function loadStockData() {
   const { data: inData } = await supabase.from("stock_in").select("*");
@@ -65,21 +82,6 @@ function saveAll() {
   LS.set('krt_spIn', spInEntries);
   LS.set('krt_spOut', spOutEntries);
 }
-
-// ============================================================
-// LOGIN / LOGOUT
-// ============================================================
-function login() {
-  if (document.getElementById('pass').value === '123') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    initApp();
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-  }
-}
-function logout() { location.reload(); }
-document.getElementById('pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
 // ============================================================
 // INIT
