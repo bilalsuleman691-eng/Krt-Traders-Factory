@@ -1,7 +1,9 @@
 // 1. Supabase ko sirf ek baar declare karein
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_KEY';
-const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf"; // Aapki key
+
+// Sahi tareeka:
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 2. Function ko global scope mein rakhein taake HTML use kar sake
 async function login() {
