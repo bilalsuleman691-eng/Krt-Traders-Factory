@@ -1,8 +1,13 @@
-// 1. Supabase ko sirf ek baar declare karein
+// Sirf ek baar initialize karein
 const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf"; // Aapki key
+const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Check karein ki pehle se to nahi bana hua
+if (typeof supabase === 'undefined') {
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Isse global window object mein save kar dein taake kahin bhi use ho sake
+    window.supabaseClient = supabase;
+}
 
 async function loadStockData() {
   const { data: inData } = await supabase.from("stock_in").select("*");
