@@ -375,7 +375,7 @@ function clearInvoiceForm() {
   editingInvTs = null;
 }
 
-async function saveInvoice() {
+async function saveInvoice Now() {
   const storeName = document.getElementById('inv-store').value.trim();
   const date      = document.getElementById('inv-date').value;
 
