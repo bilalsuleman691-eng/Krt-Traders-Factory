@@ -1,12 +1,26 @@
-const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
+// 1. Supabase ko sirf ek baar declare karein
+const supabaseUrl = 'YOUR_SUPABASE_URL';
+const supabaseKey = 'YOUR_SUPABASE_KEY';
+const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
 
-const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
+// 2. Function ko global scope mein rakhein taake HTML use kar sake
+async function login() {
+    const email = document.getElementById('email').value; // agar email field hai
+    const password = document.getElementById('password').value;
 
-const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
 
+        if (error) throw error;
+        alert("Login Successful!");
+        console.log("User:", data);
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
 async function loadStockData() {
   const { data: inData } = await supabase.from("stock_in").select("*");
   const { data: outData } = await supabase.from("stock_out").select("*");
