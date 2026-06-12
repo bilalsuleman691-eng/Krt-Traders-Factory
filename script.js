@@ -1,11 +1,9 @@
-// Sirf ek baar initialize karein
 const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
 
-// Check karein ki pehle se to nahi bana hua
 const supabaseClient = supabase.createClient(
-  "https://skuheucjlmuqtdmovugp.supabase.co",
-  "YOUR_KEY"
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
 // ============================================================
@@ -25,8 +23,8 @@ async function login() {
 
 
 async function loadStockData() {
-  const { data: inData } = await supabase.from("stock_in").select("*");
-  const { data: outData } = await supabase.from("stock_out").select("*");
+  const { data: inData } = await supabaseClient.from("stock_in").select("*");
+  const { data: outData } = await supabaseClient.from("stock_out").select("*");
 
   if (inData) stockInEntries = inData;
   if (outData) stockOutEntries = outData;
@@ -444,7 +442,7 @@ async function saveInvoiceNow() {
   }
 
   // ✅ Supabase insert
-  const { error } = await supabase.from("invoices").insert([{
+  const { error } = await supabaseClient.from("invoices").insert([{
     invoice_no: 'INV-' + ts,
     timestamp: ts,
     store_name: storeName,
@@ -646,7 +644,7 @@ async function saveStockIn() {
   const barcode = document.getElementById('in-barcode').value;
 
   // 1️⃣ SUPABASE SAVE
-  const { error } = await supabase.from("stock_in").insert([{
+  const { error } = await supabaseClient.from("stock_in").insert([{
     date,
     vendor,
     item_name: itemName,
@@ -734,7 +732,7 @@ async function saveStockOut() {
     return;
   }
 
-  const { error } = await supabase.from("stock_out").insert([{
+  const { error } = await supabaseClient.from("stock_out").insert([{
     date,
     customer,
     item_name: itemName,
@@ -1139,7 +1137,7 @@ async function saveSPStockIn() {
   const totalPcs = (ctn * pcsPerCtn) + extra;
   const total = totalPcs * price;
 
-  const { error } = await supabase.from("sp_in").insert([{
+  const { error } = await supabaseClient.from("sp_in").insert([{
     date,
     vendor,
     item_name: itemName,
@@ -1241,7 +1239,7 @@ async function saveSPStockOut() {
     return;
   }
 
-  const { error } = await supabase.from("sp_out").insert([{
+  const { error } = await supabaseClient.from("sp_out").insert([{
     date,
     store,
     item_name: itemName,
