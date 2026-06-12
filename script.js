@@ -375,7 +375,7 @@ function clearInvoiceForm() {
   editingInvTs = null;
 }
 
-async function saveInvoice Now() {
+async function saveInvoice() { // Function name mein space nahi honi chahiye (Now hata diya)
   const storeName = document.getElementById('inv-store').value.trim();
   const date      = document.getElementById('inv-date').value;
 
@@ -385,7 +385,6 @@ async function saveInvoice Now() {
   }
 
   const items = [];
-
   document.querySelectorAll('#inv-body tr').forEach(row => {
     const bc   = row.querySelector('.bc-input')?.value || '';
     const item = row.querySelector('.item-input')?.value || '';
@@ -393,13 +392,7 @@ async function saveInvoice Now() {
     const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
 
     if (item || bc) {
-      items.push({
-        barcode: bc,
-        item,
-        qty,
-        rate,
-        total: qty * rate
-      });
+      items.push({ barcode: bc, item, qty, rate, total: qty * rate });
     }
   });
 
@@ -411,57 +404,37 @@ async function saveInvoice Now() {
   const disc    = parseFloat(document.getElementById('inv-discount').value) || 0;
   const sub     = items.reduce((s, i) => s + i.total, 0);
   const discAmt = sub * disc / 100;
-  const final    = sub - discAmt;
+  const final   = sub - discAmt;
+  const ts      = Date.now();
 
-  const ts = Date.now(); // ✅ FIX: missing variable
+  // ✅ Supabase Insert (Ensure table columns match these keys)
+  try {
+    const { error } = await supabaseClient.from("invoices").insert([{
+      invoice_no: 'INV-' + ts,
+      timestamp: ts,
+      store_name: storeName,
+      customer_name: document.getElementById('inv-customer').value,
+      date: date,
+      items: items, // Agar error aaye, toh JSON.stringify(items) use karein
+      final_total: final
+    }]);
 
-  // update local invoice if editing
-  if (editingInvTs) {
-    const idx = invoices.findIndex(i => i.timestamp === editingInvTs);
-
-    if (idx > -1) {
-      invoices[idx] = {
-        ...invoices[idx],
-        storeName,
-        customerName: document.getElementById('inv-customer').value,
-        ntn: document.getElementById('inv-ntn').value,
-        strn: document.getElementById('inv-strn').value,
-        address: document.getElementById('inv-address').value,
-        date,
-        items,
-        discountPercent: disc,
-        subTotal: sub.toFixed(2),
-        discountAmt: discAmt.toFixed(2),
-        finalTotal: final.toFixed(2)
-      };
-
-      alert('✔ Invoice Update Ho Gayi!');
+    if (error) {
+      console.error("Supabase Error:", error);
+      alert("Error: " + error.message);
+      return; // Error ho toh aage na barhay
     }
 
-    editingInvTs = null;
+    // Success hone par ye chalein
+    alert('✔ Invoice Save Ho Gayi!');
+    saveAll();
+    clearInvoiceForm();
+    loadDashboard();
+
+  } catch (err) {
+    console.error("Unexpected Error:", err);
   }
-
-  // ✅ Supabase insert
-  const { error } = await supabaseClient.from("invoices").insert([{
-    invoice_no: 'INV-' + ts,
-    timestamp: ts,
-    store_name: storeName,
-    customer_name: document.getElementById('inv-customer').value,
-    date,
-    items,
-    final_total: final
-  }]);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  saveAll();
-  clearInvoiceForm();
-  loadDashboard();
 }
-
 function printCurrentInvoice() {
   const storeName  = document.getElementById('inv-store').value || 'KRT Customer';
   const date       = document.getElementById('inv-date').value;
