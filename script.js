@@ -2,8 +2,7 @@
 const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf"; // Aapki key
 
-// Sahi tareeka:
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
 async function loadStockData() {
   const { data: inData } = await supabase.from("stock_in").select("*");
