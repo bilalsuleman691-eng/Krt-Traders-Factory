@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KRT TRADERS ERP</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -100,6 +99,7 @@
         <span id="page-title">Dashboard</span>
       </div>
       <div class="topbar-right">
+        <span class="sync-badge"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Syncing...</span></span>
         <span id="todayDate"></span>
         <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
@@ -307,10 +307,12 @@
       </div>
       <div class="card">
         <div class="card-title">📋 Stock In Records</div>
+        <div class="stock-table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Total</th><th>Del</th></tr></thead>
+          <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Total</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="stock-in-table"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -332,10 +334,12 @@
       </div>
       <div class="card">
         <div class="card-title">📋 Stock Out Records</div>
+        <div class="stock-table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Del</th></tr></thead>
+          <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="stock-out-table"></tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -375,7 +379,7 @@
       <div class="card">
         <div class="card-title">📋 Aaj Ki Entries</div>
         <table>
-          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Del</th></tr></thead>
+          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="gulzar-today-table"></tbody>
         </table>
       </div>
@@ -388,10 +392,11 @@
             <input type="date" id="gulzar-to" style="width:150px">
             <button class="btn btn-primary btn-sm" onclick="renderLedgerHistory('gulzar')">Search</button>
             <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('gulzar')">Clear</button>
+            <button class="btn btn-print btn-sm" onclick="printLedger('gulzar')">🖨️ Print</button>
           </div>
         </div>
         <table>
-          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Del</th></tr></thead>
+          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="gulzar-history-table"></tbody>
         </table>
       </div>
@@ -422,7 +427,7 @@
       <div class="card">
         <div class="card-title">📋 Aaj Ki Entries</div>
         <table>
-          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Del</th></tr></thead>
+          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="kashif-today-table"></tbody>
         </table>
       </div>
@@ -435,10 +440,11 @@
             <input type="date" id="kashif-to" style="width:150px">
             <button class="btn btn-primary btn-sm" onclick="renderLedgerHistory('kashif')">Search</button>
             <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('kashif')">Clear</button>
+            <button class="btn btn-print btn-sm" onclick="printLedger('kashif')">🖨️ Print</button>
           </div>
         </div>
         <table>
-          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Del</th></tr></thead>
+          <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="kashif-history-table"></tbody>
         </table>
       </div>
@@ -505,13 +511,13 @@
       </div>
 
       <div class="grid2">
-        <div class="card" style="background:#eff6ff;border-color:#93c5fd">
+        <div class="card card-blue">
           <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Total Salary (Sab Ki)</div>
-          <div id="sal-total-salary" style="font-size:22px;font-weight:700;color:#1d4ed8">Rs. 0</div>
+          <div id="sal-total-salary" class="card-num">Rs. 0</div>
         </div>
-        <div class="card" style="background:#fff7ed;border-color:#fdba74">
+        <div class="card card-orange">
           <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Total Advance / Choti</div>
-          <div id="sal-total-advance" style="font-size:22px;font-weight:700;color:#ea580c">Rs. 0</div>
+          <div id="sal-total-advance" class="card-num">Rs. 0</div>
         </div>
       </div>
     </div>
@@ -587,9 +593,9 @@
       </div>
       <div class="card">
         <div class="card-title">📋 Stock In Records</div>
-        <div style="overflow-x:auto">
+        <div class="stock-table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Barcode</th><th>Vendor</th><th>Ctn</th><th>Extra Pcs</th><th>Pcs/Ctn</th><th>Total Pcs</th><th>Price</th><th>Total</th><th>Del</th></tr></thead>
+          <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Barcode</th><th>Vendor</th><th>Ctn</th><th>Extra Pcs</th><th>Pcs/Ctn</th><th>Total Pcs</th><th>Price</th><th>Total</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="sp-in-table"></tbody>
         </table>
         </div>
@@ -628,9 +634,9 @@
             <button class="btn btn-outline btn-sm" onclick="clearSPOutFilter()">Clear</button>
           </div>
         </div>
-        <div style="overflow-x:auto">
+        <div class="stock-table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Date</th><th>Store</th><th>Item</th><th>Barcode</th><th>Qty (Pcs)</th><th>Price</th><th>Total</th><th>Del</th></tr></thead>
+          <thead><tr><th>#</th><th>Date</th><th>Store</th><th>Item</th><th>Barcode</th><th>Qty (Pcs)</th><th>Price</th><th>Total</th><th>Edit</th><th>Print</th><th>Del</th></tr></thead>
           <tbody id="sp-out-table"></tbody>
         </table>
         </div>
@@ -669,6 +675,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
 </body>
 </html>
