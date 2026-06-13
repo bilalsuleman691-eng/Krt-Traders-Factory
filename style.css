@@ -88,3 +88,37 @@ tr:last-child td{border-bottom:none;} tr:hover td{background:#1a2030;}
 @media print{#sidebar,.topbar,.no-print{display:none!important;}#main-content{margin-left:0!important;}.page-section{display:none!important;}#page-salary-sheet.printing-sheet{display:block!important;}body{background:#fff;color:#000;}}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-thumb{background:#333a4d;border-radius:10px;}
+
+/* ===== FIXED THEME CARDS (replace old light inline styles) ===== */
+.card-blue{background:#0d1f3a;border-color:#2c5499;}
+.card-blue .card-num{color:var(--blue);}
+.card-orange{background:#2a1d0d;border-color:#7a4a14;}
+.card-orange .card-num{color:var(--warn);}
+.card-num{font-size:22px;font-weight:800;}
+.text-credit{color:#4ade80;}
+.text-debit{color:var(--danger);}
+
+/* ===== BUTTONS — full dark-theme consistency ===== */
+.btn-edit{background:linear-gradient(135deg,var(--blue),#2f6fd1);color:#fff;box-shadow:0 4px 14px rgba(91,157,255,0.3);}
+.btn-edit:hover{filter:brightness(1.12);transform:translateY(-1px);}
+.btn-print{background:linear-gradient(135deg,var(--purple),#7c5ce0);color:#fff;box-shadow:0 4px 14px rgba(167,139,250,0.3);}
+.btn-print:hover{filter:brightness(1.12);transform:translateY(-1px);}
+button{font-family:inherit;}
+
+/* ===== STOCK IN/OUT — better record table look ===== */
+.stock-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+.stock-table-wrap table{font-size:13px;}
+.stock-table-wrap thead th{position:sticky;top:0;background:var(--th-bg);z-index:2;white-space:nowrap;}
+.stock-table-wrap td{white-space:nowrap;}
+.stock-item-cell{display:flex;flex-direction:column;gap:2px;min-width:160px;white-space:normal;}
+.stock-item-name{font-weight:700;color:var(--text);}
+.stock-item-sub{font-size:11px;color:var(--muted);font-family:monospace;}
+.qty-pill{display:inline-block;background:#0d2a3e;color:#5ec3ff;padding:3px 10px;border-radius:8px;font-weight:700;font-size:12px;}
+.total-pill{display:inline-block;background:#0f3324;color:#4ade80;padding:3px 10px;border-radius:8px;font-weight:700;font-size:12px;}
+.action-cell{display:flex;gap:6px;flex-wrap:nowrap;}
+
+/* ===== LOADING / SYNC STATE ===== */
+.sync-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary);}
+.sync-dot.offline{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+.loading-row td{text-align:center;padding:30px;color:var(--muted);}
