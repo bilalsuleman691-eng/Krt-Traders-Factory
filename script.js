@@ -375,7 +375,7 @@ function clearInvoiceForm() {
   editingInvTs = null;
 }
 
-async function saveInvoice() { // Function name mein space nahi honi chahiye (Now hata diya)
+async function saveInvoiceNow() { // Function name mein space nahi honi chahiye (Now hata diya)
   const storeName = document.getElementById('inv-store').value.trim();
   const date      = document.getElementById('inv-date').value;
 
