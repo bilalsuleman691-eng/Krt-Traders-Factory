@@ -387,7 +387,7 @@ function renderRatesTable() {
 }
 
 // ============================================================
-// SP BALANCE HELPER
+// SP BALANCE HELPER - FIXED
 // ============================================================
 function getSPBalance(barcode) {
   const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + (x.totalPcs || 0), 0);
@@ -409,14 +409,18 @@ function updateSPBalanceDisplay(row) {
 // DELETE SP ENTRIES BY INVOICE TIMESTAMP
 // ============================================================
 async function deleteSPOutByInvoice(timestamp) {
-  const { error } = await sb.from('sp_stock_out').delete().eq('invoice_timestamp', timestamp);
-  if (error) {
-    console.error('Delete SP error:', error);
+  try {
+    const { error } = await sb.from('sp_stock_out').delete().eq('invoice_timestamp', timestamp);
+    if (error) {
+      console.error('Delete SP error:', error);
+    }
+    spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
+    return true;
+  } catch (e) {
+    console.error('Delete SP error:', e);
     spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
     return true;
   }
-  spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
-  return true;
 }
 
 // ============================================================
@@ -517,6 +521,9 @@ function clearInvoiceForm() {
   updateInvoiceNumber();
 }
 
+// ============================================================
+// FIXED: SAVE INVOICE WITH PROPER SP BALANCE UPDATE
+// ============================================================
 async function saveInvoiceNow() {
   const customerName = document.getElementById('inv-customer').value.trim();
   const storeName = document.getElementById('inv-store').value.trim();
@@ -526,6 +533,7 @@ async function saveInvoiceNow() {
     return;
   }
 
+  // Collect items from invoice table
   const items = [];
   document.querySelectorAll('#inv-body tr').forEach(row => {
     const bc = row.querySelector('.bc-input')?.value.trim() || '';
@@ -539,6 +547,7 @@ async function saveInvoiceNow() {
     return;
   }
 
+  // Check SP balance before saving
   let hasError = false;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
@@ -564,6 +573,7 @@ async function saveInvoiceNow() {
   let ts, invoiceNo, isEdit = false;
 
   if (editingInvTs !== null) {
+    // Delete existing SP entries first
     await deleteSPOutByInvoice(editingInvTs);
     ts = editingInvTs;
     const row = {
@@ -602,6 +612,7 @@ async function saveInvoiceNow() {
     showNotification('Invoice saved!');
   }
 
+  // CREATE SP STOCK OUT ENTRIES
   let spCreated = 0;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
@@ -614,7 +625,8 @@ async function saveInvoiceNow() {
         item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
         qty: item.qty,
         price: item.rate,
-        total: item.qty * item.rate
+        total: item.qty * item.rate,
+        invoice_timestamp: ts  // Link to invoice
       };
       const { error } = await sb.from('sp_stock_out').insert(spRow);
       if (error) {
@@ -638,12 +650,11 @@ async function saveInvoiceNow() {
   }
 
   if (spCreated > 0) {
-    const spPage = document.getElementById('page-sp-balance');
-    if (spPage && spPage.style.display !== 'none') {
-      calcSPBalance();
-    }
     showNotification(`${spCreated} SP stock entries created.`);
   }
+
+  // UPDATE ALL SP BALANCE DISPLAYS - CRITICAL FIX
+  updateAllSPBalances();
 
   if (!isEdit) updateInvoiceNumber();
   clearInvoiceForm();
@@ -651,7 +662,29 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// INVOICE PRINT FUNCTIONS (HTML templates inside JS for dynamic print windows)
+// UPDATE ALL SP BALANCE DISPLAYS
+// ============================================================
+function updateAllSPBalances() {
+  // Update invoice row balances
+  document.querySelectorAll('#inv-body tr').forEach(row => {
+    updateSPBalanceDisplay(row);
+  });
+  
+  // Update SP balance page if visible
+  const spPage = document.getElementById('page-sp-balance');
+  if (spPage && spPage.style.display !== 'none') {
+    calcSPBalance();
+  }
+  
+  // Update SP out table if visible
+  const spOutPage = document.getElementById('page-sp-out');
+  if (spOutPage && spOutPage.style.display !== 'none') {
+    renderSPOutTable();
+  }
+}
+
+// ============================================================
+// INVOICE PRINT FUNCTIONS
 // ============================================================
 function printCurrentInvoice() {
   const customerName = document.getElementById('inv-customer').value || 'Walk-in Customer';
