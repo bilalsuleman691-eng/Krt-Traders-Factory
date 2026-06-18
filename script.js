@@ -699,8 +699,7 @@ function printCurrentInvoice() {
     </tr>
     ${storeName ? `<tr><td class="label">Store:</td><td>${storeName}</td></tr>` : ''}
     ${customerAddress ? `<tr><td class="label">Address:</td><td colspan="3">${customerAddress}</td></tr>` : ''}
-    ${customerNtn || customerStrn ? `<tr><td class="label">Tax:</td><td colspan="3">${customerNtn ? 'NTN: '+customerNtn : ''} ${customerStrn ? 'STRN: '+customerStrn : ''}</td></tr>` : ''}
-  </table>
+    </table>
 
   <table>
     <thead>
