@@ -978,6 +978,20 @@ tr:hover td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+.sp-balance-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.sp-balance-cell.positive {
+  color: var(--primary);
+}
+
+.sp-balance-cell.negative {
+  color: var(--danger);
+}
+
 /* ============================================================
    MODAL
    ============================================================ */
