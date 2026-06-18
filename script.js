@@ -409,14 +409,12 @@ function updateSPBalanceDisplay(row) {
 // DELETE SP ENTRIES BY INVOICE TIMESTAMP
 // ============================================================
 async function deleteSPOutByInvoice(timestamp) {
-  // Delete from database
   const { error } = await sb.from('sp_stock_out').delete().eq('invoice_timestamp', timestamp);
   if (error) {
     console.error('Delete SP error:', error);
     showNotification('Failed to delete SP entries: ' + error.message, 'error');
     return false;
   }
-  // Remove from in-memory
   spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
   return true;
 }
@@ -535,8 +533,7 @@ async function saveInvoiceNow() {
   });
   if (items.length === 0) { showNotification('No items added!', 'error'); return; }
 
-  // Check SP balance and create SP Stock Out entries
-  const spEntries = [];
+  // Check SP balance
   let hasError = false;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
@@ -562,11 +559,10 @@ async function saveInvoiceNow() {
   let ts, invoiceNo, isEdit = false;
 
   if (editingInvTs !== null) {
-    // Edit mode: delete existing SP entries for this invoice
+    // Edit mode: delete existing SP entries
     const delOk = await deleteSPOutByInvoice(editingInvTs);
     if (!delOk) return;
     ts = editingInvTs;
-    // Update invoice in DB
     const row = {
       store_name: storeName, customer_name: customerName,
       ntn: customerNtn, strn: customerStrn, address: customerAddress,
@@ -575,7 +571,6 @@ async function saveInvoiceNow() {
     };
     const ok = await sbUpdate('invoices', 'timestamp', ts, row);
     if (!ok) return;
-    // Update in-memory
     const idx = invoices.findIndex(i => i.timestamp === ts);
     if (idx > -1) {
       invoices[idx] = { ...invoices[idx], storeName, customerName, ntn: customerNtn, strn: customerStrn, address: customerAddress, date, items,
@@ -584,7 +579,6 @@ async function saveInvoiceNow() {
     isEdit = true;
     showNotification('Invoice updated successfully!');
   } else {
-    // New invoice
     ts = Date.now();
     invoiceNo = getNextInvoiceNumber();
     const row = {
@@ -605,7 +599,7 @@ async function saveInvoiceNow() {
     showNotification('Invoice saved!');
   }
 
-  // Create new SP Stock Out entries for this invoice
+  // Create new SP Stock Out entries
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
       const srNo = Date.now() + Math.floor(Math.random() * 1000) + items.indexOf(item);
@@ -674,7 +668,7 @@ function printCurrentInvoice() {
   <title>KRT TRADERS - Cash Invoice</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; margin: 20px; background: #fff; color: #1a1a2e; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #1a1a2e; }
     .invoice-wrapper { max-width: 780px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
     .company { flex: 1; }
@@ -685,20 +679,24 @@ function printCurrentInvoice() {
     .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
     .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
-    .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
-    .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 80px; display: inline-block; }
-    .info-table .row { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-    .info-table .row-item { display: flex; align-items: center; gap: 4px; }
+    
+    .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; overflow: hidden; }
+    .info-table td { border: none; padding: 5px 10px; font-size: 11px; vertical-align: middle; }
+    .info-table .label { font-weight: 600; color: #666; width: 80px; }
+    .info-table .value { font-weight: 500; color: #1a1a2e; }
+    .info-table .separator { width: 30px; }
+    
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
     tr:last-child td { border-bottom: none; }
+    
     .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
     .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
     .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
     .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    
+    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-table { background: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -720,15 +718,19 @@ function printCurrentInvoice() {
     </div>
   </div>
 
-  <div class="info-table">
-    <div class="row">
-      <div class="row-item"><span class="label">Customer:</span> <strong>${customerName}</strong></div>
-      ${storeName ? `<div class="row-item"><span class="label">Store:</span> ${storeName}</div>` : ''}
-      <div class="row-item"><span class="label">Date:</span> ${date || new Date().toISOString().split('T')[0]}</div>
-    </div>
-    ${customerAddress ? `<div class="row"><span class="label">Address:</span> ${customerAddress}</div>` : ''}
-    ${customerNtn || customerStrn ? `<div class="row"><span class="label">Tax:</span> ${customerNtn ? 'NTN: '+customerNtn : ''} ${customerStrn ? 'STRN: '+customerStrn : ''}</div>` : ''}
-  </div>
+  <table class="info-table">
+    <tr>
+      <td class="label">Customer:</td>
+      <td class="value"><strong>${customerName}</strong></td>
+      <td class="separator"></td>
+      <td class="label">Date:</td>
+      <td class="value"><strong>${date || new Date().toISOString().split('T')[0]}</strong></td>
+    </tr>
+    ${storeName ? `<tr><td class="label">Store:</td><td class="value" colspan="3">${storeName}</td></tr>` : ''}
+    ${customerNtn ? `<tr><td class="label">NTN:</td><td class="value" colspan="3">${customerNtn}</td></tr>` : ''}
+    ${customerStrn ? `<tr><td class="label">STRN:</td><td class="value" colspan="3">${customerStrn}</td></tr>` : ''}
+    ${customerAddress ? `<tr><td class="label">Address:</td><td class="value" colspan="3">${customerAddress}</td></tr>` : ''}
+  </table>
 
   <table>
     <thead>
@@ -841,30 +843,35 @@ function printInvoiceByTs(ts) {
   <title>KRT TRADERS - ${invoiceNo}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; margin: 20px; background: #fff; color: #1a1a2e; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #1a1a2e; }
     .invoice-wrapper { max-width: 780px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
+    .company { flex: 1; }
     .company h1 { font-size: 26px; color: #22c99a; font-weight: 800; letter-spacing: 1px; }
     .company .sub-title { font-size: 13px; color: #555; font-weight: 600; margin-top: 2px; }
     .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 12px; }
     .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
-    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
     .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
-    .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
-    .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 80px; display: inline-block; }
-    .info-table .row { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-    .info-table .row-item { display: flex; align-items: center; gap: 4px; }
+    
+    .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; overflow: hidden; }
+    .info-table td { border: none; padding: 5px 10px; font-size: 11px; vertical-align: middle; }
+    .info-table .label { font-weight: 600; color: #666; width: 80px; }
+    .info-table .value { font-weight: 500; color: #1a1a2e; }
+    .info-table .separator { width: 30px; }
+    
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
     tr:last-child td { border-bottom: none; }
+    
     .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
     .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
     .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
     .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    
+    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-table { background: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -886,15 +893,19 @@ function printInvoiceByTs(ts) {
     </div>
   </div>
 
-  <div class="info-table">
-    <div class="row">
-      <div class="row-item"><span class="label">Customer:</span> <strong>${customerName}</strong></div>
-      ${storeName ? `<div class="row-item"><span class="label">Store:</span> ${storeName}</div>` : ''}
-      <div class="row-item"><span class="label">Date:</span> ${date}</div>
-    </div>
-    ${address ? `<div class="row"><span class="label">Address:</span> ${address}</div>` : ''}
-    ${ntn || strn ? `<div class="row"><span class="label">Tax:</span> ${ntn ? 'NTN: '+ntn : ''} ${strn ? 'STRN: '+strn : ''}</div>` : ''}
-  </div>
+  <table class="info-table">
+    <tr>
+      <td class="label">Customer:</td>
+      <td class="value"><strong>${customerName}</strong></td>
+      <td class="separator"></td>
+      <td class="label">Date:</td>
+      <td class="value"><strong>${date}</strong></td>
+    </tr>
+    ${storeName ? `<tr><td class="label">Store:</td><td class="value" colspan="3">${storeName}</td></tr>` : ''}
+    ${ntn ? `<tr><td class="label">NTN:</td><td class="value" colspan="3">${ntn}</td></tr>` : ''}
+    ${strn ? `<tr><td class="label">STRN:</td><td class="value" colspan="3">${strn}</td></tr>` : ''}
+    ${address ? `<tr><td class="label">Address:</td><td class="value" colspan="3">${address}</td></tr>` : ''}
+  </table>
 
   <table>
     <thead><tr><th style="width:40px;text-align:center;">#</th><th style="text-align:left;">Barcode</th><th style="text-align:left;">Item</th><th style="width:60px;text-align:center;">Qty</th><th style="width:80px;text-align:right;">Rate</th><th style="width:100px;text-align:right;">Total</th></tr></thead>
@@ -988,10 +999,8 @@ function printModal() {
 
 async function deleteInvoice(ts) {
   if (!confirm('Delete this invoice?')) return;
-  // Delete associated SP Stock Out entries
   const delOk = await deleteSPOutByInvoice(ts);
   if (!delOk) return;
-  // Delete the invoice itself
   const ok = await sbDelete('invoices', 'timestamp', ts);
   if (!ok) return;
   invoices = invoices.filter(i => i.timestamp !== ts);
@@ -1001,7 +1010,7 @@ async function deleteInvoice(ts) {
 }
 
 // ============================================================
-// STOCK IN, STOCK OUT, STOCK BALANCE (unchanged)
+// STOCK IN, STOCK OUT, STOCK BALANCE
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -1225,7 +1234,58 @@ function calcBalanceSheet() {
 }
 
 // ============================================================
-// LEDGER (GULZAR / KASHIF) - unchanged
+// PRINT STOCK BALANCE SHEET
+// ============================================================
+function printStockBalance() {
+  const stock = {};
+  stockInEntries.forEach(item => {
+    const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
+    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0 };
+    stock[k].totalIn += Number(item.qty) || 0;
+  });
+  stockOutEntries.forEach(item => {
+    const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
+    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0 };
+    stock[k].totalOut += Number(item.qty) || 0;
+  });
+
+  let rows = '';
+  const vals = Object.values(stock);
+  vals.forEach(x => {
+    const bal = x.totalIn - x.totalOut;
+    rows += `<tr><td>${x.barcode}</td><td>${x.itemName}</td><td>${x.totalIn}</td><td>${x.totalOut}</td><td style="font-weight:bold;color:${bal > 0 ? '#22c99a' : '#ff5c5c'}">${bal}</td></tr>`;
+  });
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Balance Sheet</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
+    h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+    tr:last-child td { border-bottom: none; }
+    .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <h2>KRT TRADERS — Stock Balance Sheet</h2>
+  <table>
+    <thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody>
+  </table>
+  <div class="footer">Generated on ${new Date().toLocaleDateString('en-PK')}</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
+}
+
+// ============================================================
+// LEDGER (GULZAR / KASHIF)
 // ============================================================
 function getLedgerData(person) { return person === 'gulzar' ? gulzarData : kashifData; }
 
@@ -1378,7 +1438,7 @@ function clearLedgerHistoryFilter(person) {
 }
 
 // ============================================================
-// SALARY SYSTEM (unchanged)
+// SALARY SYSTEM
 // ============================================================
 function currentMonthStr() {
   const d = new Date();
@@ -1558,7 +1618,7 @@ function generateReport() {
 }
 
 // ============================================================
-// STORE PREDICTION (GODAM) - updated SP In/Out functions
+// STORE PREDICTION (GODAM)
 // ============================================================
 function spinBarcodeInput() {
   const bc = document.getElementById('spin-barcode').value.trim();
@@ -1877,17 +1937,32 @@ function printSPOutTable() {
 </html>`);
 }
 
+// ============================================================
+// SP BALANCE - FIXED (PCS only, no CTN unless set)
+// ============================================================
 function calcSPBalance() {
   const stock = {};
   spInEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0, pcsPerCtn: item.pcsPerCtn || 0 };
+    if (!stock[k]) stock[k] = { 
+      barcode: item.barcode || '-', 
+      itemName: item.itemName, 
+      totalIn: 0, 
+      totalOut: 0, 
+      pcsPerCtn: item.pcsPerCtn || 0 
+    };
     stock[k].totalIn += Number(item.totalPcs) || 0;
-    stock[k].pcsPerCtn = item.pcsPerCtn || 0;
+    if (item.pcsPerCtn) stock[k].pcsPerCtn = item.pcsPerCtn;
   });
   spOutEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0, pcsPerCtn: 0 };
+    if (!stock[k]) stock[k] = { 
+      barcode: item.barcode || '-', 
+      itemName: item.itemName, 
+      totalIn: 0, 
+      totalOut: 0, 
+      pcsPerCtn: 0 
+    };
     stock[k].totalOut += Number(item.qty) || 0;
   });
   const tbody = document.getElementById('sp-balance-table');
@@ -1897,14 +1972,113 @@ function calcSPBalance() {
     : vals.map(x => {
       const bal = x.totalIn - x.totalOut;
       const pcsPerCtn = x.pcsPerCtn || 0;
-      const ctnPart = pcsPerCtn > 0 ? Math.floor(bal / pcsPerCtn) : 0;
-      const pcsPart = pcsPerCtn > 0 ? bal % pcsPerCtn : bal;
-      const ctnDisplay = pcsPerCtn > 0 ? `${ctnPart} Ctn + ${pcsPart} Pcs` : `${bal} Pcs`;
+      let ctnDisplay;
+      if (pcsPerCtn > 0) {
+        const ctnPart = Math.floor(bal / pcsPerCtn);
+        const pcsPart = bal % pcsPerCtn;
+        if (ctnPart > 0 && pcsPart > 0) {
+          ctnDisplay = `${ctnPart} Ctn + ${pcsPart} Pcs`;
+        } else if (ctnPart > 0) {
+          ctnDisplay = `${ctnPart} Ctn`;
+        } else {
+          ctnDisplay = `${pcsPart} Pcs`;
+        }
+      } else {
+        ctnDisplay = `${bal} Pcs`;
+      }
       return `<tr>
           <td style="font-family:monospace;font-size:12px">${x.barcode}</td>
-          <td>${x.itemName}</td><td>${x.totalIn}</td><td>${x.totalOut}</td>
-          <td><strong style="color:${bal > 0 ? 'var(--primary)' : 'var(--danger)'}">${bal}</strong></td>
+          <td>${x.itemName}</td>
+          <td>${x.totalIn}</td>
+          <td>${x.totalOut}</td>
+          <td><strong style="color:${bal > 0 ? 'var(--primary)' : bal < 0 ? 'var(--danger)' : 'var(--muted)'}">${bal}</strong></td>
           <td>${ctnDisplay}</td>
         </tr>`;
     }).join('');
+}
+
+// ============================================================
+// PRINT SP BALANCE SHEET
+// ============================================================
+function printSPBalance() {
+  const stock = {};
+  spInEntries.forEach(item => {
+    const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
+    if (!stock[k]) stock[k] = { 
+      barcode: item.barcode || '-', 
+      itemName: item.itemName, 
+      totalIn: 0, 
+      totalOut: 0, 
+      pcsPerCtn: item.pcsPerCtn || 0 
+    };
+    stock[k].totalIn += Number(item.totalPcs) || 0;
+    if (item.pcsPerCtn) stock[k].pcsPerCtn = item.pcsPerCtn;
+  });
+  spOutEntries.forEach(item => {
+    const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
+    if (!stock[k]) stock[k] = { 
+      barcode: item.barcode || '-', 
+      itemName: item.itemName, 
+      totalIn: 0, 
+      totalOut: 0, 
+      pcsPerCtn: 0 
+    };
+    stock[k].totalOut += Number(item.qty) || 0;
+  });
+
+  let rows = '';
+  const vals = Object.values(stock);
+  vals.forEach(x => {
+    const bal = x.totalIn - x.totalOut;
+    const pcsPerCtn = x.pcsPerCtn || 0;
+    let ctnDisplay;
+    if (pcsPerCtn > 0) {
+      const ctnPart = Math.floor(bal / pcsPerCtn);
+      const pcsPart = bal % pcsPerCtn;
+      if (ctnPart > 0 && pcsPart > 0) {
+        ctnDisplay = `${ctnPart} Ctn + ${pcsPart} Pcs`;
+      } else if (ctnPart > 0) {
+        ctnDisplay = `${ctnPart} Ctn`;
+      } else {
+        ctnDisplay = `${pcsPart} Pcs`;
+      }
+    } else {
+      ctnDisplay = `${bal} Pcs`;
+    }
+    rows += `<tr>
+      <td>${x.barcode}</td>
+      <td>${x.itemName}</td>
+      <td>${x.totalIn}</td>
+      <td>${x.totalOut}</td>
+      <td style="font-weight:bold;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ff5c5c' : '#999'}">${bal}</td>
+      <td>${ctnDisplay}</td>
+    </tr>`;
+  });
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>SP Balance Sheet</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
+    h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+    tr:last-child td { border-bottom: none; }
+    .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <h2>KRT TRADERS — Store Prediction Balance Sheet</h2>
+  <table>
+    <thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody>
+  </table>
+  <div class="footer">Generated on ${new Date().toLocaleDateString('en-PK')}</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
 }
