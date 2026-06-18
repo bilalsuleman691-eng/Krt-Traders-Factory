@@ -123,7 +123,7 @@ const map = {
   stockOut: r => ({ srNo: r.sr_no, date: r.date, customer: r.customer, itemName: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
   ledger: r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }),
   spIn: r => ({ srNo: r.sr_no, date: r.date, vendor: r.vendor, itemName: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }),
-  spOut: r => ({ srNo: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, itemName: r.item_name, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
+  spOut: r => ({ srNo: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, itemName: r.item_name, qty: Number(r.qty), price: Number(r.price), total: Number(r.total), invoiceTimestamp: r.invoice_timestamp || null }),
 };
 
 // ============================================================
@@ -406,6 +406,22 @@ function updateSPBalanceDisplay(row) {
 }
 
 // ============================================================
+// DELETE SP ENTRIES BY INVOICE TIMESTAMP
+// ============================================================
+async function deleteSPOutByInvoice(timestamp) {
+  // Delete from database
+  const { error } = await sb.from('sp_stock_out').delete().eq('invoice_timestamp', timestamp);
+  if (error) {
+    console.error('Delete SP error:', error);
+    showNotification('Failed to delete SP entries: ' + error.message, 'error');
+    return false;
+  }
+  // Remove from in-memory
+  spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
+  return true;
+}
+
+// ============================================================
 // CASH INVOICE - WITH SP INTEGRATION
 // ============================================================
 function getStoreRate(barcode, storeName) {
@@ -530,17 +546,6 @@ async function saveInvoiceNow() {
         hasError = true;
         break;
       }
-      const srNo = Date.now() + Math.floor(Math.random() * 1000) + spEntries.length;
-      spEntries.push({
-        sr_no: srNo,
-        date: date,
-        store: storeName || customerName,
-        barcode: item.barcode,
-        item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
-        qty: item.qty,
-        price: item.rate,
-        total: item.qty * item.rate
-      });
     }
   }
   if (hasError) return;
@@ -554,60 +559,84 @@ async function saveInvoiceNow() {
   const customerStrn = document.getElementById('inv-customer-strn').value;
   const customerAddress = document.getElementById('inv-customer-address').value;
 
-  // Save SP Stock Out entries
-  for (const sp of spEntries) {
-    const ok = await sbInsert('sp_stock_out', sp);
-    if (!ok) { showNotification('Failed to create SP entry!', 'error'); return; }
-    spOutEntries.push({
-      srNo: sp.sr_no,
-      date: sp.date,
-      store: sp.store,
-      barcode: sp.barcode,
-      itemName: sp.item_name,
-      qty: sp.qty,
-      price: sp.price,
-      total: sp.total
-    });
-  }
+  let ts, invoiceNo, isEdit = false;
 
   if (editingInvTs !== null) {
-    const idx = invoices.findIndex(i => i.timestamp === editingInvTs);
+    // Edit mode: delete existing SP entries for this invoice
+    const delOk = await deleteSPOutByInvoice(editingInvTs);
+    if (!delOk) return;
+    ts = editingInvTs;
+    // Update invoice in DB
     const row = {
-      store_name: storeName, customer_name: customerName, 
-      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      store_name: storeName, customer_name: customerName,
+      ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items,
       discount_percent: disc, sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
     };
-    const ok = await sbUpdate('invoices', 'timestamp', editingInvTs, row);
+    const ok = await sbUpdate('invoices', 'timestamp', ts, row);
     if (!ok) return;
+    // Update in-memory
+    const idx = invoices.findIndex(i => i.timestamp === ts);
     if (idx > -1) {
       invoices[idx] = { ...invoices[idx], storeName, customerName, ntn: customerNtn, strn: customerStrn, address: customerAddress, date, items,
         discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2) };
     }
-    showNotification('Invoice updated! SP stock deducted.');
-    editingInvTs = null;
+    isEdit = true;
+    showNotification('Invoice updated successfully!');
   } else {
-    const ts = Date.now();
-    const invoiceNo = getNextInvoiceNumber();
+    // New invoice
+    ts = Date.now();
+    invoiceNo = getNextInvoiceNumber();
     const row = {
-      timestamp: ts, invoice_no: invoiceNo, 
+      timestamp: ts, invoice_no: invoiceNo,
       store_name: storeName, customer_name: customerName,
-      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items, discount_percent: disc,
       sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
     };
     const ok = await sbInsert('invoices', row);
     if (!ok) return;
     invoices.push({
-      invoiceNo, timestamp: ts, storeName, customerName, 
-      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      invoiceNo, timestamp: ts, storeName, customerName,
+      ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items,
       discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2)
     });
-    showNotification(`Invoice saved! 🎉 ${spEntries.length} SP entries created.`);
-    updateInvoiceNumber();
+    showNotification('Invoice saved!');
   }
 
+  // Create new SP Stock Out entries for this invoice
+  for (const item of items) {
+    if (item.barcode && item.qty > 0) {
+      const srNo = Date.now() + Math.floor(Math.random() * 1000) + items.indexOf(item);
+      const spRow = {
+        sr_no: srNo,
+        date: date,
+        store: storeName || customerName,
+        barcode: item.barcode,
+        item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
+        qty: item.qty,
+        price: item.rate,
+        total: item.qty * item.rate,
+        invoice_timestamp: ts
+      };
+      const ok = await sbInsert('sp_stock_out', spRow);
+      if (!ok) { showNotification('Failed to create SP entry!', 'error'); return; }
+      spOutEntries.push({
+        srNo: srNo,
+        date: date,
+        store: spRow.store,
+        barcode: spRow.barcode,
+        itemName: spRow.item_name,
+        qty: spRow.qty,
+        price: spRow.price,
+        total: spRow.total,
+        invoiceTimestamp: ts
+      });
+    }
+  }
+
+  if (!isEdit) updateInvoiceNumber();
   clearInvoiceForm();
   loadDashboard();
 }
@@ -648,17 +677,19 @@ function printCurrentInvoice() {
     body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; margin: 20px; background: #fff; color: #1a1a2e; }
     .invoice-wrapper { max-width: 780px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
+    .company { flex: 1; }
     .company h1 { font-size: 26px; color: #22c99a; font-weight: 800; letter-spacing: 1px; }
     .company .sub-title { font-size: 13px; color: #555; font-weight: 600; margin-top: 2px; }
     .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 12px; }
     .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
-    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
     .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
     .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
     .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 90px; }
-    .info-table .separator { width: 30px; }
+    .info-table .label { font-weight: 600; color: #666; width: 80px; display: inline-block; }
+    .info-table .row { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    .info-table .row-item { display: flex; align-items: center; gap: 4px; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
@@ -689,17 +720,15 @@ function printCurrentInvoice() {
     </div>
   </div>
 
-  <table class="info-table">
-    <tr>
-      <td class="label">Customer:</td>
-      <td><strong>${customerName}</strong></td>
-      <td class="separator"></td>
-      <td class="label">Date:</td>
-      <td><strong>${date || new Date().toISOString().split('T')[0]}</strong></td>
-    </tr>
-    ${storeName ? `<tr><td class="label">Store:</td><td>${storeName}</td></tr>` : ''}
-    ${customerAddress ? `<tr><td class="label">Address:</td><td colspan="3">${customerAddress}</td></tr>` : ''}
-    </table>
+  <div class="info-table">
+    <div class="row">
+      <div class="row-item"><span class="label">Customer:</span> <strong>${customerName}</strong></div>
+      ${storeName ? `<div class="row-item"><span class="label">Store:</span> ${storeName}</div>` : ''}
+      <div class="row-item"><span class="label">Date:</span> ${date || new Date().toISOString().split('T')[0]}</div>
+    </div>
+    ${customerAddress ? `<div class="row"><span class="label">Address:</span> ${customerAddress}</div>` : ''}
+    ${customerNtn || customerStrn ? `<div class="row"><span class="label">Tax:</span> ${customerNtn ? 'NTN: '+customerNtn : ''} ${customerStrn ? 'STRN: '+customerStrn : ''}</div>` : ''}
+  </div>
 
   <table>
     <thead>
@@ -824,8 +853,9 @@ function printInvoiceByTs(ts) {
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
     .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
     .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 90px; }
-    .info-table .separator { width: 30px; }
+    .info-table .label { font-weight: 600; color: #666; width: 80px; display: inline-block; }
+    .info-table .row { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+    .info-table .row-item { display: flex; align-items: center; gap: 4px; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
@@ -856,18 +886,15 @@ function printInvoiceByTs(ts) {
     </div>
   </div>
 
-  <table class="info-table">
-    <tr>
-      <td class="label">Customer:</td>
-      <td><strong>${customerName}</strong></td>
-      <td class="separator"></td>
-      <td class="label">Date:</td>
-      <td><strong>${date}</strong></td>
-    </tr>
-    ${storeName ? `<tr><td class="label">Store:</td><td>${storeName}</td></tr>` : ''}
-    ${address ? `<tr><td class="label">Address:</td><td colspan="3">${address}</td></tr>` : ''}
-    ${ntn || strn ? `<tr><td class="label">Tax:</td><td colspan="3">${ntn ? 'NTN: '+ntn : ''} ${strn ? 'STRN: '+strn : ''}</td></tr>` : ''}
-  </table>
+  <div class="info-table">
+    <div class="row">
+      <div class="row-item"><span class="label">Customer:</span> <strong>${customerName}</strong></div>
+      ${storeName ? `<div class="row-item"><span class="label">Store:</span> ${storeName}</div>` : ''}
+      <div class="row-item"><span class="label">Date:</span> ${date}</div>
+    </div>
+    ${address ? `<div class="row"><span class="label">Address:</span> ${address}</div>` : ''}
+    ${ntn || strn ? `<div class="row"><span class="label">Tax:</span> ${ntn ? 'NTN: '+ntn : ''} ${strn ? 'STRN: '+strn : ''}</div>` : ''}
+  </div>
 
   <table>
     <thead><tr><th style="width:40px;text-align:center;">#</th><th style="text-align:left;">Barcode</th><th style="text-align:left;">Item</th><th style="width:60px;text-align:center;">Qty</th><th style="width:80px;text-align:right;">Rate</th><th style="width:100px;text-align:right;">Total</th></tr></thead>
@@ -961,16 +988,20 @@ function printModal() {
 
 async function deleteInvoice(ts) {
   if (!confirm('Delete this invoice?')) return;
+  // Delete associated SP Stock Out entries
+  const delOk = await deleteSPOutByInvoice(ts);
+  if (!delOk) return;
+  // Delete the invoice itself
   const ok = await sbDelete('invoices', 'timestamp', ts);
   if (!ok) return;
   invoices = invoices.filter(i => i.timestamp !== ts);
   renderInvoiceHistory();
   loadDashboard();
-  showNotification('Invoice deleted!');
+  showNotification('Invoice and associated SP entries deleted!');
 }
 
 // ============================================================
-// STOCK IN, STOCK OUT, STOCK BALANCE
+// STOCK IN, STOCK OUT, STOCK BALANCE (unchanged)
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -1194,7 +1225,7 @@ function calcBalanceSheet() {
 }
 
 // ============================================================
-// LEDGER (GULZAR / KASHIF) - REMAINING FUNCTIONS
+// LEDGER (GULZAR / KASHIF) - unchanged
 // ============================================================
 function getLedgerData(person) { return person === 'gulzar' ? gulzarData : kashifData; }
 
@@ -1347,7 +1378,7 @@ function clearLedgerHistoryFilter(person) {
 }
 
 // ============================================================
-// SALARY SYSTEM
+// SALARY SYSTEM (unchanged)
 // ============================================================
 function currentMonthStr() {
   const d = new Date();
@@ -1527,7 +1558,7 @@ function generateReport() {
 }
 
 // ============================================================
-// STORE PREDICTION (GODAM)
+// STORE PREDICTION (GODAM) - updated SP In/Out functions
 // ============================================================
 function spinBarcodeInput() {
   const bc = document.getElementById('spin-barcode').value.trim();
@@ -1559,10 +1590,9 @@ async function saveSPStockIn() {
 
   if (!itemName) { showNotification('Item name is required!', 'error'); return; }
   const totalPcs = (ctn * pcsPerCtn) + extra;
-  if (totalPcs <= 0 && pcsPerCtn > 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
-  if (totalPcs <= 0 && pcsPerCtn === 0) { showNotification('Enter Pcs per Ctn or quantity!', 'error'); return; }
+  if (totalPcs <= 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
   
-  const finalTotalPcs = totalPcs > 0 ? totalPcs : extra;
+  const finalTotalPcs = totalPcs;
   const total = finalTotalPcs * price;
 
   if (editingSPInId !== null) {
@@ -1731,7 +1761,7 @@ async function saveSPStockOut() {
     const row = { date, store, barcode, item_name: itemName, qty, price, total: qty * price };
     const ok = await sbUpdate('sp_stock_out', 'sr_no', editingSPOutId, row);
     if (!ok) return;
-    if (idx > -1) spOutEntries[idx] = { srNo: editingSPOutId, date, store, barcode, itemName, qty, price, total: qty * price };
+    if (idx > -1) spOutEntries[idx] = { srNo: editingSPOutId, date, store, barcode, itemName, qty, price, total: qty * price, invoiceTimestamp: spOutEntries[idx].invoiceTimestamp || null };
     editingSPOutId = null;
     document.querySelector('#page-sp-out .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock Out';
     showNotification('Stock Out updated!');
@@ -1742,7 +1772,7 @@ async function saveSPStockOut() {
     const row = { sr_no: srNo, date, store, barcode, item_name: itemName, qty, price, total: qty * price };
     const ok = await sbInsert('sp_stock_out', row);
     if (!ok) return;
-    spOutEntries.push({ srNo, date, store, barcode, itemName, qty, price, total: qty * price });
+    spOutEntries.push({ srNo, date, store, barcode, itemName, qty, price, total: qty * price, invoiceTimestamp: null });
     showNotification('Stock Out saved!');
   }
 
