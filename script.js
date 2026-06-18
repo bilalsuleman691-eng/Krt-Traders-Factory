@@ -122,7 +122,7 @@ const map = {
   stockIn: r => ({ srNo: r.sr_no, date: r.date, vendor: r.vendor, itemName: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
   stockOut: r => ({ srNo: r.sr_no, date: r.date, customer: r.customer, itemName: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
   ledger: r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }),
-  spIn: r => ({ srNo: r.sr_no, date: r.date, vendor: r.vendor, itemName: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn), ctn: Number(r.ctn), extra: Number(r.extra), totalPcs: Number(r.total_pcs), price: Number(r.price), total: Number(r.total) }),
+  spIn: r => ({ srNo: r.sr_no, date: r.date, vendor: r.vendor, itemName: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }),
   spOut: r => ({ srNo: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, itemName: r.item_name, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
 };
 
@@ -390,8 +390,8 @@ function renderRatesTable() {
 // SP BALANCE HELPER
 // ============================================================
 function getSPBalance(barcode) {
-  const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + x.totalPcs, 0);
-  const totalOut = spOutEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + x.qty, 0);
+  const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + (x.totalPcs || 0), 0);
+  const totalOut = spOutEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + (x.qty || 0), 0);
   return totalIn - totalOut;
 }
 
@@ -521,12 +521,14 @@ async function saveInvoiceNow() {
 
   // Check SP balance and create SP Stock Out entries
   const spEntries = [];
+  let hasError = false;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
       const bal = getSPBalance(item.barcode);
       if (bal < item.qty) {
         showNotification(`⚠️ Insufficient SP balance for ${item.item || item.barcode}! Available: ${bal}`, 'error');
-        return;
+        hasError = true;
+        break;
       }
       const srNo = Date.now() + Math.floor(Math.random() * 1000) + spEntries.length;
       spEntries.push({
@@ -541,6 +543,7 @@ async function saveInvoiceNow() {
       });
     }
   }
+  if (hasError) return;
 
   const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
   const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
@@ -554,7 +557,7 @@ async function saveInvoiceNow() {
   // Save SP Stock Out entries
   for (const sp of spEntries) {
     const ok = await sbInsert('sp_stock_out', sp);
-    if (!ok) return;
+    if (!ok) { showNotification('Failed to create SP entry!', 'error'); return; }
     spOutEntries.push({
       srNo: sp.sr_no,
       date: sp.date,
@@ -968,7 +971,7 @@ async function deleteInvoice(ts) {
 }
 
 // ============================================================
-// STOCK IN, STOCK OUT, STOCK BALANCE (SAME AS BEFORE)
+// STOCK IN, STOCK OUT, STOCK BALANCE
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -1192,7 +1195,7 @@ function calcBalanceSheet() {
 }
 
 // ============================================================
-// LEDGER (GULZAR / KASHIF)
+// LEDGER (GULZAR / KASHIF) - REMAINING FUNCTIONS
 // ============================================================
 function getLedgerData(person) { return person === 'gulzar' ? gulzarData : kashifData; }
 
@@ -1532,7 +1535,7 @@ function spinBarcodeInput() {
   if (PRODUCTS[bc]) document.getElementById('spin-item').value = PRODUCTS[bc];
   const last = [...spInEntries].reverse().find(x => x.barcode === bc);
   if (last && !document.getElementById('spin-pcsperctn').value) {
-    document.getElementById('spin-pcsperctn').value = last.pcsPerCtn;
+    document.getElementById('spin-pcsperctn').value = last.pcsPerCtn || 0;
   }
   updateSPInPreview();
 }
@@ -1555,27 +1558,30 @@ async function saveSPStockIn() {
   const date = document.getElementById('spin-date').value;
   const vendor = document.getElementById('spin-vendor').value || 'N/A';
 
-  if (!itemName || pcsPerCtn <= 0) { showNotification('Item name and Pcs per Ctn are required!', 'error'); return; }
+  if (!itemName) { showNotification('Item name is required!', 'error'); return; }
   const totalPcs = (ctn * pcsPerCtn) + extra;
-  if (totalPcs <= 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
-  const total = totalPcs * price;
+  if (totalPcs <= 0 && pcsPerCtn > 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
+  if (totalPcs <= 0 && pcsPerCtn === 0) { showNotification('Enter Pcs per Ctn or quantity!', 'error'); return; }
+  
+  const finalTotalPcs = totalPcs > 0 ? totalPcs : extra;
+  const total = finalTotalPcs * price;
 
   if (editingSPInId !== null) {
     const idx = spInEntries.findIndex(e => e.srNo === editingSPInId);
-    const row = { date, vendor, item_name: itemName, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: totalPcs, price, total };
+    const row = { date, vendor, item_name: itemName, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: finalTotalPcs, price, total };
     const ok = await sbUpdate('sp_stock_in', 'sr_no', editingSPInId, row);
     if (!ok) return;
-    if (idx > -1) spInEntries[idx] = { srNo: editingSPInId, date, vendor, itemName, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total };
+    if (idx > -1) spInEntries[idx] = { srNo: editingSPInId, date, vendor, itemName, barcode, pcsPerCtn, ctn, extra, totalPcs: finalTotalPcs, price, total };
     editingSPInId = null;
     document.querySelector('#page-sp-in .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock In';
-    showNotification('Updated! Total Pcs: ' + totalPcs);
+    showNotification('Updated! Total Pcs: ' + finalTotalPcs);
   } else {
     const srNo = Date.now();
-    const row = { sr_no: srNo, date, vendor, item_name: itemName, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: totalPcs, price, total };
+    const row = { sr_no: srNo, date, vendor, item_name: itemName, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: finalTotalPcs, price, total };
     const ok = await sbInsert('sp_stock_in', row);
     if (!ok) return;
-    spInEntries.push({ srNo, date, vendor, itemName, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total });
-    showNotification('Stock In saved! Total Pcs: ' + totalPcs);
+    spInEntries.push({ srNo, date, vendor, itemName, barcode, pcsPerCtn, ctn, extra, totalPcs: finalTotalPcs, price, total });
+    showNotification('Stock In saved! Total Pcs: ' + finalTotalPcs);
   }
 
   renderSPInTable();
@@ -1678,8 +1684,8 @@ function getSPItemByBarcode(bc) {
 }
 
 function getSPBalancePcs(barcode) {
-  const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + Number(x.totalPcs), 0);
-  const totalOut = spOutEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + Number(x.qty), 0);
+  const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + Number(x.totalPcs || 0), 0);
+  const totalOut = spOutEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + Number(x.qty || 0), 0);
   return totalIn - totalOut;
 }
 
@@ -1846,9 +1852,9 @@ function calcSPBalance() {
   const stock = {};
   spInEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0, pcsPerCtn: item.pcsPerCtn };
+    if (!stock[k]) stock[k] = { barcode: item.barcode || '-', itemName: item.itemName, totalIn: 0, totalOut: 0, pcsPerCtn: item.pcsPerCtn || 0 };
     stock[k].totalIn += Number(item.totalPcs) || 0;
-    stock[k].pcsPerCtn = item.pcsPerCtn;
+    stock[k].pcsPerCtn = item.pcsPerCtn || 0;
   });
   spOutEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
