@@ -387,17 +387,30 @@ function renderRatesTable() {
 }
 
 // ============================================================
-// CASH INVOICE
+// SP BALANCE HELPER
 // ============================================================
-function getStoreRate(barcode, storeName) {
-  const r = storeRates.find(x => x.store === storeName && x.barcode === barcode);
-  return r ? r.rate : 0;
-}
-
 function getSPBalance(barcode) {
   const totalIn = spInEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + x.totalPcs, 0);
   const totalOut = spOutEntries.filter(x => x.barcode === barcode).reduce((s, x) => s + x.qty, 0);
   return totalIn - totalOut;
+}
+
+function updateSPBalanceDisplay(row) {
+  const bc = row.querySelector('.bc-input')?.value.trim();
+  const spBalEl = row.querySelector('.sp-balance-cell');
+  if (bc && spBalEl) {
+    const bal = getSPBalance(bc);
+    spBalEl.textContent = bal;
+    spBalEl.className = 'sp-balance-cell ' + (bal > 0 ? 'positive' : bal < 0 ? 'negative' : '');
+  }
+}
+
+// ============================================================
+// CASH INVOICE - WITH SP INTEGRATION
+// ============================================================
+function getStoreRate(barcode, storeName) {
+  const r = storeRates.find(x => x.store === storeName && x.barcode === barcode);
+  return r ? r.rate : 0;
 }
 
 function onInvStoreChange(storeName) {
@@ -426,16 +439,6 @@ function onInvStoreChange(storeName) {
   calcInvoice();
 }
 
-function updateSPBalanceDisplay(row) {
-  const bc = row.querySelector('.bc-input')?.value.trim();
-  const spBalEl = row.querySelector('.sp-balance');
-  if (bc && spBalEl) {
-    const bal = getSPBalance(bc);
-    spBalEl.textContent = bal;
-    spBalEl.style.color = bal > 0 ? 'var(--primary)' : 'var(--danger)';
-  }
-}
-
 function addInvoiceRow() {
   const tbody = document.getElementById('inv-body');
   const n = tbody.rows.length + 1;
@@ -447,10 +450,11 @@ function addInvoiceRow() {
     <td><input type="number" class="qty-input" value="1" min="1" oninput="calcInvoice()"></td>
     <td><input type="number" class="rate-input" value="0" min="0" oninput="calcInvoice()"></td>
     <td class="row-total">Rs. 0.00</td>
-    <td class="sp-balance" style="text-align:center;">0</td>
+    <td class="sp-balance-cell" style="text-align:center;">0</td>
     <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove();calcInvoice();renumberRows()"><i class="fas fa-times"></i></button></td>
   `;
   tbody.appendChild(tr);
+  updateSPBalanceDisplay(tr);
 }
 
 function renumberRows() {
@@ -488,7 +492,7 @@ function calcInvoice() {
 }
 
 function clearInvoiceForm() {
-  ['inv-store', 'inv-customer', 'inv-ntn', 'inv-strn', 'inv-address'].forEach(id => document.getElementById(id).value = '');
+  ['inv-store', 'inv-customer', 'inv-customer-ntn', 'inv-customer-strn', 'inv-customer-address'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('inv-discount').value = '0';
   document.getElementById('inv-body').innerHTML = '';
   document.getElementById('inv-store-info').innerHTML = '<i class="fas fa-store"></i> Enter store name to see rates';
@@ -500,9 +504,10 @@ function clearInvoiceForm() {
 }
 
 async function saveInvoiceNow() {
+  const customerName = document.getElementById('inv-customer').value.trim();
   const storeName = document.getElementById('inv-store').value.trim();
   const date = document.getElementById('inv-date').value;
-  if (!storeName || !date) { showNotification('Store name and date are required!', 'error'); return; }
+  if (!customerName || !date) { showNotification('Customer name and date are required!', 'error'); return; }
 
   const items = [];
   document.querySelectorAll('#inv-body tr').forEach(row => {
@@ -514,44 +519,22 @@ async function saveInvoiceNow() {
   });
   if (items.length === 0) { showNotification('No items added!', 'error'); return; }
 
-  const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
-  const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
-  const discAmt = sub * disc / 100;
-  const final = sub - discAmt;
-
-  const customerName = document.getElementById('inv-customer').value;
-  const ntn = document.getElementById('inv-ntn').value;
-  const strn = document.getElementById('inv-strn').value;
-  const address = document.getElementById('inv-address').value;
-
-  // Create SP Stock Out entries for items
+  // Check SP balance and create SP Stock Out entries
+  const spEntries = [];
   for (const item of items) {
-    if (item.barcode) {
+    if (item.barcode && item.qty > 0) {
       const bal = getSPBalance(item.barcode);
       if (bal < item.qty) {
-        showNotification(`⚠️ SP Balance insufficient for ${item.item || item.barcode}! Available: ${bal}`, 'error');
+        showNotification(`⚠️ Insufficient SP balance for ${item.item || item.barcode}! Available: ${bal}`, 'error');
         return;
       }
-      // Create SP Stock Out
-      const srNo = Date.now() + Math.random() * 1000;
-      const spRow = {
+      const srNo = Date.now() + Math.floor(Math.random() * 1000) + spEntries.length;
+      spEntries.push({
         sr_no: srNo,
         date: date,
-        store: storeName,
+        store: storeName || customerName,
         barcode: item.barcode,
         item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
-        qty: item.qty,
-        price: item.rate,
-        total: item.qty * item.rate
-      };
-      const ok = await sbInsert('sp_stock_out', spRow);
-      if (!ok) return;
-      spOutEntries.push({
-        srNo: srNo,
-        date: date,
-        store: storeName,
-        barcode: item.barcode,
-        itemName: item.item || PRODUCTS[item.barcode] || item.barcode,
         qty: item.qty,
         price: item.rate,
         total: item.qty * item.rate
@@ -559,35 +542,66 @@ async function saveInvoiceNow() {
     }
   }
 
+  const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
+  const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
+  const discAmt = sub * disc / 100;
+  const final = sub - discAmt;
+
+  const customerNtn = document.getElementById('inv-customer-ntn').value;
+  const customerStrn = document.getElementById('inv-customer-strn').value;
+  const customerAddress = document.getElementById('inv-customer-address').value;
+
+  // Save SP Stock Out entries
+  for (const sp of spEntries) {
+    const ok = await sbInsert('sp_stock_out', sp);
+    if (!ok) return;
+    spOutEntries.push({
+      srNo: sp.sr_no,
+      date: sp.date,
+      store: sp.store,
+      barcode: sp.barcode,
+      itemName: sp.item_name,
+      qty: sp.qty,
+      price: sp.price,
+      total: sp.total
+    });
+  }
+
   if (editingInvTs !== null) {
     const idx = invoices.findIndex(i => i.timestamp === editingInvTs);
     const row = {
-      store_name: storeName, customer_name: customerName, ntn, strn, address, date, items,
+      store_name: storeName, customer_name: customerName, 
+      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      date, items,
       discount_percent: disc, sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
     };
     const ok = await sbUpdate('invoices', 'timestamp', editingInvTs, row);
     if (!ok) return;
     if (idx > -1) {
-      invoices[idx] = { ...invoices[idx], storeName, customerName, ntn, strn, address, date, items,
+      invoices[idx] = { ...invoices[idx], storeName, customerName, ntn: customerNtn, strn: customerStrn, address: customerAddress, date, items,
         discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2) };
     }
-    showNotification('Invoice updated successfully!');
+    showNotification('Invoice updated! SP stock deducted.');
     editingInvTs = null;
   } else {
     const ts = Date.now();
     const invoiceNo = getNextInvoiceNumber();
     const row = {
-      timestamp: ts, invoice_no: invoiceNo, store_name: storeName, customer_name: customerName,
-      ntn, strn, address, date, items, discount_percent: disc,
+      timestamp: ts, invoice_no: invoiceNo, 
+      store_name: storeName, customer_name: customerName,
+      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      date, items, discount_percent: disc,
       sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
     };
     const ok = await sbInsert('invoices', row);
     if (!ok) return;
     invoices.push({
-      invoiceNo, timestamp: ts, storeName, customerName, ntn, strn, address, date, items,
+      invoiceNo, timestamp: ts, storeName, customerName, 
+      ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+      date, items,
       discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2)
     });
-    showNotification('Invoice saved successfully! 🎉');
+    showNotification(`Invoice saved! 🎉 ${spEntries.length} SP entries created.`);
     updateInvoiceNumber();
   }
 
@@ -595,12 +609,19 @@ async function saveInvoiceNow() {
   loadDashboard();
 }
 
+// ============================================================
+// INVOICE PRINT - Professional Cash Invoice Style
+// ============================================================
 function printCurrentInvoice() {
-  const storeName = document.getElementById('inv-store').value || 'KRT Customer';
+  const customerName = document.getElementById('inv-customer').value || 'Walk-in Customer';
+  const storeName = document.getElementById('inv-store').value || '';
   const date = document.getElementById('inv-date').value;
   const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
-  let sub = 0,
-    rows = '';
+  const customerNtn = document.getElementById('inv-customer-ntn').value || '';
+  const customerStrn = document.getElementById('inv-customer-strn').value || '';
+  const customerAddress = document.getElementById('inv-customer-address').value || '';
+  
+  let sub = 0, rows = '';
   document.querySelectorAll('#inv-body tr').forEach((row, i) => {
     const bc = row.querySelector('.bc-input')?.value || '';
     const item = row.querySelector('.item-input')?.value || '';
@@ -608,77 +629,101 @@ function printCurrentInvoice() {
     const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
     const tot = qty * rate;
     sub += tot;
-    rows += `<tr><td>${i+1}</td><td>${bc}</td><td>${item}</td><td>${qty}</td><td>${rate.toFixed(2)}</td><td>${tot.toFixed(2)}</td></tr>`;
+    rows += `<tr><td style="text-align:center;">${i+1}</td><td>${bc}</td><td>${item}</td><td style="text-align:center;">${qty}</td><td style="text-align:right;">${rate.toFixed(2)}</td><td style="text-align:right;">${tot.toFixed(2)}</td></tr>`;
   });
   const discAmt = sub * disc / 100;
   const final = sub - discAmt;
-  openPrintWindow(storeName, date, rows, sub, disc, discAmt, final,
-    document.getElementById('inv-ntn').value,
-    document.getElementById('inv-strn').value,
-    document.getElementById('inv-address').value);
-}
-
-function openPrintWindow(storeName, date, rows, sub, disc, discAmt, final, ntn, strn, address) {
   const invoiceNo = document.getElementById('invoice-number-display').innerText || 'INV-001';
+
   const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>KRT Invoice</title>
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>KRT TRADERS - Cash Invoice</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Segoe UI',Arial,sans-serif; font-size:12px; margin:24px; background:#fff; color:#000; }
-    .invoice-container { max-width:800px; margin:0 auto; }
-    .header { display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:2px solid #22c99a; margin-bottom:16px; }
-    .company h1 { font-size:24px; color:#22c99a; font-weight:800; }
-    .company p { font-size:13px; color:#555; }
-    .company-details { font-size:11px; color:#666; margin-top:4px; }
-    .company-details span { display:inline-block; margin-right:16px; }
-    .inv-number { text-align:right; }
-    .inv-number label { font-size:11px; color:#666; }
-    .inv-number div { font-size:20px; font-weight:800; color:#22c99a; }
-    .info-table { width:100%; margin:10px 0; border:none; }
-    .info-table td { border:none; padding:3px 6px; }
-    .info-table .label { font-weight:600; color:#666; width:100px; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th,td { border:1px solid #ddd; padding:6px 8px; text-align:left; }
-    th { background:#f5f5f5; font-weight:700; }
-    .totals { width:auto; float:right; margin-top:10px; }
-    .totals .row { display:flex; justify-content:space-between; padding:3px 0; }
-    .totals .final { font-size:16px; font-weight:800; border-top:2px solid #22c99a; padding-top:8px; margin-top:4px; color:#22c99a; }
-    .footer { margin-top:20px; text-align:center; font-size:11px; color:#999; border-top:1px solid #ddd; padding-top:12px; }
-    @media print { body { margin:12px; } }
-  </style></head><body>
-  <div class="invoice-container">
-    <div class="header">
-      <div class="company">
-        <h1>KRT TRADERS</h1>
-        <p>CASH INVOICE</p>
-        <div class="company-details">
-          <span><strong>NTN:</strong> ${ntn || '1234567-8'}</span>
-          <span><strong>STRN:</strong> ${strn || '9876543-2'}</span>
-          <span><strong>Contact:</strong> +92 300 1234567</span>
-          <span><strong>Address:</strong> Lahore, Pakistan</span>
-        </div>
-      </div>
-      <div class="inv-number">
-        <label>Invoice #</label>
-        <div>${invoiceNo}</div>
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; margin: 20px; background: #fff; color: #1a1a2e; }
+    .invoice-wrapper { max-width: 780px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
+    .company h1 { font-size: 26px; color: #22c99a; font-weight: 800; letter-spacing: 1px; }
+    .company .sub-title { font-size: 13px; color: #555; font-weight: 600; margin-top: 2px; }
+    .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
+    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
+    .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
+    .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
+    .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
+    .info-table .label { font-weight: 600; color: #666; width: 90px; }
+    .info-table .separator { width: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
+    tr:last-child td { border-bottom: none; }
+    .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
+    .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+    .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
+    .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
+    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+<div class="invoice-wrapper">
+  <div class="header">
+    <div class="company">
+      <h1>KRT TRADERS</h1>
+      <div class="sub-title">CASH INVOICE</div>
+      <div class="company-details">
+        <span><strong>NTN:</strong> 1234567-8</span>
+        <span><strong>STRN:</strong> 9876543-2</span>
+        <span><strong>Contact:</strong> +92 300 1234567</span>
+        <span><strong>Address:</strong> Lahore, Pakistan</span>
       </div>
     </div>
-    <table class="info-table">
-      <tr><td class="label">Store:</td><td>${storeName}</td><td class="label">Date:</td><td>${date || new Date().toISOString().split('T')[0]}</td></tr>
-      <tr><td class="label">Address:</td><td colspan="3">${address || '-'}</td></tr>
-    </table>
-    <table>
-      <thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="totals">
-      <div class="row"><span>Sub Total:</span><span>Rs. ${sub.toFixed(2)}</span></div>
-      <div class="row"><span>Discount (${disc}%):</span><span>- Rs. ${discAmt.toFixed(2)}</span></div>
-      <div class="row final"><span>FINAL TOTAL:</span><span>Rs. ${final.toFixed(2)}</span></div>
+    <div class="inv-number">
+      <label>INVOICE #</label>
+      <div class="num">${invoiceNo}</div>
     </div>
-    <div class="footer">Thank you for your business!</div>
   </div>
-  <script>window.onload=()=>setTimeout(window.print,300)<\/script></body></html>`);
+
+  <table class="info-table">
+    <tr>
+      <td class="label">Customer:</td>
+      <td><strong>${customerName}</strong></td>
+      <td class="separator"></td>
+      <td class="label">Date:</td>
+      <td><strong>${date || new Date().toISOString().split('T')[0]}</strong></td>
+    </tr>
+    ${storeName ? `<tr><td class="label">Store:</td><td>${storeName}</td></tr>` : ''}
+    ${customerAddress ? `<tr><td class="label">Address:</td><td colspan="3">${customerAddress}</td></tr>` : ''}
+    ${customerNtn || customerStrn ? `<tr><td class="label">Tax:</td><td colspan="3">${customerNtn ? 'NTN: '+customerNtn : ''} ${customerStrn ? 'STRN: '+customerStrn : ''}</td></tr>` : ''}
+  </table>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;text-align:center;">#</th>
+        <th style="text-align:left;">Barcode</th>
+        <th style="text-align:left;">Item Description</th>
+        <th style="width:60px;text-align:center;">Qty</th>
+        <th style="width:80px;text-align:right;">Rate</th>
+        <th style="width:100px;text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="totals">
+    <div class="row"><span>Sub Total:</span><span>Rs. ${sub.toFixed(2)}</span></div>
+    <div class="row"><span>Discount (${disc}%):</span><span style="color:#e74c3c;">- Rs. ${discAmt.toFixed(2)}</span></div>
+    <div class="row final"><span>FINAL TOTAL:</span><span>Rs. ${final.toFixed(2)}</span></div>
+  </div>
+
+  <div class="footer">Thank you for your business! — Goods once sold cannot be returned.</div>
+</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
 }
 
 // ============================================================
@@ -693,11 +738,12 @@ function renderInvoiceHistory() {
 
   const tbody = document.getElementById('inv-history-body');
   tbody.innerHTML = list.length === 0
-    ? '<tr class="no-data"><td colspan="6">No invoices found</td></tr>'
+    ? '<tr class="no-data"><td colspan="7">No invoices found</td></tr>'
     : list.map(i => `
       <tr>
         <td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td>
-        <td>${i.storeName || i.customerName || '-'}</td>
+        <td>${i.storeName || '-'}</td>
+        <td>${i.customerName || '-'}</td>
         <td>${i.date}</td>
         <td>${(i.items || []).length} items</td>
         <td><strong>Rs. ${parseFloat(i.finalTotal).toLocaleString()}</strong></td>
@@ -743,12 +789,100 @@ function printInvoiceByTs(ts) {
   const rows = (inv.items || []).map((item, i) => {
     const t = parseFloat(item.total || 0);
     sub += t;
-    return `<tr><td>${i+1}</td><td>${item.barcode || '-'}</td><td>${item.item || '-'}</td><td>${item.qty}</td><td>${parseFloat(item.rate).toFixed(2)}</td><td>${t.toFixed(2)}</td></tr>`;
+    return `<tr><td style="text-align:center;">${i+1}</td><td>${item.barcode || '-'}</td><td>${item.item || '-'}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${parseFloat(item.rate).toFixed(2)}</td><td style="text-align:right;">${t.toFixed(2)}</td></tr>`;
   }).join('');
   const disc = parseFloat(inv.discountPercent || 0);
   const discAmt = parseFloat(inv.discountAmt || 0);
   const final = parseFloat(inv.finalTotal || 0);
-  openPrintWindow(inv.storeName || inv.customerName || '-', inv.date, rows, sub, disc, discAmt, final, inv.ntn, inv.strn, inv.address);
+  
+  const w = window.open('', '_blank');
+  const invoiceNo = inv.invoiceNo || 'INV-001';
+  const customerName = inv.customerName || 'Walk-in Customer';
+  const storeName = inv.storeName || '';
+  const date = inv.date || '';
+  const address = inv.address || '';
+  const ntn = inv.ntn || '';
+  const strn = inv.strn || '';
+
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>KRT TRADERS - ${invoiceNo}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; margin: 20px; background: #fff; color: #1a1a2e; }
+    .invoice-wrapper { max-width: 780px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
+    .company h1 { font-size: 26px; color: #22c99a; font-weight: 800; letter-spacing: 1px; }
+    .company .sub-title { font-size: 13px; color: #555; font-weight: 600; margin-top: 2px; }
+    .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
+    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
+    .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
+    .info-table { width: 100%; margin: 10px 0 14px; border: none; background: #f8f9fa; border-radius: 6px; padding: 10px 12px; }
+    .info-table td { border: none; padding: 4px 8px; font-size: 11px; }
+    .info-table .label { font-weight: 600; color: #666; width: 90px; }
+    .info-table .separator { width: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
+    tr:last-child td { border-bottom: none; }
+    .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
+    .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+    .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
+    .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
+    @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+<div class="invoice-wrapper">
+  <div class="header">
+    <div class="company">
+      <h1>KRT TRADERS</h1>
+      <div class="sub-title">CASH INVOICE</div>
+      <div class="company-details">
+        <span><strong>NTN:</strong> 1234567-8</span>
+        <span><strong>STRN:</strong> 9876543-2</span>
+        <span><strong>Contact:</strong> +92 300 1234567</span>
+        <span><strong>Address:</strong> Lahore, Pakistan</span>
+      </div>
+    </div>
+    <div class="inv-number">
+      <label>INVOICE #</label>
+      <div class="num">${invoiceNo}</div>
+    </div>
+  </div>
+
+  <table class="info-table">
+    <tr>
+      <td class="label">Customer:</td>
+      <td><strong>${customerName}</strong></td>
+      <td class="separator"></td>
+      <td class="label">Date:</td>
+      <td><strong>${date}</strong></td>
+    </tr>
+    ${storeName ? `<tr><td class="label">Store:</td><td>${storeName}</td></tr>` : ''}
+    ${address ? `<tr><td class="label">Address:</td><td colspan="3">${address}</td></tr>` : ''}
+    ${ntn || strn ? `<tr><td class="label">Tax:</td><td colspan="3">${ntn ? 'NTN: '+ntn : ''} ${strn ? 'STRN: '+strn : ''}</td></tr>` : ''}
+  </table>
+
+  <table>
+    <thead><tr><th style="width:40px;text-align:center;">#</th><th style="text-align:left;">Barcode</th><th style="text-align:left;">Item</th><th style="width:60px;text-align:center;">Qty</th><th style="width:80px;text-align:right;">Rate</th><th style="width:100px;text-align:right;">Total</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="totals">
+    <div class="row"><span>Sub Total:</span><span>Rs. ${sub.toFixed(2)}</span></div>
+    <div class="row"><span>Discount (${disc}%):</span><span style="color:#e74c3c;">- Rs. ${discAmt.toFixed(2)}</span></div>
+    <div class="row final"><span>FINAL TOTAL:</span><span>Rs. ${final.toFixed(2)}</span></div>
+  </div>
+
+  <div class="footer">Thank you for your business! — Goods once sold cannot be returned.</div>
+</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
 }
 
 function viewInvModal(ts) {
@@ -762,10 +896,11 @@ function viewInvModal(ts) {
     <div class="grid-2" style="margin-bottom:12px">
       <div><label>Invoice #</label><strong>${inv.invoiceNo}</strong></div>
       <div><label>Date</label>${inv.date}</div>
-      <div><label>Store</label><strong>${inv.storeName || '-'}</strong></div>
-      <div><label>Customer</label>${inv.customerName || '-'}</div>
+      <div><label>Customer</label><strong>${inv.customerName || '-'}</strong></div>
+      <div><label>Store</label>${inv.storeName || '-'}</div>
       <div><label>NTN</label>${inv.ntn || '-'}</div>
       <div><label>STRN</label>${inv.strn || '-'}</div>
+      <div><label>Address</label>${inv.address || '-'}</div>
     </div>
     <div class="table-wrap">
       <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
@@ -791,11 +926,11 @@ function loadInvToForm(ts) {
   const inv = invoices.find(i => i.timestamp === ts);
   if (!inv) return;
   showPage('cash-invoice', 'Cash Invoice');
-  document.getElementById('inv-store').value = inv.storeName || '';
   document.getElementById('inv-customer').value = inv.customerName || '';
-  document.getElementById('inv-ntn').value = inv.ntn || '';
-  document.getElementById('inv-strn').value = inv.strn || '';
-  document.getElementById('inv-address').value = inv.address || '';
+  document.getElementById('inv-store').value = inv.storeName || '';
+  document.getElementById('inv-customer-ntn').value = inv.ntn || '';
+  document.getElementById('inv-customer-strn').value = inv.strn || '';
+  document.getElementById('inv-customer-address').value = inv.address || '';
   document.getElementById('inv-date').value = inv.date || '';
   document.getElementById('inv-discount').value = inv.discountPercent || 0;
   onInvStoreChange(inv.storeName || '');
@@ -833,7 +968,7 @@ async function deleteInvoice(ts) {
 }
 
 // ============================================================
-// STOCK IN
+// STOCK IN, STOCK OUT, STOCK BALANCE (SAME AS BEFORE)
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -941,9 +1076,6 @@ function printStockEntry(type, srNo) {
   <script>window.onload=()=>window.print()<\/script></body></html>`);
 }
 
-// ============================================================
-// STOCK OUT
-// ============================================================
 function outBarcodeInput() {
   const bc = document.getElementById('out-barcode').value.trim();
   if (PRODUCTS[bc]) document.getElementById('out-item').value = PRODUCTS[bc];
@@ -1033,9 +1165,6 @@ async function deleteStockOut(srNo) {
   showNotification('Entry deleted!');
 }
 
-// ============================================================
-// STOCK BALANCE
-// ============================================================
 function calcBalanceSheet() {
   const stock = {};
   stockInEntries.forEach(item => {
@@ -1672,6 +1801,45 @@ async function deleteSPOut(srNo) {
   spOutEntries = spOutEntries.filter(e => e.srNo !== srNo);
   renderSPOutTable();
   showNotification('Entry deleted!');
+}
+
+function printSPOutTable() {
+  const from = document.getElementById('spout-from')?.value;
+  const to = document.getElementById('spout-to')?.value;
+  const search = (document.getElementById('spout-search')?.value || '').toLowerCase();
+  let list = [...spOutEntries].reverse();
+  if (from) list = list.filter(x => x.date >= from);
+  if (to) list = list.filter(x => x.date <= to);
+  if (search) list = list.filter(x => (x.store + x.itemName + x.barcode).toLowerCase().includes(search));
+
+  let rows = '';
+  list.forEach((d, i) => {
+    rows += `<tr><td>${i+1}</td><td>${d.date}</td><td>${d.store}</td><td>${d.itemName}</td><td>${d.barcode}</td><td>${d.qty}</td><td>${d.price}</td><td>${d.total}</td></tr>`;
+  });
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>SP Stock Out Report</title>
+  <style>
+    body { font-family: Arial; font-size: 12px; margin: 20px; }
+    h2 { text-align: center; color: #22c99a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
+    th { background: #22c99a; color: #fff; }
+    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <h2>KRT TRADERS — SP Stock Out Report</h2>
+  <table>
+    <thead><tr><th>#</th><th>Date</th><th>Store</th><th>Item</th><th>Barcode</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
 }
 
 function calcSPBalance() {
