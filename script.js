@@ -21,7 +21,7 @@ function showNotification(message, type = 'success') {
   el.textContent = message;
   el.className = 'notification ' + type + ' show';
   clearTimeout(el._timeout);
-  el._timeout = setTimeout(() => el.classList.remove('show'), 3000);
+  el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
 async function sbSelect(table, order) {
@@ -210,7 +210,7 @@ function showPage(id, title) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) n.classList.add('active');
   });
-  
+
   if (id === 'dashboard') loadDashboard();
   if (id === 'store-rates') { renderRatesTable(); updateStoreLists(); }
   if (id === 'cash-invoice') { updateInvStoreLists(); if (!document.querySelector('#inv-body tr')) addInvoiceRow(); updateInvoiceNumber(); }
@@ -412,8 +412,8 @@ async function deleteSPOutByInvoice(timestamp) {
   const { error } = await sb.from('sp_stock_out').delete().eq('invoice_timestamp', timestamp);
   if (error) {
     console.error('Delete SP error:', error);
-    showNotification('Failed to delete SP entries: ' + error.message, 'error');
-    return false;
+    spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
+    return true;
   }
   spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== timestamp);
   return true;
@@ -521,7 +521,10 @@ async function saveInvoiceNow() {
   const customerName = document.getElementById('inv-customer').value.trim();
   const storeName = document.getElementById('inv-store').value.trim();
   const date = document.getElementById('inv-date').value;
-  if (!customerName || !date) { showNotification('Customer name and date are required!', 'error'); return; }
+  if (!customerName || !date) {
+    showNotification('Customer name and date are required!', 'error');
+    return;
+  }
 
   const items = [];
   document.querySelectorAll('#inv-body tr').forEach(row => {
@@ -531,9 +534,11 @@ async function saveInvoiceNow() {
     const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
     if (item || bc) items.push({ barcode: bc, item, qty, rate, total: (qty * rate).toFixed(2) });
   });
-  if (items.length === 0) { showNotification('No items added!', 'error'); return; }
+  if (items.length === 0) {
+    showNotification('No items added!', 'error');
+    return;
+  }
 
-  // Check SP balance
   let hasError = false;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
@@ -559,9 +564,7 @@ async function saveInvoiceNow() {
   let ts, invoiceNo, isEdit = false;
 
   if (editingInvTs !== null) {
-    // Edit mode: delete existing SP entries
-    const delOk = await deleteSPOutByInvoice(editingInvTs);
-    if (!delOk) return;
+    await deleteSPOutByInvoice(editingInvTs);
     ts = editingInvTs;
     const row = {
       store_name: storeName, customer_name: customerName,
@@ -599,10 +602,10 @@ async function saveInvoiceNow() {
     showNotification('Invoice saved!');
   }
 
-  // Create new SP Stock Out entries
+  let spCreated = 0;
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
-      const srNo = Date.now() + Math.floor(Math.random() * 1000) + items.indexOf(item);
+      const srNo = Date.now() + Math.floor(Math.random() * 1000) + spCreated;
       const spRow = {
         sr_no: srNo,
         date: date,
@@ -611,11 +614,14 @@ async function saveInvoiceNow() {
         item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
         qty: item.qty,
         price: item.rate,
-        total: item.qty * item.rate,
-        invoice_timestamp: ts
+        total: item.qty * item.rate
       };
-      const ok = await sbInsert('sp_stock_out', spRow);
-      if (!ok) { showNotification('Failed to create SP entry!', 'error'); return; }
+      const { error } = await sb.from('sp_stock_out').insert(spRow);
+      if (error) {
+        console.error('SP Insert Error:', error);
+        showNotification('Failed to create SP entry: ' + error.message, 'error');
+        return;
+      }
       spOutEntries.push({
         srNo: srNo,
         date: date,
@@ -627,7 +633,16 @@ async function saveInvoiceNow() {
         total: spRow.total,
         invoiceTimestamp: ts
       });
+      spCreated++;
     }
+  }
+
+  if (spCreated > 0) {
+    const spPage = document.getElementById('page-sp-balance');
+    if (spPage && spPage.style.display !== 'none') {
+      calcSPBalance();
+    }
+    showNotification(`${spCreated} SP stock entries created.`);
   }
 
   if (!isEdit) updateInvoiceNumber();
@@ -636,7 +651,7 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// INVOICE PRINT - Professional Cash Invoice Style
+// INVOICE PRINT FUNCTIONS (HTML templates inside JS for dynamic print windows)
 // ============================================================
 function printCurrentInvoice() {
   const customerName = document.getElementById('inv-customer').value || 'Walk-in Customer';
@@ -646,7 +661,7 @@ function printCurrentInvoice() {
   const customerNtn = document.getElementById('inv-customer-ntn').value || '';
   const customerStrn = document.getElementById('inv-customer-strn').value || '';
   const customerAddress = document.getElementById('inv-customer-address').value || '';
-  
+
   let sub = 0, rows = '';
   document.querySelectorAll('#inv-body tr').forEach((row, i) => {
     const bc = row.querySelector('.bc-input')?.value || '';
@@ -679,23 +694,19 @@ function printCurrentInvoice() {
     .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
     .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
-    
     .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; overflow: hidden; }
     .info-table td { border: none; padding: 5px 10px; font-size: 11px; vertical-align: middle; }
     .info-table .label { font-weight: 600; color: #666; width: 80px; }
     .info-table .value { font-weight: 500; color: #1a1a2e; }
     .info-table .separator { width: 30px; }
-    
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
     tr:last-child td { border-bottom: none; }
-    
     .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
     .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
     .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
     .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    
     @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-table { background: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
@@ -827,7 +838,7 @@ function printInvoiceByTs(ts) {
   const disc = parseFloat(inv.discountPercent || 0);
   const discAmt = parseFloat(inv.discountAmt || 0);
   const final = parseFloat(inv.finalTotal || 0);
-  
+
   const w = window.open('', '_blank');
   const invoiceNo = inv.invoiceNo || 'INV-001';
   const customerName = inv.customerName || 'Walk-in Customer';
@@ -854,23 +865,19 @@ function printInvoiceByTs(ts) {
     .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
     .inv-number label { font-size: 10px; color: #888; font-weight: 600; display: block; }
     .inv-number .num { font-size: 22px; font-weight: 800; color: #22c99a; }
-    
     .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; overflow: hidden; }
     .info-table td { border: none; padding: 5px 10px; font-size: 11px; vertical-align: middle; }
     .info-table .label { font-weight: 600; color: #666; width: 80px; }
     .info-table .value { font-weight: 500; color: #1a1a2e; }
     .info-table .separator { width: 30px; }
-    
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
     tr:last-child td { border-bottom: none; }
-    
     .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
     .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
     .totals .final { font-size: 17px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
     .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    
     @media print { body { margin: 10px; } th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-table { background: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
@@ -999,14 +1006,13 @@ function printModal() {
 
 async function deleteInvoice(ts) {
   if (!confirm('Delete this invoice?')) return;
-  const delOk = await deleteSPOutByInvoice(ts);
-  if (!delOk) return;
+  await deleteSPOutByInvoice(ts);
   const ok = await sbDelete('invoices', 'timestamp', ts);
   if (!ok) return;
   invoices = invoices.filter(i => i.timestamp !== ts);
   renderInvoiceHistory();
   loadDashboard();
-  showNotification('Invoice and associated SP entries deleted!');
+  showNotification('Invoice deleted!');
 }
 
 // ============================================================
@@ -1233,9 +1239,6 @@ function calcBalanceSheet() {
     }).join('');
 }
 
-// ============================================================
-// PRINT STOCK BALANCE SHEET
-// ============================================================
 function printStockBalance() {
   const stock = {};
   stockInEntries.forEach(item => {
@@ -1651,7 +1654,7 @@ async function saveSPStockIn() {
   if (!itemName) { showNotification('Item name is required!', 'error'); return; }
   const totalPcs = (ctn * pcsPerCtn) + extra;
   if (totalPcs <= 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
-  
+
   const finalTotalPcs = totalPcs;
   const total = finalTotalPcs * price;
 
@@ -1938,30 +1941,30 @@ function printSPOutTable() {
 }
 
 // ============================================================
-// SP BALANCE - FIXED (PCS only, no CTN unless set)
+// SP BALANCE
 // ============================================================
 function calcSPBalance() {
   const stock = {};
   spInEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { 
-      barcode: item.barcode || '-', 
-      itemName: item.itemName, 
-      totalIn: 0, 
-      totalOut: 0, 
-      pcsPerCtn: item.pcsPerCtn || 0 
+    if (!stock[k]) stock[k] = {
+      barcode: item.barcode || '-',
+      itemName: item.itemName,
+      totalIn: 0,
+      totalOut: 0,
+      pcsPerCtn: item.pcsPerCtn || 0
     };
     stock[k].totalIn += Number(item.totalPcs) || 0;
     if (item.pcsPerCtn) stock[k].pcsPerCtn = item.pcsPerCtn;
   });
   spOutEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { 
-      barcode: item.barcode || '-', 
-      itemName: item.itemName, 
-      totalIn: 0, 
-      totalOut: 0, 
-      pcsPerCtn: 0 
+    if (!stock[k]) stock[k] = {
+      barcode: item.barcode || '-',
+      itemName: item.itemName,
+      totalIn: 0,
+      totalOut: 0,
+      pcsPerCtn: 0
     };
     stock[k].totalOut += Number(item.qty) || 0;
   });
@@ -1997,31 +2000,28 @@ function calcSPBalance() {
     }).join('');
 }
 
-// ============================================================
-// PRINT SP BALANCE SHEET
-// ============================================================
 function printSPBalance() {
   const stock = {};
   spInEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { 
-      barcode: item.barcode || '-', 
-      itemName: item.itemName, 
-      totalIn: 0, 
-      totalOut: 0, 
-      pcsPerCtn: item.pcsPerCtn || 0 
+    if (!stock[k]) stock[k] = {
+      barcode: item.barcode || '-',
+      itemName: item.itemName,
+      totalIn: 0,
+      totalOut: 0,
+      pcsPerCtn: item.pcsPerCtn || 0
     };
     stock[k].totalIn += Number(item.totalPcs) || 0;
     if (item.pcsPerCtn) stock[k].pcsPerCtn = item.pcsPerCtn;
   });
   spOutEntries.forEach(item => {
     const k = item.barcode && item.barcode !== 'N/A' ? item.barcode : item.itemName;
-    if (!stock[k]) stock[k] = { 
-      barcode: item.barcode || '-', 
-      itemName: item.itemName, 
-      totalIn: 0, 
-      totalOut: 0, 
-      pcsPerCtn: 0 
+    if (!stock[k]) stock[k] = {
+      barcode: item.barcode || '-',
+      itemName: item.itemName,
+      totalIn: 0,
+      totalOut: 0,
+      pcsPerCtn: 0
     };
     stock[k].totalOut += Number(item.qty) || 0;
   });
