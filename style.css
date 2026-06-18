@@ -41,7 +41,6 @@ body {
   line-height: 1.6;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -455,6 +454,13 @@ body {
   margin-bottom: 12px;
 }
 
+.invoice-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
 /* ============================================================
    FORM ELEMENTS
    ============================================================ */
@@ -578,12 +584,6 @@ textarea::placeholder {
 .btn-sm {
   padding: 5px 12px;
   font-size: 12px;
-}
-
-.btn-success {
-  background: linear-gradient(135deg, #4ade80, #22b55a);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(74, 222, 128, 0.3);
 }
 
 /* ============================================================
@@ -959,10 +959,27 @@ tr:hover td {
   flex-wrap: wrap;
 }
 
+.invoice-company-card .company-details-box {
+  padding: 4px 0;
+}
+
+.invoice-company-card .company-details-box div {
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.invoice-company-card .company-details-box .label {
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 70px;
+  display: inline-block;
+}
+
 .rate-info-placeholder {
   color: var(--muted);
   font-size: 13px;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
 .rate-preview {
@@ -976,6 +993,14 @@ tr:hover td {
 .rate-preview div {
   padding: 2px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.rate-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .sp-balance-cell {
@@ -1171,6 +1196,9 @@ tr:hover td {
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
+  .invoice-details-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1202,7 +1230,8 @@ tr:hover td {
   .grid-2,
   .grid-3,
   .form-grid-2,
-  .form-grid-3 {
+  .form-grid-3,
+  .invoice-details-grid {
     grid-template-columns: 1fr;
   }
   
@@ -1255,6 +1284,14 @@ tr:hover td {
   .modal {
     width: 96%;
     max-height: 96vh;
+  }
+  
+  .rate-info-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rate-info-row .form-group {
+    max-width: 100% !important;
   }
 }
 
