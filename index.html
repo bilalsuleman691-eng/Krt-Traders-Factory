@@ -433,7 +433,10 @@
     <!-- STOCK BALANCE -->
     <div class="page-section" id="page-stock-balance">
       <div class="card">
-        <div class="card-title"><i class="fas fa-balance-scale"></i> Stock Balance Sheet</div>
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-balance-scale"></i> Stock Balance Sheet</div>
+          <button class="btn btn-print btn-sm" onclick="printStockBalance()"><i class="fas fa-print"></i> Print</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
@@ -751,7 +754,10 @@
     <!-- SP BALANCE -->
     <div class="page-section" id="page-sp-balance">
       <div class="card">
-        <div class="card-title"><i class="fas fa-balance-scale"></i> SP Balance Sheet</div>
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-balance-scale"></i> SP Balance Sheet</div>
+          <button class="btn btn-print btn-sm" onclick="printSPBalance()"><i class="fas fa-print"></i> Print</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
