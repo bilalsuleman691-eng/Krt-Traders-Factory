@@ -766,7 +766,14 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     const key = catInfo.category;
     const qty = parseFloat(item.qty) || 0;
     const rate = parseFloat(item.rate) || 0;
-    const total = qty * rate;
+    
+    // 👇 FIX: Calculate total AFTER discount (per item basis)
+    // Since discount is applied at invoice level, we need to calculate
+    // the discounted total for each item proportionally
+    const totalBeforeDiscount = qty * rate;
+    const discountPercent = parseFloat(cashInv.discountPercent) || 0;
+    const discountAmt = totalBeforeDiscount * (discountPercent / 100);
+    const totalAfterDiscount = totalBeforeDiscount - discountAmt;
 
     if (!categories[key]) {
       categories[key] = {
@@ -783,7 +790,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     }
 
     categories[key].totalPcs += qty;
-    categories[key].totalAmount += total;
+    categories[key].totalAmount += totalAfterDiscount;  // 👈 FIX: Use after discount
     categories[key].items.push(item);
     
     if (catInfo.weight > 0) {
@@ -794,8 +801,11 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
       }
     }
 
-    totalExcludingTax += total;
+    totalExcludingTax += totalAfterDiscount;  // 👈 FIX: Use after discount
   });
+
+  // Rest of the function remains the same...
+  // (Continue from here with existing code)
 
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
