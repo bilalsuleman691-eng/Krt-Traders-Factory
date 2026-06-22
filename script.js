@@ -146,6 +146,7 @@ let editingSPInId = null;
 let editingSPOutId = null;
 let editingLedgerId = { gulzar: null, kashif: null };
 let ratesVisible = false;
+let taxInvoiceData = null;
 
 // ============================================================
 // MAPPERS
@@ -601,14 +602,49 @@ async function saveInvoiceNow() {
   // Generate Tax Invoice automatically
   await generateAndSaveTaxInvoice(ts);
 
+  // Create SP Stock Out entries
+  for (const item of items) {
+    if (item.barcode && item.qty > 0) {
+      const srNo = Date.now() + Math.floor(Math.random() * 1000);
+      const spRow = {
+        sr_no: srNo,
+        date: date,
+        store: storeName || customerName,
+        barcode: item.barcode,
+        item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
+        qty: item.qty,
+        price: item.rate,
+        total: item.qty * item.rate,
+        invoice_timestamp: ts
+      };
+      const { error } = await sb.from('sp_stock_out').insert(spRow);
+      if (error) {
+        console.error('SP Insert Error:', error);
+      } else {
+        spOutEntries.push({
+          srNo: srNo,
+          date: date,
+          store: spRow.store,
+          barcode: spRow.barcode,
+          itemName: spRow.item_name,
+          qty: spRow.qty,
+          price: spRow.price,
+          total: spRow.total,
+          invoiceTimestamp: ts
+        });
+      }
+    }
+  }
+
   if (!isEdit) updateInvoiceNumber();
   clearInvoiceForm();
   loadDashboard();
 }
 
 // ============================================================
-// TAX INVOICE
+// TAX INVOICE — EDITABLE TABLE (NEW)
 // ============================================================
+
 async function generateAndSaveTaxInvoice(cashTimestamp) {
   const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
   if (!cashInv) return;
@@ -647,7 +683,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     totalExcludingTax += total;
   });
 
-  // Calculate rates for each category
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
     const ratePerKg = cat.totalKg > 0 ? cat.totalAmount / cat.totalKg : 0;
@@ -704,7 +739,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
 }
 
 function generateTaxInvoiceFromCash() {
-  // Find the most recent cash invoice
   const lastInv = invoices.length > 0 ? invoices[invoices.length - 1] : null;
   if (!lastInv) {
     showNotification('No cash invoice found! Please save a cash invoice first.', 'error');
@@ -713,23 +747,54 @@ function generateTaxInvoiceFromCash() {
   generateAndSaveTaxInvoice(lastInv.timestamp);
 }
 
+// ============================================================
+// TAX INVOICE — RENDER EDITABLE TABLE
+// ============================================================
+
 function renderTaxInvoiceDisplay(data) {
   const container = document.getElementById('tax-invoice-container');
-  const categories = data.categories || [];
+  taxInvoiceData = data;
 
-  let categoryRows = categories.map(cat => `
-    <tr>
-      <td>${cat.totalPcs.toFixed(0)}</td>
-      <td>${cat.category}</td>
-      <td>${cat.hsCode}</td>
-      <td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
-      <td>Rs. ${cat.ratePerPcs.toFixed(2)}</td>
-      <td>Rs. ${cat.amount.toFixed(2)}</td>
-      <td>18%</td>
-      <td>Rs. ${(cat.amount * 0.18).toFixed(2)}</td>
-      <td>Rs. ${(cat.amount * 1.18).toFixed(2)}</td>
-    </tr>
-  `).join('');
+  if (!data || !data.categories || data.categories.length === 0) {
+    container.innerHTML = `
+      <div class="tax-invoice-placeholder">
+        <i class="fas fa-file-invoice" style="font-size:48px;color:var(--muted);"></i>
+        <p>No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p>
+      </div>
+    `;
+    return;
+  }
+
+  const categories = data.categories || [];
+  const totalExcl = parseFloat(data.totalExcludingTax) || 0;
+  const totalGst = parseFloat(data.totalGst) || 0;
+  const totalGross = parseFloat(data.totalGross) || 0;
+
+  let rows = '';
+  categories.forEach((cat, index) => {
+    const catName = cat.category || '';
+    const hsCode = cat.hsCode || '';
+    const qty = cat.totalPcs || 0;
+    const kg = cat.totalKg || 0;
+    const rate = cat.ratePerPcs || 0;
+    const amount = cat.amount || 0;
+    const gst = amount * 0.18;
+    const gross = amount + gst;
+
+    rows += `
+      <tr data-index="${index}">
+        <td><input type="number" class="tax-qty" value="${qty}" min="0" step="1" onchange="updateTaxRow(${index})"></td>
+        <td><input type="text" class="tax-category" value="${catName}" onchange="updateTaxRow(${index})"></td>
+        <td><input type="text" class="tax-hs" value="${hsCode}" onchange="updateTaxRow(${index})"></td>
+        <td><input type="number" class="tax-kg" value="${kg}" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
+        <td><input type="number" class="tax-rate" value="${rate}" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
+        <td class="tax-amount">Rs. ${amount.toFixed(2)}</td>
+        <td class="tax-gst">Rs. ${gst.toFixed(2)}</td>
+        <td class="tax-gross">Rs. ${gross.toFixed(2)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="removeTaxRow(${index})"><i class="fas fa-times"></i></button></td>
+      </tr>
+    `;
+  });
 
   container.innerHTML = `
     <div class="tax-invoice-display">
@@ -739,67 +804,240 @@ function renderTaxInvoiceDisplay(data) {
         <p><strong>SALES TAX INVOICE</strong> — Original/Duplicate</p>
       </div>
 
-      <div class="info-row">
-        <span><span class="label">Invoice #:</span> <span class="value">${data.invoiceNo}</span></span>
-        <span><span class="label">Date:</span> <span class="value">${data.date}</span></span>
-        <span><span class="label">Time of Supply:</span> <span class="value">—</span></span>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-        <div>
-          <div><span class="label">Supplier:</span> <strong>KRT TRADERS</strong></div>
-          <div><span class="label">NTN:</span> 2995454-1</div>
-          <div><span class="label">STRN:</span> 300299545411</div>
-          <div><span class="label">Address:</span> Lahore, Pakistan</div>
+      <div class="tax-info-grid">
+        <div class="tax-info-item">
+          <span class="label">Invoice #:</span>
+          <input type="text" id="tax-inv-no" value="${data.invoiceNo || ''}" class="tax-edit-input">
         </div>
-        <div>
-          <div><span class="label">Buyer:</span> <strong>${data.customerName || data.storeName || '-'}</strong></div>
-          <div><span class="label">NTN:</span> ${data.ntn || '-'}</div>
-          <div><span class="label">STRN:</span> ${data.strn || '-'}</div>
-          <div><span class="label">Address:</span> ${data.address || '-'}</div>
+        <div class="tax-info-item">
+          <span class="label">Date:</span>
+          <input type="date" id="tax-date" value="${data.date || ''}" class="tax-edit-input">
+        </div>
+        <div class="tax-info-item">
+          <span class="label">Time of Supply:</span>
+          <input type="time" id="tax-time" value="12:00" class="tax-edit-input">
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Qty (Pcs)</th>
-            <th>Description</th>
-            <th>HS Code</th>
-            <th>KG</th>
-            <th>Rate/Pcs</th>
-            <th>Excl. Tax</th>
-            <th>GST</th>
-            <th>Tax</th>
-            <th>Gross</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${categoryRows || '<tr><td colspan="9" style="text-align:center;color:var(--muted);">No categories found</td></tr>'}
-        </tbody>
-      </table>
-
-      <div class="totals-row">
-        <div class="item">
-          <div class="label">Total Excluding Tax</div>
-          <div class="value">Rs. ${data.totalExcludingTax || '0.00'}</div>
+      <div class="tax-buyer-grid">
+        <div class="tax-buyer-box">
+          <strong>Supplier:</strong> KRT TRADERS
+          <div>NTN: 2995454-1</div>
+          <div>STRN: 300299545411</div>
+          <div>Address: Lahore, Pakistan</div>
         </div>
-        <div class="item">
-          <div class="label">GST @ 18%</div>
-          <div class="value gold">Rs. ${data.totalGst || '0.00'}</div>
-        </div>
-        <div class="item">
-          <div class="label">💰 Gross Amount</div>
-          <div class="value green">Rs. ${data.totalGross || '0.00'}</div>
+        <div class="tax-buyer-box">
+          <strong>Buyer:</strong>
+          <input type="text" id="tax-buyer-name" value="${data.customerName || data.storeName || ''}" class="tax-edit-input" placeholder="Buyer name">
+          <div>NTN: <input type="text" id="tax-buyer-ntn" value="${data.ntn || ''}" class="tax-edit-input-sm" placeholder="NTN"></div>
+          <div>STRN: <input type="text" id="tax-buyer-strn" value="${data.strn || ''}" class="tax-edit-input-sm" placeholder="STRN"></div>
+          <div>Address: <input type="text" id="tax-buyer-address" value="${data.address || ''}" class="tax-edit-input" placeholder="Address"></div>
         </div>
       </div>
 
-      <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);font-size:12px;color:var(--muted);">
-        <span>Sales Tax: Rs. ${data.totalGst || '0.00'}</span>
-        <span>Net Taxes Inclusive Value: Rs. ${data.totalGross || '0.00'}</span>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;">Qty (Pcs)</th>
+              <th style="min-width:150px;">Description</th>
+              <th style="width:120px;">HS Code</th>
+              <th style="width:80px;">KG</th>
+              <th style="width:100px;">Rate/Pcs</th>
+              <th style="width:120px;">Excl. Tax</th>
+              <th style="width:100px;">GST 18%</th>
+              <th style="width:120px;">Gross</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tax-table-body">
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tax-add-row">
+        <button class="btn btn-primary btn-sm" onclick="addTaxRow()"><i class="fas fa-plus"></i> Add Row</button>
+      </div>
+
+      <div class="tax-totals" id="tax-totals-display">
+        <div class="tax-total-item">
+          <span class="label">Total Excluding Tax:</span>
+          <span class="value" id="tax-total-excl">Rs. ${totalExcl.toFixed(2)}</span>
+        </div>
+        <div class="tax-total-item">
+          <span class="label">GST @ 18%:</span>
+          <span class="value gold" id="tax-total-gst">Rs. ${totalGst.toFixed(2)}</span>
+        </div>
+        <div class="tax-total-item">
+          <span class="label">💰 Gross Amount:</span>
+          <span class="value green" id="tax-total-gross">Rs. ${totalGross.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div class="tax-actions">
+        <button class="btn btn-primary" onclick="saveTaxInvoice()"><i class="fas fa-save"></i> Save Tax Invoice</button>
+        <button class="btn btn-print" onclick="printTaxInvoice()"><i class="fas fa-print"></i> Print</button>
+        <button class="btn btn-outline" onclick="clearTaxInvoice()"><i class="fas fa-trash"></i> Clear</button>
       </div>
     </div>
   `;
+
+  // Store reference to current data
+  window._taxData = data;
+  window._taxCategories = categories;
+  window._taxTimestamp = data.timestamp;
+}
+
+// ============================================================
+// TAX INVOICE — EDIT FUNCTIONS
+// ============================================================
+
+function updateTaxRow(index) {
+  const row = document.querySelector(`#tax-table-body tr[data-index="${index}"]`);
+  if (!row) return;
+
+  const qty = parseFloat(row.querySelector('.tax-qty').value) || 0;
+  const rate = parseFloat(row.querySelector('.tax-rate').value) || 0;
+  const amount = qty * rate;
+  const gst = amount * 0.18;
+  const gross = amount + gst;
+
+  row.querySelector('.tax-amount').textContent = 'Rs. ' + amount.toFixed(2);
+  row.querySelector('.tax-gst').textContent = 'Rs. ' + gst.toFixed(2);
+  row.querySelector('.tax-gross').textContent = 'Rs. ' + gross.toFixed(2);
+
+  recalcTaxTotals();
+}
+
+function recalcTaxTotals() {
+  let totalExcl = 0;
+  document.querySelectorAll('#tax-table-body tr').forEach(row => {
+    const amountText = row.querySelector('.tax-amount').textContent;
+    const amount = parseFloat(amountText.replace('Rs. ', '')) || 0;
+    totalExcl += amount;
+  });
+
+  const totalGst = totalExcl * 0.18;
+  const totalGross = totalExcl + totalGst;
+
+  document.getElementById('tax-total-excl').textContent = 'Rs. ' + totalExcl.toFixed(2);
+  document.getElementById('tax-total-gst').textContent = 'Rs. ' + totalGst.toFixed(2);
+  document.getElementById('tax-total-gross').textContent = 'Rs. ' + totalGross.toFixed(2);
+}
+
+function addTaxRow() {
+  const tbody = document.getElementById('tax-table-body');
+  const index = tbody.children.length;
+  const tr = document.createElement('tr');
+  tr.setAttribute('data-index', index);
+  tr.innerHTML = `
+    <td><input type="number" class="tax-qty" value="1" min="0" step="1" onchange="updateTaxRow(${index})"></td>
+    <td><input type="text" class="tax-category" value="" placeholder="Enter category" onchange="updateTaxRow(${index})"></td>
+    <td><input type="text" class="tax-hs" value="" placeholder="HS Code" onchange="updateTaxRow(${index})"></td>
+    <td><input type="number" class="tax-kg" value="0" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
+    <td><input type="number" class="tax-rate" value="0" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
+    <td class="tax-amount">Rs. 0.00</td>
+    <td class="tax-gst">Rs. 0.00</td>
+    <td class="tax-gross">Rs. 0.00</td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeTaxRow(${index})"><i class="fas fa-times"></i></button></td>
+  `;
+  tbody.appendChild(tr);
+  recalcTaxTotals();
+}
+
+function removeTaxRow(index) {
+  const row = document.querySelector(`#tax-table-body tr[data-index="${index}"]`);
+  if (row) {
+    row.remove();
+    recalcTaxTotals();
+    document.querySelectorAll('#tax-table-body tr').forEach((r, i) => {
+      r.setAttribute('data-index', i);
+    });
+  }
+}
+
+async function saveTaxInvoice() {
+  const invoiceNo = document.getElementById('tax-inv-no')?.value || 'TAX-001';
+  const date = document.getElementById('tax-date')?.value || new Date().toISOString().split('T')[0];
+  const buyerName = document.getElementById('tax-buyer-name')?.value || '';
+  const buyerNtn = document.getElementById('tax-buyer-ntn')?.value || '';
+  const buyerStrn = document.getElementById('tax-buyer-strn')?.value || '';
+  const buyerAddress = document.getElementById('tax-buyer-address')?.value || '';
+
+  const categories = [];
+  let totalExcl = 0;
+
+  document.querySelectorAll('#tax-table-body tr').forEach(row => {
+    const category = row.querySelector('.tax-category').value || 'Other';
+    const hsCode = row.querySelector('.tax-hs').value || '0000';
+    const qty = parseFloat(row.querySelector('.tax-qty').value) || 0;
+    const rate = parseFloat(row.querySelector('.tax-rate').value) || 0;
+    const kg = parseFloat(row.querySelector('.tax-kg').value) || 0;
+    const amount = qty * rate;
+
+    if (qty > 0 || category !== 'Other') {
+      categories.push({
+        category: category,
+        hsCode: hsCode,
+        totalPcs: qty,
+        totalKg: kg,
+        ratePerPcs: rate,
+        amount: amount
+      });
+      totalExcl += amount;
+    }
+  });
+
+  const totalGst = totalExcl * 0.18;
+  const totalGross = totalExcl + totalGst;
+
+  const taxData = {
+    timestamp: window._taxTimestamp || Date.now(),
+    invoiceNo: invoiceNo,
+    date: date,
+    customerName: buyerName,
+    storeName: buyerName,
+    ntn: buyerNtn,
+    strn: buyerStrn,
+    address: buyerAddress,
+    categories: categories,
+    totalExcludingTax: totalExcl.toFixed(2),
+    totalGst: totalGst.toFixed(2),
+    totalGross: totalGross.toFixed(2)
+  };
+
+  // Save to Supabase
+  const row = {
+    timestamp: taxData.timestamp,
+    invoice_no: taxData.invoiceNo,
+    store_name: taxData.storeName,
+    customer_name: taxData.customerName,
+    ntn: taxData.ntn,
+    strn: taxData.strn,
+    address: taxData.address,
+    date: taxData.date,
+    categories: taxData.categories,
+    total_excluding_tax: taxData.totalExcludingTax,
+    total_gst: taxData.totalGst,
+    total_gross: taxData.totalGross,
+    cash_invoice_timestamp: null
+  };
+
+  const ok = await sbUpsert('tax_invoices', row, 'timestamp');
+  if (!ok) return;
+
+  // Update local state
+  const idx = taxInvoices.findIndex(i => i.timestamp === taxData.timestamp);
+  if (idx > -1) {
+    taxInvoices[idx] = taxData;
+  } else {
+    taxInvoices.push(taxData);
+  }
+
+  showNotification('Tax Invoice saved successfully!');
+  renderTaxInvoiceDisplay(taxData);
+  renderTaxHistory();
 }
 
 function clearTaxInvoice() {
@@ -824,19 +1062,20 @@ function printTaxInvoice() {
     .tax-invoice-display { max-width: 900px; margin: 0 auto; }
     .header { text-align: center; border-bottom: 2px solid #22c99a; padding-bottom: 12px; margin-bottom: 16px; }
     .header h2 { font-size: 22px; color: #22c99a; }
-    .info-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; padding: 4px 0; border-bottom: 1px solid #eee; }
-    .label { font-weight: 600; color: #666; }
-    .value { font-weight: 600; }
+    .tax-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
+    .tax-buyer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
     table { width: 100%; border-collapse: collapse; margin: 12px 0; }
     th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
     td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-    .totals-row { display: flex; justify-content: flex-end; gap: 30px; flex-wrap: wrap; padding: 10px 0; border-top: 2px solid #ddd; margin-top: 10px; }
-    .totals-row .item { text-align: right; }
-    .totals-row .item .label { font-size: 12px; color: #666; }
-    .totals-row .item .value { font-size: 18px; font-weight: 800; }
+    .tax-totals { display: flex; justify-content: flex-end; gap: 30px; flex-wrap: wrap; padding: 12px 0; border-top: 2px solid #ddd; margin-top: 10px; }
+    .tax-total-item { text-align: right; }
+    .tax-total-item .label { font-size: 12px; color: #666; display: block; }
+    .tax-total-item .value { font-size: 18px; font-weight: 800; }
     .green { color: #22c99a; }
     .gold { color: #fbbf24; }
-    @media print { body { margin: 10px; } th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    .tax-actions, .tax-add-row { display: none; }
+    input { border: none !important; background: transparent !important; color: #000 !important; }
+    @media print { th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -1272,7 +1511,7 @@ function printStockEntry(type, srNo) {
 }
 
 // ============================================================
-// STOCK OUT - WITH DROPDOWN FROM STOCK IN
+// STOCK OUT
 // ============================================================
 function updateStockOutDropdown() {
   const select = document.getElementById('out-item-select');
