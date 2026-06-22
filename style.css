@@ -24,9 +24,6 @@
   --transition: all 0.3s ease;
 }
 
-/* ============================================================
-   RESET & BASE
-   ============================================================ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -41,17 +38,9 @@ body {
   line-height: 1.6;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background: #333a4d;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #333a4d; border-radius: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
 
 /* ============================================================
    LOGIN
@@ -72,6 +61,7 @@ body {
   border-radius: 20px;
   padding: 48px 56px;
   width: 380px;
+  max-width: 92%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   text-align: center;
 }
@@ -90,17 +80,8 @@ body {
   color: #fff;
 }
 
-.login-box h2 {
-  font-size: 24px;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.login-box p {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 28px;
-}
+.login-box h2 { font-size: 24px; color: var(--text); margin-bottom: 4px; }
+.login-box p { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
 
 .login-box input {
   width: 100%;
@@ -139,20 +120,12 @@ body {
   box-shadow: 0 8px 24px rgba(34, 201, 154, 0.45);
 }
 
-#login-error {
-  color: var(--danger);
-  font-size: 13px;
-  margin-top: 10px;
-  display: none;
-}
+#login-error { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
 
 /* ============================================================
    APP LAYOUT
    ============================================================ */
-#app {
-  display: flex;
-  min-height: 100vh;
-}
+#app { display: flex; min-height: 100vh; }
 
 /* ============================================================
    SIDEBAR
@@ -173,26 +146,13 @@ body {
   box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
 }
 
-#sidebar.collapsed {
-  width: 60px;
-}
-
+#sidebar.collapsed { width: 60px; }
 #sidebar.collapsed .nav-label,
 #sidebar.collapsed .sidebar-title,
 #sidebar.collapsed .nav-section,
-#sidebar.collapsed .sidebar-header span:not(.sidebar-icon) {
-  display: none;
-}
-
-#sidebar.collapsed .sidebar-header {
-  justify-content: center;
-  padding: 16px 0;
-}
-
-#sidebar.collapsed .nav-item {
-  justify-content: center;
-  padding: 12px 0;
-}
+#sidebar.collapsed .sidebar-header span:not(.sidebar-icon) { display: none; }
+#sidebar.collapsed .sidebar-header { justify-content: center; padding: 16px 0; }
+#sidebar.collapsed .nav-item { justify-content: center; padding: 12px 0; }
 
 .sidebar-header {
   padding: 20px 16px 16px;
@@ -202,21 +162,10 @@ body {
   gap: 10px;
 }
 
-.sidebar-icon {
-  font-size: 24px;
-  color: var(--primary);
-}
+.sidebar-icon { font-size: 24px; color: var(--primary); }
+.sidebar-title { font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 0.6px; }
 
-.sidebar-title {
-  font-size: 14px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.6px;
-}
-
-.sidebar-menu {
-  padding: 8px 0;
-}
+.sidebar-menu { padding: 8px 0; }
 
 .nav-section {
   padding: 16px 16px 6px;
@@ -240,11 +189,7 @@ body {
   font-size: 13px;
 }
 
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-
+.nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
 .nav-item.active {
   background: rgba(34, 201, 154, 0.16);
   border-left-color: var(--sidebar-active);
@@ -252,15 +197,8 @@ body {
   box-shadow: inset 0 0 18px rgba(34, 201, 154, 0.08);
 }
 
-.nav-icon {
-  font-size: 18px;
-  min-width: 24px;
-  text-align: center;
-}
-
-.nav-label {
-  font-size: 13px;
-}
+.nav-icon { font-size: 18px; min-width: 24px; text-align: center; }
+.nav-label { font-size: 13px; }
 
 /* ============================================================
    MAIN CONTENT
@@ -272,9 +210,7 @@ body {
   min-height: 100vh;
 }
 
-#main-content.expanded {
-  margin-left: 60px;
-}
+#main-content.expanded { margin-left: 60px; }
 
 /* ============================================================
    TOPBAR
@@ -292,37 +228,12 @@ body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.menu-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text); transition: var(--transition); }
+.menu-btn:hover { color: var(--primary); }
+#page-title { font-size: 16px; font-weight: 700; }
 
-.menu-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: var(--text);
-  transition: var(--transition);
-}
-
-.menu-btn:hover {
-  color: var(--primary);
-}
-
-#page-title {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 13px;
-  color: var(--muted);
-}
+.topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
 
 .logout-btn {
   background: var(--danger);
@@ -337,10 +248,7 @@ body {
   transition: var(--transition);
 }
 
-.logout-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(255, 92, 92, 0.35);
-}
+.logout-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255, 92, 92, 0.35); }
 
 /* ============================================================
    SYNC BADGE
@@ -362,18 +270,12 @@ body {
   transition: var(--transition);
 }
 
-.sync-dot.offline {
-  background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
-}
+.sync-dot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
 /* ============================================================
    PAGE SECTIONS
    ============================================================ */
-.page-section {
-  display: none;
-  padding: 24px;
-}
+.page-section { display: none; padding: 24px; }
 
 /* ============================================================
    CARDS
@@ -388,22 +290,9 @@ body {
   transition: var(--transition);
 }
 
-.card:hover {
-  border-color: rgba(34, 201, 154, 0.2);
-}
-
-.card-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.card-title i {
-  color: var(--primary);
-}
+.card:hover { border-color: rgba(34, 201, 154, 0.2); }
+.card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title i { color: var(--primary); }
 
 .card-header {
   display: flex;
@@ -414,80 +303,36 @@ body {
   gap: 10px;
 }
 
-.card-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.card-actions input[type="text"],
+.card-actions input[type="date"],
+.card-actions select {
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  background: #0e1320;
+  color: var(--text);
 }
 
 /* ============================================================
    GRIDS
    ============================================================ */
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
-}
-
-.grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-}
-
-.form-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.form-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.invoice-details-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 14px;
-}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.invoice-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 
 /* ============================================================
    FORM ELEMENTS
    ============================================================ */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; }
+.form-group label .required { color: var(--danger); }
 
-.form-group label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.form-group label .required {
-  color: var(--danger);
-}
-
-input[type="text"],
-input[type="number"],
-input[type="date"],
-input[type="password"],
-input[type="month"],
-select,
-textarea {
+input[type="text"], input[type="number"], input[type="date"], input[type="password"], input[type="month"], select, textarea {
   width: 100%;
   padding: 10px 14px;
   border: 1.5px solid var(--border);
@@ -500,23 +345,13 @@ textarea {
   font-family: inherit;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(34, 201, 154, 0.15);
 }
 
-textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted);
-  opacity: 0.5;
-}
+textarea { resize: vertical; min-height: 60px; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.5; }
 
 /* ============================================================
    BUTTONS
@@ -542,10 +377,7 @@ textarea::placeholder {
   box-shadow: 0 4px 14px rgba(34, 201, 154, 0.35);
 }
 
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(34, 201, 154, 0.45);
-}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34, 201, 154, 0.45); }
 
 .btn-danger {
   background: linear-gradient(135deg, #ff5c5c, #A32D2D);
@@ -553,10 +385,7 @@ textarea::placeholder {
   box-shadow: 0 4px 14px rgba(255, 92, 92, 0.3);
 }
 
-.btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 92, 92, 0.4);
-}
+.btn-danger:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 92, 92, 0.4); }
 
 .btn-outline {
   background: transparent;
@@ -564,11 +393,7 @@ textarea::placeholder {
   color: var(--text);
 }
 
-.btn-outline:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(34, 201, 154, 0.05);
-}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(34, 201, 154, 0.05); }
 
 .btn-print {
   background: linear-gradient(135deg, var(--purple), #7c5ce0);
@@ -576,30 +401,16 @@ textarea::placeholder {
   box-shadow: 0 4px 14px rgba(167, 139, 250, 0.3);
 }
 
-.btn-print:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.4);
-}
+.btn-print:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(167, 139, 250, 0.4); }
 
-.btn-sm {
-  padding: 5px 12px;
-  font-size: 12px;
-}
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; }
 
 /* ============================================================
    TABLES
    ============================================================ */
-.table-wrap {
-  overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
+.table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
 
 th {
   background: var(--th-bg);
@@ -615,25 +426,10 @@ th {
   z-index: 2;
 }
 
-td {
-  padding: 9px 12px;
-  border-bottom: 1px solid #1f2536;
-  vertical-align: middle;
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-tr:hover td {
-  background: #1a2030;
-}
-
-.no-data td {
-  text-align: center;
-  color: var(--muted);
-  padding: 30px;
-}
+td { padding: 9px 12px; border-bottom: 1px solid #1f2536; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #1a2030; }
+.no-data td { text-align: center; color: var(--muted); padding: 30px; }
 
 .inv-table input {
   border: 1px solid transparent;
@@ -650,18 +446,12 @@ tr:hover td {
   background: #0e1320;
 }
 
-.inv-table input:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
+.inv-table input:hover { background: rgba(255, 255, 255, 0.03); }
 
-.row-total {
-  font-weight: 700;
-  color: var(--primary);
-  text-align: right;
-}
+.row-total { font-weight: 700; color: var(--primary); text-align: right; }
 
 /* ============================================================
-   STAT CARDS
+   DASHBOARD
    ============================================================ */
 .dashboard-grid {
   display: grid;
@@ -698,60 +488,19 @@ tr:hover td {
   flex-shrink: 0;
 }
 
-.stat-card.primary .stat-icon {
-  background: rgba(34, 201, 154, 0.15);
-  color: var(--primary);
-}
-.stat-card.success .stat-icon {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-}
-.stat-card.warning .stat-icon {
-  background: rgba(251, 191, 36, 0.15);
-  color: var(--warn);
-}
-.stat-card.info .stat-icon {
-  background: rgba(91, 157, 255, 0.15);
-  color: var(--blue);
-}
-.stat-card.danger .stat-icon {
-  background: rgba(255, 92, 92, 0.15);
-  color: var(--danger);
-}
-.stat-card.purple .stat-icon {
-  background: rgba(167, 139, 250, 0.15);
-  color: var(--purple);
-}
-.stat-card.blue .stat-icon {
-  background: rgba(91, 157, 255, 0.15);
-  color: var(--blue);
-}
-.stat-card.orange .stat-icon {
-  background: rgba(251, 191, 36, 0.15);
-  color: var(--warn);
-}
+.stat-card.primary .stat-icon { background: rgba(34, 201, 154, 0.15); color: var(--primary); }
+.stat-card.success .stat-icon { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+.stat-card.warning .stat-icon { background: rgba(251, 191, 36, 0.15); color: var(--warn); }
+.stat-card.info .stat-icon { background: rgba(91, 157, 255, 0.15); color: var(--blue); }
+.stat-card.danger .stat-icon { background: rgba(255, 92, 92, 0.15); color: var(--danger); }
+.stat-card.purple .stat-icon { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+.stat-card.blue .stat-icon { background: rgba(91, 157, 255, 0.15); color: var(--blue); }
+.stat-card.orange .stat-icon { background: rgba(251, 191, 36, 0.15); color: var(--warn); }
 
-.stat-info {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.stat-val {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.stat-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
+.stat-info { flex: 1; }
+.stat-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+.stat-val { font-size: 22px; font-weight: 800; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 /* ============================================================
    TOTALS BOX
@@ -790,25 +539,10 @@ tr:hover td {
   font-weight: 700;
 }
 
-.badge-store {
-  background: #0d2a3e;
-  color: #5ec3ff;
-}
-
-.badge-success {
-  background: #0f3324;
-  color: #4ade80;
-}
-
-.badge-warn {
-  background: #3a2e0a;
-  color: #fbbf24;
-}
-
-.badge-danger {
-  background: #3a1414;
-  color: #ff8080;
-}
+.badge-store { background: #0d2a3e; color: #5ec3ff; }
+.badge-success { background: #0f3324; color: #4ade80; }
+.badge-warn { background: #3a2e0a; color: #fbbf24; }
+.badge-danger { background: #3a1414; color: #ff8080; }
 
 .qty-pill {
   display: inline-block;
@@ -851,18 +585,9 @@ tr:hover td {
   border-color: #2c5499;
 }
 
-.person-name {
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
+.person-name { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
 
-.stat-strip {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
+.stat-strip { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
 
 .mini-stat {
   background: rgba(0, 0, 0, 0.3);
@@ -872,17 +597,8 @@ tr:hover td {
   min-width: 130px;
 }
 
-.mini-stat-label {
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 2px;
-  font-weight: 600;
-}
-
-.mini-stat-val {
-  font-size: 20px;
-  font-weight: 800;
-}
+.mini-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; font-weight: 600; }
+.mini-stat-val { font-size: 20px; font-weight: 800; }
 
 /* ============================================================
    INVOICE
@@ -906,17 +622,8 @@ tr:hover td {
   gap: 12px;
 }
 
-.company-info h2 {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--primary);
-}
-
-.company-info p {
-  font-size: 14px;
-  color: var(--muted);
-  margin: 2px 0 6px;
-}
+.company-info h2 { font-size: 22px; font-weight: 800; color: var(--primary); }
+.company-info p { font-size: 14px; color: var(--muted); margin: 2px 0 6px; }
 
 .company-details {
   display: flex;
@@ -932,17 +639,8 @@ tr:hover td {
   border-radius: 4px;
 }
 
-.invoice-number {
-  text-align: right;
-}
-
-.invoice-number label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-  display: block;
-}
-
+.invoice-number { text-align: right; }
+.invoice-number label { font-size: 12px; color: var(--muted); font-weight: 600; display: block; }
 .inv-number-display {
   font-size: 24px;
   font-weight: 800;
@@ -953,22 +651,10 @@ tr:hover td {
   border: 1px solid rgba(34, 201, 154, 0.2);
 }
 
-.invoice-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.invoice-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-.invoice-company-card .company-details-box {
-  padding: 4px 0;
-}
-
-.invoice-company-card .company-details-box div {
-  padding: 3px 0;
-  font-size: 13px;
-  color: var(--text);
-}
-
+.invoice-company-card .company-details-box { padding: 4px 0; }
+.invoice-company-card .company-details-box div { padding: 3px 0; font-size: 13px; color: var(--text); }
 .invoice-company-card .company-details-box .label {
   color: var(--muted);
   font-weight: 600;
@@ -976,46 +662,128 @@ tr:hover td {
   display: inline-block;
 }
 
-.rate-info-placeholder {
+.rate-info-placeholder { color: var(--muted); font-size: 13px; padding: 8px 0; }
+.rate-preview { max-height: 120px; overflow-y: auto; font-size: 12px; color: var(--muted); padding: 4px 0; }
+.rate-preview div { padding: 2px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.rate-info-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+/* ============================================================
+   TAX INVOICE
+   ============================================================ */
+.tax-invoice-placeholder {
+  text-align: center;
+  padding: 60px 20px;
   color: var(--muted);
-  font-size: 13px;
-  padding: 8px 0;
 }
 
-.rate-preview {
-  max-height: 120px;
-  overflow-y: auto;
+.tax-invoice-placeholder p { margin-top: 12px; font-size: 14px; }
+
+.tax-invoice-display {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.tax-invoice-display .header {
+  text-align: center;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.tax-invoice-display .header h2 {
+  font-size: 20px;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.tax-invoice-display .header p {
   font-size: 12px;
   color: var(--muted);
-  padding: 4px 0;
 }
 
-.rate-preview div {
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.rate-info-row {
+.tax-invoice-display .info-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-}
-
-.sp-balance-cell {
-  text-align: center;
-  font-weight: 700;
+  gap: 8px 20px;
   font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.sp-balance-cell.positive {
-  color: var(--primary);
+.tax-invoice-display .info-row .label {
+  color: var(--muted);
+  font-weight: 600;
 }
 
-.sp-balance-cell.negative {
-  color: var(--danger);
+.tax-invoice-display .info-row .value {
+  font-weight: 600;
 }
+
+.tax-invoice-display table {
+  margin: 12px 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tax-invoice-display table th {
+  background: var(--th-bg);
+  color: var(--text);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  font-size: 11px;
+}
+
+.tax-invoice-display table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #1f2536;
+}
+
+.tax-invoice-display .totals-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-top: 2px solid var(--border);
+  margin-top: 10px;
+}
+
+.tax-invoice-display .totals-row .item {
+  text-align: right;
+}
+
+.tax-invoice-display .totals-row .item .label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tax-invoice-display .totals-row .item .value {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.tax-invoice-display .totals-row .item .value.green { color: var(--primary); }
+.tax-invoice-display .totals-row .item .value.gold { color: var(--warn); }
+
+/* ============================================================
+   STOCK ITEMS
+   ============================================================ */
+.stock-item-cell { display: flex; flex-direction: column; }
+.stock-item-name { font-weight: 600; }
+.stock-item-sub { font-size: 11px; color: var(--muted); }
+
+.balance-info {
+  font-size: 13px;
+  padding: 10px 0;
+  margin-bottom: 12px;
+}
+
+.balance-info .badge { font-size: 13px; padding: 4px 14px; }
 
 /* ============================================================
    MODAL
@@ -1031,9 +799,7 @@ tr:hover td {
   backdrop-filter: blur(4px);
 }
 
-.modal-overlay.open {
-  display: flex;
-}
+.modal-overlay.open { display: flex; }
 
 .modal {
   background: var(--white);
@@ -1054,21 +820,15 @@ tr:hover td {
   align-items: center;
 }
 
-.modal-header h3 {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.modal-body {
-  padding: 24px;
-}
-
+.modal-header h3 { font-size: 17px; font-weight: 700; }
+.modal-body { padding: 24px; }
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 /* ============================================================
@@ -1088,272 +848,102 @@ tr:hover td {
   max-width: 400px;
 }
 
-.notification.show {
-  transform: translateX(0);
-}
-
-.notification.success {
-  background: #0f3324;
-  border: 1px solid #2c6b45;
-  color: #4ade80;
-}
-
-.notification.error {
-  background: #3a1414;
-  border: 1px solid #8b2d2d;
-  color: #ff8080;
-}
-
-.notification.info {
-  background: #0d1f3a;
-  border: 1px solid #2c5499;
-  color: #5ec3ff;
-}
+.notification.show { transform: translateX(0); }
+.notification.success { background: #0f3324; border: 1px solid #2c6b45; color: #4ade80; }
+.notification.error { background: #3a1414; border: 1px solid #8b2d2d; color: #ff8080; }
+.notification.info { background: #0d1f3a; border: 1px solid #2c5499; color: #5ec3ff; }
 
 /* ============================================================
-   BALANCE INFO
+   RESPONSIVE
    ============================================================ */
-.balance-info {
-  font-size: 13px;
-  padding: 10px 0;
-  margin-bottom: 12px;
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .invoice-details-grid { grid-template-columns: 1fr; }
+  .tax-invoice-display .totals-row { justify-content: flex-start; gap: 16px; }
 }
 
-.balance-info .badge {
-  font-size: 13px;
-  padding: 4px 14px;
+@media (max-width: 768px) {
+  #sidebar { width: 60px; }
+  #sidebar .nav-label, #sidebar .sidebar-title, #sidebar .nav-section,
+  #sidebar .sidebar-header span:not(.sidebar-icon) { display: none; }
+  #sidebar .sidebar-header { justify-content: center; padding: 16px 0; }
+  #sidebar .nav-item { justify-content: center; padding: 12px 0; }
+  #main-content { margin-left: 60px; }
+  .grid-2, .grid-3, .form-grid-2, .form-grid-3, .invoice-details-grid { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+  .topbar { padding: 10px 16px; }
+  .page-section { padding: 14px; }
+  .invoice-header-card { flex-direction: column; }
+  .invoice-number { text-align: left; width: 100%; }
+  .company-details { gap: 8px; }
+  .company-details span { font-size: 11px; }
+  .card { padding: 14px 16px; }
+  .stat-card { padding: 14px 16px; }
+  .login-box { padding: 30px 24px; width: 92%; }
+  .modal { width: 96%; max-height: 96vh; }
+  .rate-info-row { flex-direction: column; align-items: stretch; }
+  .rate-info-row .form-group { max-width: 100% !important; }
+  .topbar-right { gap: 8px; font-size: 12px; }
+  .topbar-right .logout-btn { padding: 6px 12px; font-size: 12px; }
+  .stat-val { font-size: 18px; }
+  .tax-invoice-display .info-row { flex-direction: column; gap: 2px; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+  .card-actions { flex-direction: column; align-items: stretch; }
+  .card-actions input[type="text"], .card-actions input[type="date"] { width: 100%; }
+  .tax-invoice-display .totals-row .item { width: 100%; text-align: left; }
 }
 
 /* ============================================================
    PRINT STYLES
    ============================================================ */
 @media print {
-  #sidebar,
-  .topbar,
-  .no-print,
-  .btn,
-  .card-actions,
-  .menu-btn,
-  .logout-btn {
+  #sidebar, .topbar, .no-print, .btn, .card-actions,
+  .menu-btn, .logout-btn, .nav-item, .nav-section,
+  .sidebar-header, .invoice-actions, .sync-badge {
     display: none !important;
   }
 
-  #main-content {
-    margin-left: 0 !important;
-  }
+  #main-content { margin-left: 0 !important; }
+  .page-section { display: none !important; }
+  #page-tax-invoice { display: block !important; }
+  #page-tax-invoice .no-print { display: none !important; }
 
-  .page-section {
-    display: none !important;
-  }
-
-  #page-salary-sheet.printing-sheet {
-    display: block !important;
-  }
-
-  body {
-    background: #fff;
-    color: #000;
-  }
-
-  .card {
-    border: 1px solid #ddd;
-    box-shadow: none;
-    background: #fff;
-  }
-
-  table {
-    font-size: 11px;
-  }
-
-  th {
-    background: #f0f0f0;
-    color: #000;
-  }
-
-  td {
-    border-bottom: 1px solid #ddd;
-  }
-
-  .totals-box {
-    background: #f8f8f8;
-    border-color: #ddd;
-  }
-
-  .inv-number-display {
-    color: #000;
-    background: #f0f0f0;
-  }
-
-  .company-info h2 {
-    color: #000;
-  }
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 1024px) {
-  .grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .invoice-details-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  #sidebar {
-    width: 60px;
-  }
-
-  #sidebar .nav-label,
-  #sidebar .sidebar-title,
-  #sidebar .nav-section,
-  #sidebar .sidebar-header span:not(.sidebar-icon) {
-    display: none;
-  }
-
-  #sidebar .sidebar-header {
-    justify-content: center;
-    padding: 16px 0;
-  }
-
-  #sidebar .nav-item {
-    justify-content: center;
-    padding: 12px 0;
-  }
-
-  #main-content {
-    margin-left: 60px;
-  }
-
-  .grid-2,
-  .grid-3,
-  .form-grid-2,
-  .form-grid-3,
-  .invoice-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .grid-4 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .topbar {
-    padding: 10px 16px;
-  }
-
-  .page-section {
-    padding: 14px;
-  }
-
-  .invoice-header-card {
-    flex-direction: column;
-  }
-
-  .invoice-number {
-    text-align: left;
-    width: 100%;
-  }
-
-  .company-details {
-    gap: 8px;
-  }
-
-  .company-details span {
-    font-size: 11px;
-  }
-
-  .card {
-    padding: 14px 16px;
-  }
-
-  .stat-card {
-    padding: 14px 16px;
-  }
-
-  .login-box {
-    padding: 30px 24px;
-    width: 92%;
-  }
-
-  .modal {
-    width: 96%;
-    max-height: 96vh;
-  }
-
-  .rate-info-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .rate-info-row .form-group {
-    max-width: 100% !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .grid-4 {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar-right {
-    gap: 8px;
-    font-size: 12px;
-  }
-
-  .topbar-right .logout-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  .stat-val {
-    font-size: 18px;
-  }
+  body { background: #fff; color: #000; }
+  .card { border: 1px solid #ddd; box-shadow: none; background: #fff; }
+  table { font-size: 11px; }
+  th { background: #f0f0f0; color: #000; }
+  td { border-bottom: 1px solid #ddd; }
+  .totals-box { background: #f8f8f8; border-color: #ddd; }
+  .inv-number-display { color: #000; background: #f0f0f0; }
+  .company-info h2 { color: #000; }
+  .tax-invoice-display { border: 1px solid #ddd; }
+  .tax-invoice-display .header h2 { color: #000; }
+  .tax-invoice-display table th { background: #f0f0f0; color: #000; }
+  .tax-invoice-placeholder { display: none; }
+  .person-banner { background: #f5f5f5 !important; border-color: #ddd !important; }
+  .person-name { color: #000 !important; }
+  .mini-stat { background: #fff !important; border-color: #ddd !important; }
+  .mini-stat-val { color: #000 !important; }
+  #gulzar-total-credit, #kashif-total-credit { color: #2c6b45 !important; }
+  #gulzar-total-debit, #kashif-total-debit { color: #c73e3e !important; }
 }
 
 /* ============================================================
    MISC HELPERS
    ============================================================ */
-.text-credit {
-  color: #4ade80;
-}
-
-.text-debit {
-  color: var(--danger);
-}
-
-.text-muted {
-  color: var(--muted);
-}
-
-.mt-8 {
-  margin-top: 8px;
-}
-.mt-12 {
-  margin-top: 12px;
-}
-.mb-12 {
-  margin-bottom: 12px;
-}
-
-.flex {
-  display: flex;
-}
-.flex-center {
-  display: flex;
-  align-items: center;
-}
-.gap-8 {
-  gap: 8px;
-}
-.gap-12 {
-  gap: 12px;
-}
+.text-credit { color: #4ade80; }
+.text-debit { color: var(--danger); }
+.text-muted { color: var(--muted); }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mb-12 { margin-bottom: 12px; }
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.w-full { width: 100%; }
