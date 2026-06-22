@@ -187,7 +187,8 @@ const map = {
   invoice: r => ({
     timestamp: r.timestamp, invoiceNo: r.invoice_no, storeName: r.store_name, customerName: r.customer_name,
     ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, items: r.items || [],
-    discountPercent: Number(r.discount_percent), subTotal: r.sub_total, discountAmt: r.discount_amt, finalTotal: r.final_total
+    discountPercent: Number(r.discount_percent), subTotal: r.sub_total, discountAmt: r.discount_amt,
+    afterDiscount: r.after_discount, totalExcludingTax: r.total_excluding_tax, totalGst: r.total_gst, finalTotal: r.final_total
   }),
   taxInvoice: r => ({
     timestamp: r.timestamp, invoiceNo: r.invoice_no, storeName: r.store_name, customerName: r.customer_name,
@@ -528,6 +529,9 @@ function onInvBarcode(el) {
   calcInvoice();
 }
 
+// ============================================================
+// CALC INVOICE — WITH TAX INCLUSIVE LOGIC
+// ============================================================
 function calcInvoice() {
   let sub = 0;
   document.querySelectorAll('#inv-body tr').forEach(row => {
@@ -540,10 +544,20 @@ function calcInvoice() {
   });
   const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
   const discAmt = sub * disc / 100;
-  const final = sub - discAmt;
+  const afterDisc = sub - discAmt;
+  
+  // 👇 NEW: Calculate Excluding Tax & GST (Rate is Inclusive)
+  const totalInclusive = afterDisc;
+  const totalExcludingTax = totalInclusive / 1.18;
+  const totalGst = totalExcludingTax * 0.18;
+  const final = totalInclusive;
+
   document.getElementById('inv-subtotal').innerText = 'Rs. ' + sub.toFixed(2);
   document.getElementById('inv-disc-amt').innerText = '- Rs. ' + discAmt.toFixed(2);
   document.getElementById('inv-disc-label').innerHTML = `Discount (${disc}%):`;
+  document.getElementById('inv-after-disc').innerText = 'Rs. ' + afterDisc.toFixed(2);
+  document.getElementById('inv-excl-tax').innerText = 'Rs. ' + totalExcludingTax.toFixed(2);
+  document.getElementById('inv-gst').innerText = 'Rs. ' + totalGst.toFixed(2);
   document.getElementById('inv-final').innerText = 'Rs. ' + final.toFixed(2);
 }
 
@@ -559,6 +573,9 @@ function clearInvoiceForm() {
   updateInvoiceNumber();
 }
 
+// ============================================================
+// SAVE INVOICE — WITH TAX INCLUSIVE LOGIC
+// ============================================================
 async function saveInvoiceNow() {
   const customerName = document.getElementById('inv-customer').value.trim();
   const storeName = document.getElementById('inv-store').value.trim();
@@ -584,7 +601,13 @@ async function saveInvoiceNow() {
   const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
   const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
   const discAmt = sub * disc / 100;
-  const final = sub - discAmt;
+  const afterDisc = sub - discAmt;
+  
+  // 👇 NEW: Calculate Excluding Tax & GST (Rate is Inclusive)
+  const totalInclusive = afterDisc;
+  const totalExcludingTax = totalInclusive / 1.18;
+  const totalGst = totalExcludingTax * 0.18;
+  const final = totalInclusive;
 
   const customerNtn = document.getElementById('inv-customer-ntn').value;
   const customerStrn = document.getElementById('inv-customer-strn').value;
@@ -598,14 +621,21 @@ async function saveInvoiceNow() {
       store_name: storeName, customer_name: customerName,
       ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items,
-      discount_percent: disc, sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
+      discount_percent: disc, 
+      sub_total: sub.toFixed(2), 
+      discount_amt: discAmt.toFixed(2), 
+      after_discount: afterDisc.toFixed(2),
+      total_excluding_tax: totalExcludingTax.toFixed(2),
+      total_gst: totalGst.toFixed(2),
+      final_total: final.toFixed(2)
     };
     const ok = await sbUpdate('invoices', 'timestamp', ts, row);
     if (!ok) return;
     const idx = invoices.findIndex(i => i.timestamp === ts);
     if (idx > -1) {
       invoices[idx] = { ...invoices[idx], storeName, customerName, ntn: customerNtn, strn: customerStrn, address: customerAddress, date, items,
-        discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2) };
+        discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), afterDiscount: afterDisc.toFixed(2),
+        totalExcludingTax: totalExcludingTax.toFixed(2), totalGst: totalGst.toFixed(2), finalTotal: final.toFixed(2) };
     }
     isEdit = true;
     showNotification('Invoice updated successfully!');
@@ -617,7 +647,10 @@ async function saveInvoiceNow() {
       store_name: storeName, customer_name: customerName,
       ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items, discount_percent: disc,
-      sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), final_total: final.toFixed(2)
+      sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), after_discount: afterDisc.toFixed(2),
+      total_excluding_tax: totalExcludingTax.toFixed(2),
+      total_gst: totalGst.toFixed(2),
+      final_total: final.toFixed(2)
     };
     const ok = await sbInsert('invoices', row);
     if (!ok) return;
@@ -625,15 +658,14 @@ async function saveInvoiceNow() {
       invoiceNo, timestamp: ts, storeName, customerName,
       ntn: customerNtn, strn: customerStrn, address: customerAddress,
       date, items,
-      discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), finalTotal: final.toFixed(2)
+      discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), afterDiscount: afterDisc.toFixed(2),
+      totalExcludingTax: totalExcludingTax.toFixed(2), totalGst: totalGst.toFixed(2), finalTotal: final.toFixed(2)
     });
     showNotification('Invoice saved!');
   }
 
-  // Generate Tax Invoice automatically
   await generateAndSaveTaxInvoice(ts);
 
-  // Create SP Stock Out entries
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
       const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -675,12 +707,10 @@ async function saveInvoiceNow() {
 // ============================================================
 // TAX INVOICE — WITH KG CALCULATION
 // ============================================================
-
 async function generateAndSaveTaxInvoice(cashTimestamp) {
   const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
   if (!cashInv) return;
 
-  // Group items by category with KG calculation
   const categories = {};
   let totalExcludingTax = 0;
 
@@ -709,7 +739,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     categories[key].totalAmount += total;
     categories[key].items.push(item);
     
-    // 👇 KG CALCULATION
     if (catInfo.weight > 0) {
       categories[key].totalGram += (qty * catInfo.weight);
       categories[key].totalKg = categories[key].totalGram / 1000;
@@ -718,7 +747,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     totalExcludingTax += total;
   });
 
-  // Calculate Rate Per KG for each category
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
     const ratePerKg = cat.totalKg > 0 ? cat.totalAmount / cat.totalKg : 0;
@@ -749,7 +777,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     cashInvoiceTimestamp: cashTimestamp
   };
 
-  // Save to Supabase
   const row = {
     timestamp: taxInvoiceData.timestamp,
     invoice_no: taxInvoiceData.invoiceNo,
@@ -786,7 +813,6 @@ function generateTaxInvoiceFromCash() {
 // ============================================================
 // TAX INVOICE — RENDER EDITABLE TABLE WITH KG
 // ============================================================
-
 function renderTaxInvoiceDisplay(data) {
   const container = document.getElementById('tax-invoice-container');
   taxInvoiceData = data;
@@ -927,7 +953,6 @@ function renderTaxInvoiceDisplay(data) {
 // ============================================================
 // TAX INVOICE — EDIT FUNCTIONS
 // ============================================================
-
 function updateTaxRow(index) {
   const row = document.querySelector(`#tax-table-body tr[data-index="${index}"]`);
   if (!row) return;
@@ -1208,7 +1233,7 @@ async function deleteTaxInvoice(ts) {
 }
 
 // ============================================================
-// CASH INVOICE HISTORY (SHORTENED - SAME AS BEFORE)
+// CASH INVOICE HISTORY (SHORTENED)
 // ============================================================
 function renderInvoiceHistory() {
   const from = document.getElementById('inv-hist-from').value;
