@@ -114,62 +114,18 @@
     <!-- ===== DASHBOARD ===== -->
     <div class="page-section" id="page-dashboard">
       <div class="dashboard-grid">
-        <div class="stat-card primary">
-          <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Today's Sale</div>
-            <div class="stat-val" id="dash-today-sales">Rs. 0</div>
-            <div class="stat-sub" id="dash-sale-count">0 invoices</div>
-          </div>
-        </div>
-        <div class="stat-card success">
-          <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Today's Purchase</div>
-            <div class="stat-val" id="dash-today-purchase">Rs. 0</div>
-            <div class="stat-sub" id="dash-purchase-count">0 items</div>
-          </div>
-        </div>
-        <div class="stat-card warning">
-          <div class="stat-icon"><i class="fas fa-boxes"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Total Stock</div>
-            <div class="stat-val" id="dash-total-stock">0</div>
-            <div class="stat-sub">Items in inventory</div>
-          </div>
-        </div>
-        <div class="stat-card info">
-          <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Total Sales</div>
-            <div class="stat-val" id="dash-total-sales">Rs. 0</div>
-            <div class="stat-sub">All time</div>
-          </div>
-        </div>
-        <div class="stat-card danger">
-          <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Outstanding Balance</div>
-            <div class="stat-val" id="dash-outstanding">Rs. 0</div>
-            <div class="stat-sub">Gulzar + Kashif</div>
-          </div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-icon"><i class="fas fa-tags"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Store Rates</div>
-            <div class="stat-val" id="dash-rates">0</div>
-            <div class="stat-sub">Rate entries</div>
-          </div>
-        </div>
+        <div class="stat-card primary"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div><div class="stat-info"><div class="stat-label">Today's Sale</div><div class="stat-val" id="dash-today-sales">Rs. 0</div><div class="stat-sub" id="dash-sale-count">0 invoices</div></div></div>
+        <div class="stat-card success"><div class="stat-icon"><i class="fas fa-arrow-down"></i></div><div class="stat-info"><div class="stat-label">Today's Purchase</div><div class="stat-val" id="dash-today-purchase">Rs. 0</div><div class="stat-sub" id="dash-purchase-count">0 items</div></div></div>
+        <div class="stat-card warning"><div class="stat-icon"><i class="fas fa-boxes"></i></div><div class="stat-info"><div class="stat-label">Total Stock</div><div class="stat-val" id="dash-total-stock">0</div><div class="stat-sub">Items in inventory</div></div></div>
+        <div class="stat-card info"><div class="stat-icon"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-label">Total Sales</div><div class="stat-val" id="dash-total-sales">Rs. 0</div><div class="stat-sub">All time</div></div></div>
+        <div class="stat-card danger"><div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-info"><div class="stat-label">Outstanding Balance</div><div class="stat-val" id="dash-outstanding">Rs. 0</div><div class="stat-sub">Gulzar + Kashif</div></div></div>
+        <div class="stat-card purple"><div class="stat-icon"><i class="fas fa-tags"></i></div><div class="stat-info"><div class="stat-label">Store Rates</div><div class="stat-val" id="dash-rates">0</div><div class="stat-sub">Rate entries</div></div></div>
       </div>
       <div class="card">
         <div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Invoice #</th><th>Store</th><th>Date</th><th>Total</th></tr></thead>
-            <tbody id="dash-recent-inv"><tr class="no-data"><td colspan="4">No invoices found</td></tr></tbody>
-          </table>
+          <table><thead><tr><th>Invoice #</th><th>Store</th><th>Date</th><th>Total</th></tr></thead>
+          <tbody id="dash-recent-inv"><tr class="no-data"><td colspan="4">No invoices found</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -179,29 +135,13 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-plus-circle"></i> Add Store Rate</div>
         <div class="form-grid-3">
-          <div class="form-group">
-            <label>Store Name <span class="required">*</span></label>
-            <input id="sr-store" placeholder="e.g. ABC Store" list="sr-store-list">
-            <datalist id="sr-store-list"></datalist>
-          </div>
-          <div class="form-group">
-            <label>Barcode <span class="required">*</span></label>
-            <input id="sr-barcode" placeholder="Scan barcode" oninput="srBarcodeInput()">
-          </div>
-          <div class="form-group">
-            <label>Item Name</label>
-            <input id="sr-item" placeholder="Auto-filled">
-          </div>
+          <div class="form-group"><label>Store Name <span class="required">*</span></label><input id="sr-store" placeholder="e.g. ABC Store" list="sr-store-list"><datalist id="sr-store-list"></datalist></div>
+          <div class="form-group"><label>Barcode <span class="required">*</span></label><input id="sr-barcode" placeholder="Scan barcode" oninput="srBarcodeInput()"></div>
+          <div class="form-group"><label>Item Name</label><input id="sr-item" placeholder="Auto-filled"></div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group">
-            <label>Rate (Rs.) <span class="required">*</span></label>
-            <input id="sr-rate" type="number" placeholder="0">
-          </div>
-          <div class="form-group" style="display:flex;gap:10px;align-items:flex-end;">
-            <button class="btn btn-primary" onclick="saveStoreRate()" id="sr-save-btn"><i class="fas fa-save"></i> Save</button>
-            <button class="btn btn-outline" onclick="cancelRateEdit()" id="sr-cancel-btn" style="display:none"><i class="fas fa-times"></i> Cancel</button>
-          </div>
+          <div class="form-group"><label>Rate (Rs.) <span class="required">*</span></label><input id="sr-rate" type="number" placeholder="0"></div>
+          <div class="form-group" style="display:flex;gap:10px;align-items:flex-end;"><button class="btn btn-primary" onclick="saveStoreRate()" id="sr-save-btn"><i class="fas fa-save"></i> Save</button><button class="btn btn-outline" onclick="cancelRateEdit()" id="sr-cancel-btn" style="display:none"><i class="fas fa-times"></i> Cancel</button></div>
         </div>
       </div>
       <div class="card">
@@ -209,20 +149,14 @@
           <div class="card-title"><i class="fas fa-list"></i> Store Rates</div>
           <div class="card-actions">
             <input id="sr-search" placeholder="Search..." oninput="filterRatesTable(this.value)">
-            <select id="sr-filter-store" onchange="filterRatesTable(document.getElementById('sr-search').value)">
-              <option value="">All Stores</option>
-            </select>
-            <button class="btn btn-outline btn-sm" onclick="toggleRatesVisibility()">
-              <i class="fas fa-eye" id="rates-eye-icon"></i> <span id="rates-toggle-text">Show</span>
-            </button>
+            <select id="sr-filter-store" onchange="filterRatesTable(document.getElementById('sr-search').value)"><option value="">All Stores</option></select>
+            <button class="btn btn-outline btn-sm" onclick="toggleRatesVisibility()"><i class="fas fa-eye" id="rates-eye-icon"></i> <span id="rates-toggle-text">Show</span></button>
           </div>
         </div>
         <div id="rates-list-container" style="display:none;">
           <div class="table-wrap">
-            <table>
-              <thead><tr><th>Store</th><th>Barcode</th><th>Item Name</th><th>Rate</th><th>Actions</th></tr></thead>
-              <tbody id="sr-table-body"><tr class="no-data"><td colspan="5">No rates added yet</td></tr></tbody>
-            </table>
+            <table><thead><tr><th>Store</th><th>Barcode</th><th>Item Name</th><th>Rate</th><th>Actions</th></tr></thead>
+            <tbody id="sr-table-body"><tr class="no-data"><td colspan="5">No rates added yet</td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -235,16 +169,9 @@
           <div class="company-info">
             <h2><i class="fas fa-store-alt" style="color:var(--primary);"></i> KRT TRADERS</h2>
             <p><i class="fas fa-file-invoice"></i> CASH INVOICE</p>
-            <div class="company-details">
-              <span><strong>NTN:</strong> 2995454-1</span>
-              <span><strong>STRN:</strong> 300299545411</span>
-              <span><strong>Address:</strong> Lahore, Pakistan</span>
-            </div>
+            <div class="company-details"><span><strong>NTN:</strong> 2995454-1</span><span><strong>STRN:</strong> 300299545411</span><span><strong>Address:</strong> Lahore, Pakistan</span></div>
           </div>
-          <div class="invoice-number">
-            <label>Invoice #</label>
-            <div class="inv-number-display" id="invoice-number-display">INV-001</div>
-          </div>
+          <div class="invoice-number"><label>Invoice #</label><div class="inv-number-display" id="invoice-number-display">INV-001</div></div>
         </div>
 
         <div class="invoice-details-grid">
@@ -260,48 +187,24 @@
           <div class="card invoice-customer-card">
             <div class="card-title"><i class="fas fa-user"></i> Customer Details</div>
             <div class="form-grid-2">
-              <div class="form-group">
-                <label>Customer Name <span class="required">*</span></label>
-                <input id="inv-customer" placeholder="Customer name">
-              </div>
-              <div class="form-group">
-                <label>Store / Company</label>
-                <input id="inv-store" placeholder="Store name" list="inv-store-list" oninput="onInvStoreChange(this.value)">
-                <datalist id="inv-store-list"></datalist>
-              </div>
+              <div class="form-group"><label>Customer Name <span class="required">*</span></label><input id="inv-customer" placeholder="Customer name"></div>
+              <div class="form-group"><label>Store / Company</label><input id="inv-store" placeholder="Store name" list="inv-store-list" oninput="onInvStoreChange(this.value)"><datalist id="inv-store-list"></datalist></div>
             </div>
             <div class="form-grid-2">
-              <div class="form-group">
-                <label>Customer NTN</label>
-                <input id="inv-customer-ntn" placeholder="Customer NTN">
-              </div>
-              <div class="form-group">
-                <label>Customer STRN</label>
-                <input id="inv-customer-strn" placeholder="Customer STRN">
-              </div>
+              <div class="form-group"><label>Customer NTN</label><input id="inv-customer-ntn" placeholder="Customer NTN"></div>
+              <div class="form-group"><label>Customer STRN</label><input id="inv-customer-strn" placeholder="Customer STRN"></div>
             </div>
             <div class="form-grid-2">
-              <div class="form-group">
-                <label>Customer Address</label>
-                <input id="inv-customer-address" placeholder="Customer address">
-              </div>
-              <div class="form-group">
-                <label>Date <span class="required">*</span></label>
-                <input id="inv-date" type="date" class="stock-date">
-              </div>
+              <div class="form-group"><label>Customer Address</label><input id="inv-customer-address" placeholder="Customer address"></div>
+              <div class="form-group"><label>Date <span class="required">*</span></label><input id="inv-date" type="date" class="stock-date"></div>
             </div>
           </div>
         </div>
 
         <div class="card">
           <div class="rate-info-row">
-            <div id="inv-store-info" class="rate-info-placeholder">
-              <i class="fas fa-store"></i> Enter store name to see rates
-            </div>
-            <div class="form-group" style="max-width:200px;">
-              <label>Discount %</label>
-              <input id="inv-discount" type="number" value="0" min="0" max="100" oninput="calcInvoice()">
-            </div>
+            <div id="inv-store-info" class="rate-info-placeholder"><i class="fas fa-store"></i> Enter store name to see rates</div>
+            <div class="form-group" style="max-width:200px;"><label>Discount %</label><input id="inv-discount" type="number" value="0" min="0" max="100" oninput="calcInvoice()"></div>
           </div>
           <div id="inv-store-rate-preview" class="rate-preview"></div>
         </div>
@@ -313,17 +216,7 @@
           </div>
           <div class="table-wrap">
             <table class="inv-table">
-              <thead>
-                <tr>
-                  <th style="width:40px">#</th>
-                  <th>Barcode</th>
-                  <th>Item Name</th>
-                  <th style="width:80px">Qty</th>
-                  <th style="width:100px">Rate</th>
-                  <th style="width:100px;text-align:right">Total</th>
-                  <th style="width:40px"></th>
-                </tr>
-              </thead>
+              <thead><tr><th style="width:40px">#</th><th>Barcode</th><th>Item Name</th><th style="width:80px">Qty</th><th style="width:100px">Rate</th><th style="width:100px;text-align:right">Total</th><th style="width:40px"></th></tr></thead>
               <tbody id="inv-body"></tbody>
             </table>
           </div>
@@ -339,10 +232,7 @@
           <div class="totals-box">
             <div class="total-row"><span>Sub Total (Inclusive):</span><span id="inv-subtotal">Rs. 0.00</span></div>
             <div class="total-row"><span id="inv-disc-label">Discount (0%):</span><span id="inv-disc-amt">- Rs. 0.00</span></div>
-            <div class="total-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;">
-              <span>After Discount (Inclusive):</span>
-              <span id="inv-after-disc">Rs. 0.00</span>
-            </div>
+            <div class="total-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;"><span>After Discount (Inclusive):</span><span id="inv-after-disc">Rs. 0.00</span></div>
             <div class="total-row"><span>Excluding Tax:</span><span id="inv-excl-tax" style="color:var(--blue);">Rs. 0.00</span></div>
             <div class="total-row"><span>GST @ 18%:</span><span id="inv-gst" style="color:var(--warn);">Rs. 0.00</span></div>
             <div class="total-row final"><span>💰 Gross Amount (Inclusive):</span><span id="inv-final">Rs. 0.00</span></div>
@@ -363,10 +253,7 @@
           </div>
         </div>
         <div id="tax-invoice-container">
-          <div class="tax-invoice-placeholder">
-            <i class="fas fa-file-invoice" style="font-size:48px;color:var(--muted);"></i>
-            <p>No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p>
-          </div>
+          <div class="tax-invoice-placeholder"><i class="fas fa-file-invoice" style="font-size:48px;color:var(--muted);"></i><p>No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p></div>
         </div>
       </div>
     </div>
@@ -384,10 +271,7 @@
           </div>
         </div>
         <div id="monthly-report-container">
-          <div class="tax-invoice-placeholder">
-            <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--muted);"></i>
-            <p>Select a month and click "Generate" to view monthly invoice list</p>
-          </div>
+          <div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--muted);"></i><p>Select a month and click "Generate" to view monthly invoice list</p></div>
         </div>
       </div>
     </div>
@@ -398,19 +282,15 @@
         <div class="card-header">
           <div class="card-title"><i class="fas fa-history"></i> Tax Invoice History</div>
           <div class="card-actions">
-            <input type="date" id="tax-hist-from" onchange="renderTaxHistory()">
-            <span style="color:var(--muted);">to</span>
-            <input type="date" id="tax-hist-to" onchange="renderTaxHistory()">
+            <input type="date" id="tax-hist-from" onchange="renderTaxHistory()"><span style="color:var(--muted);">to</span><input type="date" id="tax-hist-to" onchange="renderTaxHistory()">
             <input id="tax-hist-search" placeholder="Search invoice #, store..." oninput="renderTaxHistory()">
             <button class="btn btn-print btn-sm" onclick="exportTaxHistory()"><i class="fas fa-file-export"></i> Export</button>
             <button class="btn btn-outline btn-sm" onclick="clearTaxHistoryFilter()"><i class="fas fa-times"></i> Clear</button>
           </div>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Total</th><th>GST</th><th>Gross</th><th>Actions</th></tr></thead>
-            <tbody id="tax-history-body"><tr class="no-data"><td colspan="9">No tax invoices found</td></tr></tbody>
-          </table>
+          <table><thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Total</th><th>GST</th><th>Gross</th><th>Actions</th></tr></thead>
+          <tbody id="tax-history-body"><tr class="no-data"><td colspan="9">No tax invoices found</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -421,18 +301,14 @@
         <div class="card-header">
           <div class="card-title"><i class="fas fa-history"></i> Cash Invoice History</div>
           <div class="card-actions">
-            <input type="date" id="inv-hist-from" onchange="renderInvoiceHistory()">
-            <span style="color:var(--muted);">to</span>
-            <input type="date" id="inv-hist-to" onchange="renderInvoiceHistory()">
+            <input type="date" id="inv-hist-from" onchange="renderInvoiceHistory()"><span style="color:var(--muted);">to</span><input type="date" id="inv-hist-to" onchange="renderInvoiceHistory()">
             <button class="btn btn-print btn-sm" onclick="exportInvoiceHistory()"><i class="fas fa-file-export"></i> Export</button>
             <button class="btn btn-outline btn-sm" onclick="clearInvoiceHistoryFilter()"><i class="fas fa-times"></i> Clear</button>
           </div>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Actions</th></tr></thead>
-            <tbody id="inv-history-body"><tr class="no-data"><td colspan="7">No invoices found</td></tr></tbody>
-          </table>
+          <table><thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Actions</th></tr></thead>
+          <tbody id="inv-history-body"><tr class="no-data"><td colspan="7">No invoices found</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -456,10 +332,8 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-list"></i> Stock In Records</div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Item</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead>
-            <tbody id="stock-in-table"></tbody>
-          </table>
+          <table><thead><tr><th>#</th><th>Date</th><th>Item</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead>
+          <tbody id="stock-in-table"></tbody></table>
         </div>
       </div>
     </div>
@@ -472,9 +346,7 @@
           <div class="form-group"><label>Date</label><input type="date" id="out-date" class="stock-date"></div>
           <div class="form-group"><label>Customer <span class="required">*</span></label><input id="out-customer" placeholder="Customer name"></div>
           <div class="form-group"><label>Item <span class="required">*</span></label>
-            <select id="out-item-select" onchange="onOutItemSelect()">
-              <option value="">-- Select Item --</option>
-            </select>
+            <select id="out-item-select" onchange="onOutItemSelect()"><option value="">-- Select Item --</option></select>
             <input id="out-item" placeholder="Or type custom" style="margin-top:4px;" oninput="onOutCustomItem()">
           </div>
         </div>
@@ -489,10 +361,8 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-list"></i> Stock Out Records</div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead>
-            <tbody id="stock-out-table"></tbody>
-          </table>
+          <table><thead><tr><th>#</th><th>Date</th><th>Customer</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead>
+          <tbody id="stock-out-table"></tbody></table>
         </div>
       </div>
     </div>
@@ -505,10 +375,8 @@
           <button class="btn btn-print btn-sm" onclick="printStockBalance()"><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
-            <tbody id="balance-table"></tbody>
-          </table>
+          <table><thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
+          <tbody id="balance-table"></tbody></table>
         </div>
       </div>
     </div>
@@ -614,10 +482,8 @@
       <div class="card">
         <div class="card-title">Salary Table — <span id="sal-month-label">Select month</span></div>
         <div class="table-wrap">
-          <table class="inv-table">
-            <thead><tr><th>#</th><th>Name</th><th>Salary</th><th>Advance</th><th>Balance</th><th>Note</th><th></th></tr></thead>
-            <tbody id="sal-body"></tbody>
-          </table>
+          <table class="inv-table"><thead><tr><th>#</th><th>Name</th><th>Salary</th><th>Advance</th><th>Balance</th><th>Note</th><th></th></tr></thead>
+          <tbody id="sal-body"></tbody></table>
         </div>
       </div>
       <div class="grid-2">
@@ -722,10 +588,8 @@
           <button class="btn btn-print btn-sm" onclick="printSPBalance()"><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
-            <tbody id="sp-balance-table"></tbody>
-          </table>
+          <table><thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
+          <tbody id="sp-balance-table"></tbody></table>
         </div>
       </div>
     </div>
@@ -736,10 +600,7 @@
 <!-- ===== MODAL ===== -->
 <div class="modal-overlay" id="inv-modal">
   <div class="modal">
-    <div class="modal-header">
-      <h3><i class="fas fa-file-invoice"></i> Invoice Details</h3>
-      <button class="btn btn-outline btn-sm" onclick="closeInvModal()"><i class="fas fa-times"></i> Close</button>
-    </div>
+    <div class="modal-header"><h3><i class="fas fa-file-invoice"></i> Invoice Details</h3><button class="btn btn-outline btn-sm" onclick="closeInvModal()"><i class="fas fa-times"></i> Close</button></div>
     <div class="modal-body" id="inv-modal-body"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="editInvoiceFromModal()"><i class="fas fa-edit"></i> Edit</button>
