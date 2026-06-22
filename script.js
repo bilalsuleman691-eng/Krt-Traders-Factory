@@ -1168,10 +1168,33 @@ function generateMonthlyReport() {
   }
 
   const [year, monthNum] = month.split('-');
+  
+  // Filter invoices by month (handling date object)
   const filteredInvoices = invoices.filter(inv => {
     if (!inv.date) return false;
-    const invDate = inv.date.split('-');
-    return invDate[0] === year && invDate[1] === monthNum;
+    // If date is string, convert to Date object
+    let dateObj;
+    if (typeof inv.date === 'string') {
+      // Try parsing YYYY-MM-DD
+      const parts = inv.date.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        // Try DD-MM-YYYY
+        const parts2 = inv.date.split('-');
+        if (parts2.length === 3 && parts2[2].length === 4) {
+          dateObj = new Date(parseInt(parts2[2]), parseInt(parts2[1]) - 1, parseInt(parts2[0]));
+        } else {
+          dateObj = new Date(inv.date);
+        }
+      }
+    } else {
+      dateObj = new Date(inv.date);
+    }
+    
+    if (isNaN(dateObj.getTime())) return false;
+    return dateObj.getFullYear() === parseInt(year) && 
+           (dateObj.getMonth() + 1) === parseInt(monthNum);
   });
 
   if (filteredInvoices.length === 0) {
@@ -1184,6 +1207,10 @@ function generateMonthlyReport() {
     `;
     return;
   }
+
+  // Rest of the function remains the same...
+  // (Copy the rest of generateMonthlyReport from previous code)
+
 
   let reportHTML = `
   <div class="monthly-report">
