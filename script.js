@@ -296,6 +296,7 @@ function showPage(id, title) {
   if (id === 'cash-invoice') { updateInvStoreLists(); if (!document.querySelector('#inv-body tr')) addInvoiceRow(); updateInvoiceNumber(); }
   if (id === 'invoice-history') renderInvoiceHistory();
   if (id === 'tax-history') renderTaxHistory();
+  if (id === 'monthly-list') { document.getElementById('monthly-month').value = new Date().toISOString().slice(0,7); }
   if (id === 'stock-in') renderStockInTable();
   if (id === 'stock-out') { updateStockOutDropdown(); renderStockOutTable(); }
   if (id === 'stock-balance') calcBalanceSheet();
@@ -546,7 +547,7 @@ function calcInvoice() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // 👇 FIX: Rate is Inclusive, so divide by 1.18
+  // Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -603,7 +604,7 @@ async function saveInvoiceNow() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // 👇 FIX: Rate is Inclusive, so divide by 1.18
+  // Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -729,6 +730,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         totalPcs: 0,
         totalGram: 0,
         totalKg: 0,
+        totalSheet: 0,
         totalAmount: 0,
         weight: catInfo.weight || 0,
         items: []
@@ -742,6 +744,10 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     if (catInfo.weight > 0) {
       categories[key].totalGram += (qty * catInfo.weight);
       categories[key].totalKg = categories[key].totalGram / 1000;
+      // Sheet calculation for Foam (1400 is sheet rate)
+      if (key === 'Foam') {
+        categories[key].totalSheet = categories[key].totalGram / 1400;
+      }
     }
 
     totalExcludingTax += total;
@@ -750,10 +756,12 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
     const ratePerKg = cat.totalKg > 0 ? cat.totalAmount / cat.totalKg : 0;
+    const ratePerSheet = cat.totalSheet > 0 ? cat.totalAmount / cat.totalSheet : 0;
     return {
       ...cat,
       ratePerPcs: ratePerPcs,
       ratePerKg: ratePerKg,
+      ratePerSheet: ratePerSheet,
       amount: cat.totalAmount
     };
   });
@@ -838,6 +846,7 @@ function renderTaxInvoiceDisplay(data) {
     const hsCode = cat.hsCode || '';
     const qty = cat.totalPcs || 0;
     const kg = cat.totalKg || 0;
+    const sheet = cat.totalSheet || 0;
     const rate = cat.ratePerPcs || 0;
     const amount = cat.amount || 0;
     const gst = amount * 0.18;
@@ -848,6 +857,7 @@ function renderTaxInvoiceDisplay(data) {
         <td><input type="number" class="tax-qty" value="${qty}" min="0" step="1" onchange="updateTaxRow(${index})"></td>
         <td><input type="text" class="tax-category" value="${catName}" onchange="updateTaxRow(${index})"></td>
         <td><input type="text" class="tax-hs" value="${hsCode}" onchange="updateTaxRow(${index})"></td>
+        <td><input type="number" class="tax-sheet" value="${sheet.toFixed(3)}" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
         <td><input type="number" class="tax-kg" value="${kg.toFixed(3)}" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
         <td><input type="number" class="tax-rate" value="${rate.toFixed(2)}" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
         <td class="tax-amount">Rs. ${amount.toFixed(2)}</td>
@@ -902,13 +912,14 @@ function renderTaxInvoiceDisplay(data) {
           <thead>
             <tr>
               <th style="width:60px;">Qty (Pcs)</th>
-              <th style="min-width:150px;">Description</th>
-              <th style="width:120px;">HS Code</th>
-              <th style="width:80px;">KG</th>
-              <th style="width:100px;">Rate/Pcs</th>
-              <th style="width:120px;">Excl. Tax</th>
-              <th style="width:100px;">GST 18%</th>
-              <th style="width:120px;">Gross</th>
+              <th style="min-width:140px;">Description</th>
+              <th style="width:100px;">HS Code</th>
+              <th style="width:70px;">Sheet</th>
+              <th style="width:70px;">KG</th>
+              <th style="width:90px;">Rate/Pcs</th>
+              <th style="width:110px;">Excl. Tax</th>
+              <th style="width:90px;">GST 18%</th>
+              <th style="width:110px;">Gross</th>
               <th style="width:40px;"></th>
             </tr>
           </thead>
@@ -959,7 +970,6 @@ function updateTaxRow(index) {
 
   const qty = parseFloat(row.querySelector('.tax-qty').value) || 0;
   const rate = parseFloat(row.querySelector('.tax-rate').value) || 0;
-  const kg = parseFloat(row.querySelector('.tax-kg').value) || 0;
   const amount = qty * rate;
   const gst = amount * 0.18;
   const gross = amount + gst;
@@ -996,6 +1006,7 @@ function addTaxRow() {
     <td><input type="number" class="tax-qty" value="1" min="0" step="1" onchange="updateTaxRow(${index})"></td>
     <td><input type="text" class="tax-category" value="" placeholder="Enter category" onchange="updateTaxRow(${index})"></td>
     <td><input type="text" class="tax-hs" value="" placeholder="HS Code" onchange="updateTaxRow(${index})"></td>
+    <td><input type="number" class="tax-sheet" value="0" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
     <td><input type="number" class="tax-kg" value="0" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
     <td><input type="number" class="tax-rate" value="0" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
     <td class="tax-amount">Rs. 0.00</td>
@@ -1034,6 +1045,7 @@ async function saveTaxInvoice() {
     const hsCode = row.querySelector('.tax-hs').value || '0000';
     const qty = parseFloat(row.querySelector('.tax-qty').value) || 0;
     const rate = parseFloat(row.querySelector('.tax-rate').value) || 0;
+    const sheet = parseFloat(row.querySelector('.tax-sheet').value) || 0;
     const kg = parseFloat(row.querySelector('.tax-kg').value) || 0;
     const amount = qty * rate;
 
@@ -1042,6 +1054,7 @@ async function saveTaxInvoice() {
         category: category,
         hsCode: hsCode,
         totalPcs: qty,
+        totalSheet: sheet,
         totalKg: kg,
         ratePerPcs: rate,
         amount: amount
@@ -1145,7 +1158,251 @@ function printTaxInvoice() {
 }
 
 // ============================================================
-// TAX INVOICE HISTORY
+// MONTHLY INVOICE LIST — WITH SHEET, KG, PCS
+// ============================================================
+function generateMonthlyReport() {
+  const month = document.getElementById('monthly-month').value;
+  if (!month) {
+    showNotification('Please select a month!', 'error');
+    return;
+  }
+
+  const [year, monthNum] = month.split('-');
+  const filteredInvoices = invoices.filter(inv => {
+    if (!inv.date) return false;
+    const invDate = inv.date.split('-');
+    return invDate[0] === year && invDate[1] === monthNum;
+  });
+
+  if (filteredInvoices.length === 0) {
+    showNotification('No invoices found for this month!', 'error');
+    document.getElementById('monthly-report-container').innerHTML = `
+      <div class="tax-invoice-placeholder">
+        <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--muted);"></i>
+        <p>No invoices found for ${month}</p>
+      </div>
+    `;
+    return;
+  }
+
+  let reportHTML = `
+  <div class="monthly-report">
+    <div class="report-header">
+      <h2>KRT TRADERS</h2>
+      <h3>Monthly Invoice List</h3>
+      <p>Month: ${month}</p>
+      <p>Generated: ${new Date().toLocaleDateString('en-PK')}</p>
+    </div>
+  `;
+
+  const groupedInvoices = {};
+  filteredInvoices.forEach(inv => {
+    const key = inv.invoiceNo;
+    if (!groupedInvoices[key]) {
+      groupedInvoices[key] = {
+        invoiceNo: inv.invoiceNo,
+        storeName: inv.storeName,
+        customerName: inv.customerName,
+        ntn: inv.ntn,
+        strn: inv.strn,
+        date: inv.date,
+        items: inv.items || []
+      };
+    }
+  });
+
+  Object.values(groupedInvoices).forEach(inv => {
+    const catData = {};
+    
+    inv.items.forEach(item => {
+      const itemName = item.item || item.barcode;
+      const catInfo = getItemCategory(itemName);
+      const category = catInfo.category;
+      const qty = parseFloat(item.qty) || 0;
+      const rate = parseFloat(item.rate) || 0;
+      const total = qty * rate;
+      const weight = catInfo.weight || 0;
+
+      if (!catData[category]) {
+        catData[category] = {
+          category: category,
+          hsCode: catInfo.hsCode,
+          totalPcs: 0,
+          totalSheet: 0,
+          totalKg: 0,
+          totalAmount: 0,
+          ratePerPcs: 0,
+          ratePerSheet: 0,
+          ratePerKg: 0,
+          weight: weight
+        };
+      }
+
+      catData[category].totalPcs += qty;
+      catData[category].totalAmount += total;
+
+      if (category === 'Foam' && weight > 0) {
+        catData[category].totalSheet += (qty * weight) / 1400;
+      }
+      if (category === 'Steel' && weight > 0) {
+        catData[category].totalKg += (qty * weight) / 1000;
+      }
+    });
+
+    Object.values(catData).forEach(cat => {
+      if (cat.totalPcs > 0) cat.ratePerPcs = cat.totalAmount / cat.totalPcs;
+      if (cat.totalSheet > 0) cat.ratePerSheet = cat.totalAmount / cat.totalSheet;
+      if (cat.totalKg > 0) cat.ratePerKg = cat.totalAmount / cat.totalKg;
+    });
+
+    let tableRows = '';
+    let grandExcl = 0;
+    let grandGst = 0;
+    let grandGross = 0;
+
+    const categoryOrder = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor'];
+    const categoryLabels = {
+      'Foam': 'Abrasive Sheet',
+      'Steel': 'Stainless Steel',
+      'Fancy': 'Home Consumption',
+      'Micro': 'Micro Fiber',
+      'Razor': 'Classic Razor'
+    };
+
+    categoryOrder.forEach(catKey => {
+      const cat = catData[catKey];
+      if (!cat || cat.totalPcs === 0) return;
+
+      const exclTax = cat.totalAmount;
+      const gst = exclTax * 0.18;
+      const gross = exclTax + gst;
+
+      grandExcl += exclTax;
+      grandGst += gst;
+      grandGross += gross;
+
+      const displayName = categoryLabels[catKey] || catKey;
+
+      tableRows += `
+        <tr>
+          <td>${displayName}</td>
+          <td style="text-align:center;">${cat.totalPcs.toFixed(0)}</td>
+          <td style="text-align:center;">${cat.totalSheet > 0 ? cat.totalSheet.toFixed(3) : '-'}</td>
+          <td style="text-align:center;">${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
+          <td style="text-align:right;">${cat.ratePerPcs > 0 ? cat.ratePerPcs.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${cat.ratePerSheet > 0 ? cat.ratePerSheet.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${cat.ratePerKg > 0 ? cat.ratePerKg.toFixed(2) : '-'}</td>
+          <td style="text-align:right;">${exclTax.toFixed(2)}</td>
+          <td style="text-align:right;">${gst.toFixed(2)}</td>
+          <td style="text-align:right;font-weight:bold;">${gross.toFixed(2)}</td>
+          <td style="text-align:center;">${cat.hsCode}</td>
+        </tr>
+      `;
+    });
+
+    reportHTML += `
+      <div class="invoice-report-card">
+        <div class="invoice-report-header">
+          <div class="invoice-report-title">
+            <strong>Invoice #: ${inv.invoiceNo}</strong>
+          </div>
+          <div class="invoice-report-details">
+            <span><strong>Store:</strong> ${inv.storeName || inv.customerName || '-'}</span>
+            <span><strong>NTN:</strong> ${inv.ntn || '-'}</span>
+            <span><strong>STRN:</strong> ${inv.strn || '-'}</span>
+            <span><strong>Date:</strong> ${inv.date || '-'}</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:150px;">Category</th>
+                <th style="width:60px;">PCS</th>
+                <th style="width:70px;">Sheet</th>
+                <th style="width:70px;">KG</th>
+                <th style="width:90px;">Rate/PCS</th>
+                <th style="width:90px;">Rate/Sheet</th>
+                <th style="width:90px;">Rate/KG</th>
+                <th style="width:110px;">Excl. Tax</th>
+                <th style="width:90px;">GST 18%</th>
+                <th style="width:110px;">Gross</th>
+                <th style="width:100px;">HS Code</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+              <tr style="font-weight:bold;border-top:2px solid var(--primary);">
+                <td colspan="7" style="text-align:right;">TOTAL</td>
+                <td style="text-align:right;">${grandExcl.toFixed(2)}</td>
+                <td style="text-align:right;">${grandGst.toFixed(2)}</td>
+                <td style="text-align:right;">${grandGross.toFixed(2)}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+
+  reportHTML += `
+    <div class="report-footer">
+      <p>Generated by KRT TRADERS ERP</p>
+      <p>Total Invoices: ${Object.keys(groupedInvoices).length}</p>
+    </div>
+  </div>
+  `;
+
+  document.getElementById('monthly-report-container').innerHTML = reportHTML;
+  document.getElementById('monthly-report-container').style.display = 'block';
+}
+
+function clearMonthlyReport() {
+  document.getElementById('monthly-report-container').innerHTML = `
+    <div class="tax-invoice-placeholder">
+      <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--muted);"></i>
+      <p>Select a month and click "Generate" to view monthly invoice list</p>
+    </div>
+  `;
+}
+
+function printMonthlyReport() {
+  const content = document.getElementById('monthly-report-container').innerHTML;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Monthly Invoice List</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
+    .monthly-report { max-width: 1300px; margin: 0 auto; }
+    .report-header { text-align: center; padding-bottom: 16px; border-bottom: 3px solid #22c99a; margin-bottom: 20px; }
+    .report-header h2 { font-size: 24px; color: #22c99a; }
+    .report-header h3 { font-size: 18px; margin-top: 4px; }
+    .report-header p { font-size: 12px; color: #666; margin-top: 2px; }
+    .invoice-report-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+    .invoice-report-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .invoice-report-title { font-size: 14px; font-weight: 700; }
+    .invoice-report-details { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
+    .invoice-report-details span { background: #fff; padding: 2px 10px; border-radius: 4px; border: 1px solid #ddd; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; }
+    td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+    .report-footer { text-align: center; font-size: 11px; color: #999; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px; }
+    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="monthly-report">${content}</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+</body>
+</html>`);
+}
+
+// ============================================================
+// TAX INVOICE HISTORY (SHORTENED - SAME AS BEFORE)
 // ============================================================
 function renderTaxHistory() {
   const from = document.getElementById('tax-hist-from').value;
@@ -1459,7 +1716,7 @@ async function deleteInvoice(ts) {
 }
 
 // ============================================================
-// STOCK IN (SHORTENED - SAME AS BEFORE)
+// STOCK IN (SHORTENED)
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -1930,7 +2187,7 @@ function clearLedgerHistoryFilter(person) {
 }
 
 // ============================================================
-// SALARY SYSTEM
+// SALARY SYSTEM (SHORTENED)
 // ============================================================
 function currentMonthStr() {
   const d = new Date();
@@ -2058,7 +2315,7 @@ function printSalarySheet() {
 }
 
 // ============================================================
-// SP STOCK IN
+// SP STOCK IN (SHORTENED)
 // ============================================================
 function spinBarcodeInput() {
   const bc = document.getElementById('spin-barcode').value.trim();
