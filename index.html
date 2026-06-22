@@ -15,7 +15,7 @@
   <div class="login-box">
     <div class="login-logo"><i class="fas fa-store"></i></div>
     <h2>KRT TRADERS</h2>
-    <p>ERP Management System v2.0</p>
+    <p>ERP Management System v3.0</p>
     <input type="password" id="pass" placeholder="Enter Password" onkeydown="if(event.key==='Enter')login()">
     <button class="login-btn" onclick="login()"><i class="fas fa-sign-in-alt"></i> Login</button>
     <div id="login-error"><i class="fas fa-exclamation-circle"></i> Incorrect password!</div>
@@ -39,13 +39,19 @@
 
       <div class="nav-section">Rates & Invoice</div>
       <div class="nav-item" onclick="showPage('store-rates','Store Rates Setup')">
-        <span class="nav-icon"><i class="fas fa-tags"></i></span><span class="nav-label">Store Rates Setup</span>
+        <span class="nav-icon"><i class="fas fa-tags"></i></span><span class="nav-label">Store Rates</span>
       </div>
       <div class="nav-item" onclick="showPage('cash-invoice','Cash Invoice')">
         <span class="nav-icon"><i class="fas fa-receipt"></i></span><span class="nav-label">Cash Invoice</span>
       </div>
-      <div class="nav-item" onclick="showPage('invoice-history','Invoice History')">
-        <span class="nav-icon"><i class="fas fa-history"></i></span><span class="nav-label">Invoice History</span>
+      <div class="nav-item" onclick="showPage('tax-invoice','Tax Invoice')">
+        <span class="nav-icon"><i class="fas fa-file-invoice"></i></span><span class="nav-label">Tax Invoice</span>
+      </div>
+      <div class="nav-item" onclick="showPage('tax-history','Tax Invoice History')">
+        <span class="nav-icon"><i class="fas fa-history"></i></span><span class="nav-label">Tax History</span>
+      </div>
+      <div class="nav-item" onclick="showPage('invoice-history','Cash Invoice History')">
+        <span class="nav-icon"><i class="fas fa-history"></i></span><span class="nav-label">Cash History</span>
       </div>
 
       <div class="nav-section">Stock</div>
@@ -61,13 +67,10 @@
 
       <div class="nav-section">Accounts</div>
       <div class="nav-item" onclick="showPage('gulzar','Gulzar Account')">
-        <span class="nav-icon"><i class="fas fa-user-circle"></i></span><span class="nav-label">Gulzar Account</span>
+        <span class="nav-icon"><i class="fas fa-user-circle"></i></span><span class="nav-label">Gulzar</span>
       </div>
       <div class="nav-item" onclick="showPage('kashif','Kashif Account')">
-        <span class="nav-icon"><i class="fas fa-user-circle"></i></span><span class="nav-label">Kashif Account</span>
-      </div>
-      <div class="nav-item" onclick="showPage('daily-report','Daily Report')">
-        <span class="nav-icon"><i class="fas fa-calendar-day"></i></span><span class="nav-label">Daily Report</span>
+        <span class="nav-icon"><i class="fas fa-user-circle"></i></span><span class="nav-label">Kashif</span>
       </div>
 
       <div class="nav-section">Salary</div>
@@ -76,9 +79,6 @@
       </div>
       <div class="nav-item" onclick="showPage('salary-sheet','Salary Sheet')">
         <span class="nav-icon"><i class="fas fa-file-invoice"></i></span><span class="nav-label">Salary Sheet</span>
-      </div>
-      <div class="nav-item" onclick="showPage('salary-history','Salary History')">
-        <span class="nav-icon"><i class="fas fa-archive"></i></span><span class="nav-label">Salary History</span>
       </div>
 
       <div class="nav-section">Godam</div>
@@ -160,7 +160,6 @@
           </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div>
         <div class="table-wrap">
@@ -197,17 +196,16 @@
             <input id="sr-rate" type="number" placeholder="0">
           </div>
           <div class="form-group" style="display:flex;gap:10px;align-items:flex-end;">
-            <button class="btn btn-primary" onclick="saveStoreRate()" id="sr-save-btn"><i class="fas fa-save"></i> Save Rate</button>
+            <button class="btn btn-primary" onclick="saveStoreRate()" id="sr-save-btn"><i class="fas fa-save"></i> Save</button>
             <button class="btn btn-outline" onclick="cancelRateEdit()" id="sr-cancel-btn" style="display:none"><i class="fas fa-times"></i> Cancel</button>
           </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><i class="fas fa-list"></i> Store Rates List</div>
+          <div class="card-title"><i class="fas fa-list"></i> Store Rates</div>
           <div class="card-actions">
-            <input id="sr-search" placeholder="Search store or barcode..." oninput="filterRatesTable(this.value)">
+            <input id="sr-search" placeholder="Search..." oninput="filterRatesTable(this.value)">
             <select id="sr-filter-store" onchange="filterRatesTable(document.getElementById('sr-search').value)">
               <option value="">All Stores</option>
             </select>
@@ -235,8 +233,8 @@
             <h2><i class="fas fa-store-alt" style="color:var(--primary);"></i> KRT TRADERS</h2>
             <p><i class="fas fa-file-invoice"></i> CASH INVOICE</p>
             <div class="company-details">
-              <span><strong>NTN:</strong> 1234567-8</span>
-              <span><strong>STRN:</strong> 9876543-2</span>
+              <span><strong>NTN:</strong> 2995454-1</span>
+              <span><strong>STRN:</strong> 300299545411</span>
               <span><strong>Contact:</strong> +92 300 1234567</span>
               <span><strong>Address:</strong> Lahore, Pakistan</span>
             </div>
@@ -252,13 +250,11 @@
             <div class="card-title" style="color:var(--primary);"><i class="fas fa-building"></i> Company Details</div>
             <div class="company-details-box">
               <div><strong>KRT TRADERS</strong></div>
-              <div><span class="label">NTN:</span> 1234567-8</div>
-              <div><span class="label">STRN:</span> 9876543-2</div>
-              <div><span class="label">Contact:</span> +92 300 1234567</div>
+              <div><span class="label">NTN:</span> 2995454-1</div>
+              <div><span class="label">STRN:</span> 300299545411</div>
               <div><span class="label">Address:</span> Lahore, Pakistan</div>
             </div>
           </div>
-
           <div class="card invoice-customer-card">
             <div class="card-title"><i class="fas fa-user"></i> Customer Details</div>
             <div class="form-grid-2">
@@ -323,7 +319,6 @@
                   <th style="width:80px">Qty</th>
                   <th style="width:100px">Rate</th>
                   <th style="width:100px;text-align:right">Total</th>
-                  <th style="width:60px;text-align:center">SP Bal</th>
                   <th style="width:40px"></th>
                 </tr>
               </thead>
@@ -347,11 +342,54 @@
       </div>
     </div>
 
-    <!-- ===== INVOICE HISTORY ===== -->
+    <!-- ===== TAX INVOICE ===== -->
+    <div class="page-section" id="page-tax-invoice">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-file-invoice"></i> Tax Invoice</div>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-sm" onclick="generateTaxInvoiceFromCash()"><i class="fas fa-sync"></i> Generate from Cash</button>
+            <button class="btn btn-print btn-sm" onclick="printTaxInvoice()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn btn-outline btn-sm" onclick="clearTaxInvoice()"><i class="fas fa-trash"></i> Clear</button>
+          </div>
+        </div>
+        <div id="tax-invoice-container">
+          <div class="tax-invoice-placeholder">
+            <i class="fas fa-file-invoice" style="font-size:48px;color:var(--muted);"></i>
+            <p>No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAX INVOICE HISTORY ===== -->
+    <div class="page-section" id="page-tax-history">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-history"></i> Tax Invoice History</div>
+          <div class="card-actions">
+            <input type="date" id="tax-hist-from" onchange="renderTaxHistory()">
+            <span style="color:var(--muted);">to</span>
+            <input type="date" id="tax-hist-to" onchange="renderTaxHistory()">
+            <input id="tax-hist-search" placeholder="Search invoice #, store..." oninput="renderTaxHistory()">
+            <button class="btn btn-print btn-sm" onclick="exportTaxHistory()"><i class="fas fa-file-export"></i> Export</button>
+            <button class="btn btn-outline btn-sm" onclick="clearTaxHistoryFilter()"><i class="fas fa-times"></i> Clear</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Total</th><th>GST</th><th>Gross</th><th>Actions</th></tr></thead>
+            <tbody id="tax-history-body"><tr class="no-data"><td colspan="9">No tax invoices found</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CASH INVOICE HISTORY ===== -->
     <div class="page-section" id="page-invoice-history">
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><i class="fas fa-history"></i> Invoice History</div>
+          <div class="card-title"><i class="fas fa-history"></i> Cash Invoice History</div>
           <div class="card-actions">
             <input type="date" id="inv-hist-from" onchange="renderInvoiceHistory()">
             <span style="color:var(--muted);">to</span>
@@ -374,14 +412,32 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-arrow-down"></i> Stock In Entry</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date</label><input type="date" id="in-date" class="stock-date"></div>
-          <div class="form-group"><label>Vendor</label><input id="in-vendor" placeholder="Vendor name"></div>
-          <div class="form-group"><label>Barcode</label><input id="in-barcode" placeholder="Barcode" oninput="inBarcodeInput()"></div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="in-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Vendor</label>
+            <input id="in-vendor" placeholder="Vendor name">
+          </div>
+          <div class="form-group">
+            <label>Barcode</label>
+            <input id="in-barcode" placeholder="Barcode" oninput="inBarcodeInput()">
+          </div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Item Name <span class="required">*</span></label><input id="in-item" placeholder="Item name"></div>
-          <div class="form-group"><label>Quantity <span class="required">*</span></label><input id="in-qty" type="number" placeholder="0"></div>
-          <div class="form-group"><label>Price</label><input id="in-price" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Item Name <span class="required">*</span></label>
+            <input id="in-item" placeholder="Item name">
+          </div>
+          <div class="form-group">
+            <label>Quantity <span class="required">*</span></label>
+            <input id="in-qty" type="number" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <input id="in-price" type="number" placeholder="0">
+          </div>
         </div>
         <button class="btn btn-primary" onclick="saveStockIn()"><i class="fas fa-save"></i> Save Stock In</button>
       </div>
@@ -401,15 +457,37 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-arrow-up"></i> Stock Out Entry</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date</label><input type="date" id="out-date" class="stock-date"></div>
-          <div class="form-group"><label>Customer <span class="required">*</span></label><input id="out-customer" placeholder="Customer name"></div>
-          <div class="form-group"><label>Barcode</label><input id="out-barcode" placeholder="Barcode" oninput="outBarcodeInput()"></div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="out-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Customer <span class="required">*</span></label>
+            <input id="out-customer" placeholder="Customer name">
+          </div>
+          <div class="form-group">
+            <label>Item <span class="required">*</span></label>
+            <select id="out-item-select" onchange="onOutItemSelect()">
+              <option value="">-- Select Item --</option>
+            </select>
+            <input id="out-item" placeholder="Or type custom" style="margin-top:4px;" oninput="onOutCustomItem()">
+          </div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Item Name <span class="required">*</span></label><input id="out-item" placeholder="Item name"></div>
-          <div class="form-group"><label>Quantity <span class="required">*</span></label><input id="out-qty" type="number" placeholder="0"></div>
-          <div class="form-group"><label>Price</label><input id="out-price" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Barcode</label>
+            <input id="out-barcode" placeholder="Barcode">
+          </div>
+          <div class="form-group">
+            <label>Quantity <span class="required">*</span></label>
+            <input id="out-qty" type="number" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <input id="out-price" type="number" placeholder="0">
+          </div>
         </div>
+        <div id="out-balance-info" class="balance-info"></div>
         <button class="btn btn-primary" onclick="saveStockOut()"><i class="fas fa-save"></i> Save Stock Out</button>
       </div>
       <div class="card">
@@ -427,7 +505,7 @@
     <div class="page-section" id="page-stock-balance">
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><i class="fas fa-balance-scale"></i> Stock Balance Sheet</div>
+          <div class="card-title"><i class="fas fa-balance-scale"></i> Stock Balance</div>
           <button class="btn btn-print btn-sm" onclick="printStockBalance()"><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="table-wrap">
@@ -444,26 +522,42 @@
       <div class="person-banner person-gulzar">
         <div class="person-name"><i class="fas fa-user-circle"></i> Gulzar Bhai Account</div>
         <div class="stat-strip">
-          <div class="mini-stat"><div class="mini-stat-label">Total Credit</div><div class="mini-stat-val" id="gulzar-total-credit" style="color:#4ade80;">Rs. 0</div></div>
-          <div class="mini-stat"><div class="mini-stat-label">Total Debit</div><div class="mini-stat-val" id="gulzar-total-debit" style="color:#f87171;">Rs. 0</div></div>
-          <div class="mini-stat"><div class="mini-stat-label">Balance</div><div class="mini-stat-val" id="gulzar-balance" style="color:#22c99a;">Rs. 0</div></div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Total Credit</div>
+            <div class="mini-stat-val" id="gulzar-total-credit" style="color:#4ade80;">Rs. 0</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Total Debit</div>
+            <div class="mini-stat-val" id="gulzar-total-debit" style="color:#f87171;">Rs. 0</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Balance</div>
+            <div class="mini-stat-val" id="gulzar-balance" style="color:#22c99a;">Rs. 0</div>
+          </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="fas fa-plus-circle"></i> New Entry</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" id="gulzar-date" class="stock-date"></div>
-          <div class="form-group"><label>Credit</label><input id="gulzar-credit" type="number" placeholder="0"></div>
-          <div class="form-group"><label>Debit</label><input id="gulzar-debit" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Date <span class="required">*</span></label>
+            <input type="date" id="gulzar-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Credit</label>
+            <input id="gulzar-credit" type="number" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Debit</label>
+            <input id="gulzar-debit" type="number" placeholder="0">
+          </div>
         </div>
         <div class="form-group">
           <label>Note</label>
           <textarea id="gulzar-note" rows="3" placeholder="Enter note here..."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="addLedgerEntry('gulzar')"><i class="fas fa-save"></i> Save Entry</button>
+        <button class="btn btn-primary" onclick="addLedgerEntry('gulzar')"><i class="fas fa-save"></i> Save</button>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="fas fa-calendar-day"></i> Today's Entries</div>
         <div class="table-wrap">
@@ -473,7 +567,6 @@
           </table>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header">
           <div class="card-title"><i class="fas fa-history"></i> History</div>
@@ -499,26 +592,42 @@
       <div class="person-banner person-kashif">
         <div class="person-name"><i class="fas fa-user-circle"></i> Kashif Bhai Account</div>
         <div class="stat-strip">
-          <div class="mini-stat"><div class="mini-stat-label">Total Credit</div><div class="mini-stat-val" id="kashif-total-credit" style="color:#4ade80;">Rs. 0</div></div>
-          <div class="mini-stat"><div class="mini-stat-label">Total Debit</div><div class="mini-stat-val" id="kashif-total-debit" style="color:#f87171;">Rs. 0</div></div>
-          <div class="mini-stat"><div class="mini-stat-label">Balance</div><div class="mini-stat-val" id="kashif-balance" style="color:#22c99a;">Rs. 0</div></div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Total Credit</div>
+            <div class="mini-stat-val" id="kashif-total-credit" style="color:#4ade80;">Rs. 0</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Total Debit</div>
+            <div class="mini-stat-val" id="kashif-total-debit" style="color:#f87171;">Rs. 0</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">Balance</div>
+            <div class="mini-stat-val" id="kashif-balance" style="color:#22c99a;">Rs. 0</div>
+          </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="fas fa-plus-circle"></i> New Entry</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" id="kashif-date" class="stock-date"></div>
-          <div class="form-group"><label>Credit</label><input id="kashif-credit" type="number" placeholder="0"></div>
-          <div class="form-group"><label>Debit</label><input id="kashif-debit" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Date <span class="required">*</span></label>
+            <input type="date" id="kashif-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Credit</label>
+            <input id="kashif-credit" type="number" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Debit</label>
+            <input id="kashif-debit" type="number" placeholder="0">
+          </div>
         </div>
         <div class="form-group">
           <label>Note</label>
           <textarea id="kashif-note" rows="3" placeholder="Enter note here..."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="addLedgerEntry('kashif')"><i class="fas fa-save"></i> Save Entry</button>
+        <button class="btn btn-primary" onclick="addLedgerEntry('kashif')"><i class="fas fa-save"></i> Save</button>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="fas fa-calendar-day"></i> Today's Entries</div>
         <div class="table-wrap">
@@ -528,7 +637,6 @@
           </table>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header">
           <div class="card-title"><i class="fas fa-history"></i> History</div>
@@ -549,45 +657,27 @@
       </div>
     </div>
 
-    <!-- ===== DAILY REPORT ===== -->
-    <div class="page-section" id="page-daily-report">
-      <div class="card">
-        <div class="card-title"><i class="fas fa-calendar-day"></i> Daily Report</div>
-        <div class="form-grid-3">
-          <div class="form-group"><label>From Date</label><input type="date" id="rep-from"></div>
-          <div class="form-group"><label>To Date</label><input type="date" id="rep-to"></div>
-          <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" style="width:100%" onclick="generateReport()"><i class="fas fa-file-alt"></i> Generate Report</button></div>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title"><i class="fas fa-arrow-down"></i> Stock In</div>
-          <div class="table-wrap">
-            <table><thead><tr><th>Date</th><th>Item</th><th>Vendor</th><th>Qty</th><th>Total</th></tr></thead>
-            <tbody id="rep-in-table"><tr class="no-data"><td colspan="5">Select date range</td></tr></tbody></table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-arrow-up"></i> Stock Out / Sales</div>
-          <div class="table-wrap">
-            <table><thead><tr><th>Date</th><th>Item</th><th>Customer</th><th>Qty</th><th>Total</th></tr></thead>
-            <tbody id="rep-out-table"><tr class="no-data"><td colspan="5">Select date range</td></tr></tbody></table>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== SALARY ENTRY ===== -->
     <div class="page-section" id="page-salary-entry">
       <div class="card">
         <div class="card-title"><i class="fas fa-money-bill-wave"></i> Salary Entry</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Month <span class="required">*</span></label><input type="month" id="sal-month" onchange="loadSalaryMonth()"></div>
-          <div><button class="btn btn-primary" style="width:100%;" onclick="addSalaryEmployeeRow()"><i class="fas fa-user-plus"></i> Add Employee</button></div>
-          <div><button class="btn btn-outline" style="width:100%;" onclick="saveSalaryMonth()"><i class="fas fa-save"></i> Save Month</button></div>
+          <div class="form-group">
+            <label>Month <span class="required">*</span></label>
+            <input type="month" id="sal-month" onchange="loadSalaryMonth()">
+          </div>
+          <div>
+            <button class="btn btn-primary" style="width:100%;" onclick="addSalaryEmployeeRow()">
+              <i class="fas fa-user-plus"></i> Add Employee
+            </button>
+          </div>
+          <div>
+            <button class="btn btn-outline" style="width:100%;" onclick="saveSalaryMonth()">
+              <i class="fas fa-save"></i> Save
+            </button>
+          </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title">Salary Table — <span id="sal-month-label">Select month</span></div>
         <div class="table-wrap">
@@ -607,7 +697,6 @@
           </table>
         </div>
       </div>
-
       <div class="grid-2">
         <div class="stat-card blue">
           <div class="stat-info">
@@ -629,13 +718,16 @@
       <div class="card">
         <div class="card-title"><i class="fas fa-file-invoice"></i> Salary Sheet</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Month</label><input type="month" id="sheet-month" onchange="renderSalarySheet()"></div>
+          <div class="form-group">
+            <label>Month</label>
+            <input type="month" id="sheet-month" onchange="renderSalarySheet()">
+          </div>
         </div>
       </div>
       <div class="card">
         <div class="card-title">Salary Sheet — <span id="sheet-month-label">Select month</span></div>
         <div class="table-wrap">
-          <table class="sum-table">
+          <table>
             <thead><tr><th>#</th><th>Name</th><th>Salary</th><th>Advance</th><th>Balance</th><th>Note</th></tr></thead>
             <tbody id="sheet-body"><tr class="no-data"><td colspan="6">Select month</td></tr></tbody>
           </table>
@@ -645,31 +737,8 @@
           <div class="total-row"><span>Total Advance:</span><span id="sheet-total-advance" style="color:var(--danger);">Rs. 0</span></div>
           <div class="total-row final"><span>Net Payable:</span><span id="sheet-total-net">Rs. 0</span></div>
         </div>
-        <div style="margin-top:12px;"><button class="btn btn-print" onclick="printSalarySheet()"><i class="fas fa-print"></i> Print Sheet</button></div>
-      </div>
-    </div>
-
-    <!-- ===== SALARY HISTORY ===== -->
-    <div class="page-section" id="page-salary-history">
-      <div class="card">
-        <div class="card-title"><i class="fas fa-archive"></i> Salary History</div>
-        <div class="form-grid-3">
-          <div class="form-group">
-            <label>Employee Name <span class="required">*</span></label>
-            <input id="hist-name" placeholder="Employee name" list="hist-name-list">
-            <datalist id="hist-name-list"></datalist>
-          </div>
-          <div class="form-group"><label>Month (optional)</label><input type="month" id="hist-month"></div>
-          <div><button class="btn btn-primary" style="width:100%;" onclick="renderSalaryHistory()"><i class="fas fa-search"></i> Search</button></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title"><i class="fas fa-list"></i> Results</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Month</th><th>Name</th><th>Salary</th><th>Advance</th><th>Balance</th><th>Note</th></tr></thead>
-            <tbody id="hist-body"><tr class="no-data"><td colspan="6">Enter name to search</td></tr></tbody>
-          </table>
+        <div style="margin-top:12px;">
+          <button class="btn btn-print" onclick="printSalarySheet()"><i class="fas fa-print"></i> Print</button>
         </div>
       </div>
     </div>
@@ -677,23 +746,47 @@
     <!-- ===== SP STOCK IN ===== -->
     <div class="page-section" id="page-sp-in">
       <div class="card">
-        <div class="card-title"><i class="fas fa-arrow-down"></i> SP Stock In Entry</div>
+        <div class="card-title"><i class="fas fa-arrow-down"></i> SP Stock In</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date</label><input type="date" id="spin-date" class="stock-date"></div>
-          <div class="form-group"><label>Vendor</label><input id="spin-vendor" placeholder="Vendor name"></div>
-          <div class="form-group"><label>Barcode</label><input id="spin-barcode" placeholder="Barcode" oninput="spinBarcodeInput()"></div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="spin-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Vendor</label>
+            <input id="spin-vendor" placeholder="Vendor name">
+          </div>
+          <div class="form-group">
+            <label>Barcode</label>
+            <input id="spin-barcode" placeholder="Barcode" oninput="spinBarcodeInput()">
+          </div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Item Name <span class="required">*</span></label><input id="spin-item" placeholder="Item name"></div>
-          <div class="form-group"><label>Pcs per Ctn</label><input id="spin-pcsperctn" type="number" placeholder="e.g. 24" oninput="updateSPInPreview()"></div>
-          <div class="form-group"><label>Ctn Qty</label><input id="spin-ctn" type="number" placeholder="0" oninput="updateSPInPreview()"></div>
+          <div class="form-group">
+            <label>Item Name <span class="required">*</span></label>
+            <input id="spin-item" placeholder="Item name">
+          </div>
+          <div class="form-group">
+            <label>Pcs per Ctn</label>
+            <input id="spin-pcsperctn" type="number" placeholder="e.g. 24" oninput="updateSPInPreview()">
+          </div>
+          <div class="form-group">
+            <label>Ctn Qty</label>
+            <input id="spin-ctn" type="number" placeholder="0" oninput="updateSPInPreview()">
+          </div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Extra Pcs</label><input id="spin-extra" type="number" placeholder="0" oninput="updateSPInPreview()"></div>
-          <div class="form-group"><label>Price (per Pcs)</label><input id="spin-price" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Extra Pcs</label>
+            <input id="spin-extra" type="number" placeholder="0" oninput="updateSPInPreview()">
+          </div>
+          <div class="form-group">
+            <label>Price (per Pcs)</label>
+            <input id="spin-price" type="number" placeholder="0">
+          </div>
           <div style="display:flex;align-items:flex-end;color:var(--muted);font-size:14px;" id="spin-total-preview">Total Pcs: 0</div>
         </div>
-        <button class="btn btn-primary" onclick="saveSPStockIn()"><i class="fas fa-save"></i> Save Stock In</button>
+        <button class="btn btn-primary" onclick="saveSPStockIn()"><i class="fas fa-save"></i> Save</button>
       </div>
       <div class="card">
         <div class="card-title"><i class="fas fa-list"></i> SP Stock In Records</div>
@@ -709,19 +802,38 @@
     <!-- ===== SP STOCK OUT ===== -->
     <div class="page-section" id="page-sp-out">
       <div class="card">
-        <div class="card-title"><i class="fas fa-arrow-up"></i> SP Stock Out Entry</div>
+        <div class="card-title"><i class="fas fa-arrow-up"></i> SP Stock Out</div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Date</label><input type="date" id="spout-date" class="stock-date"></div>
-          <div class="form-group"><label>Store Name <span class="required">*</span></label><input id="spout-store" placeholder="Store name" list="spout-store-list"><datalist id="spout-store-list"></datalist></div>
-          <div class="form-group"><label>Barcode <span class="required">*</span></label><input id="spout-barcode" placeholder="Barcode" oninput="spoutBarcodeInput()"></div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="spout-date" class="stock-date">
+          </div>
+          <div class="form-group">
+            <label>Store Name <span class="required">*</span></label>
+            <input id="spout-store" placeholder="Store name" list="spout-store-list">
+            <datalist id="spout-store-list"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Barcode <span class="required">*</span></label>
+            <input id="spout-barcode" placeholder="Barcode" oninput="spoutBarcodeInput()">
+          </div>
         </div>
         <div class="form-grid-3">
-          <div class="form-group"><label>Item Name</label><input id="spout-item" placeholder="Auto-filled" readonly></div>
-          <div class="form-group"><label>Quantity (Pcs) <span class="required">*</span></label><input id="spout-qty" type="number" placeholder="0"></div>
-          <div class="form-group"><label>Price (per Pcs)</label><input id="spout-price" type="number" placeholder="0"></div>
+          <div class="form-group">
+            <label>Item Name</label>
+            <input id="spout-item" placeholder="Auto-filled" readonly>
+          </div>
+          <div class="form-group">
+            <label>Quantity (Pcs) <span class="required">*</span></label>
+            <input id="spout-qty" type="number" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Price (per Pcs)</label>
+            <input id="spout-price" type="number" placeholder="0">
+          </div>
         </div>
         <div id="spout-balance-info" class="balance-info"></div>
-        <button class="btn btn-primary" onclick="saveSPStockOut()"><i class="fas fa-save"></i> Save Stock Out</button>
+        <button class="btn btn-primary" onclick="saveSPStockOut()"><i class="fas fa-save"></i> Save</button>
       </div>
       <div class="card">
         <div class="card-header">
@@ -729,7 +841,7 @@
           <div class="card-actions">
             <input type="date" id="spout-from" style="width:150px;">
             <input type="date" id="spout-to" style="width:150px;">
-            <input id="spout-search" placeholder="Search store or item..." style="width:180px;">
+            <input id="spout-search" placeholder="Search..." style="width:180px;">
             <button class="btn btn-primary btn-sm" onclick="renderSPOutTable()"><i class="fas fa-search"></i></button>
             <button class="btn btn-outline btn-sm" onclick="clearSPOutFilter()"><i class="fas fa-times"></i></button>
             <button class="btn btn-print btn-sm" onclick="printSPOutTable()"><i class="fas fa-print"></i></button>
@@ -748,7 +860,7 @@
     <div class="page-section" id="page-sp-balance">
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><i class="fas fa-balance-scale"></i> SP Balance Sheet</div>
+          <div class="card-title"><i class="fas fa-balance-scale"></i> SP Balance</div>
           <button class="btn btn-print btn-sm" onclick="printSPBalance()"><i class="fas fa-print"></i> Print</button>
         </div>
         <div class="table-wrap">
@@ -763,7 +875,7 @@
   </div><!-- /main-content -->
 </div><!-- /app -->
 
-<!-- ===== INVOICE VIEW MODAL ===== -->
+<!-- ===== MODAL ===== -->
 <div class="modal-overlay" id="inv-modal">
   <div class="modal">
     <div class="modal-header">
