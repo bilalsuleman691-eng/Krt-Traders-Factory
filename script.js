@@ -92,7 +92,7 @@ const PRODUCTS = {
 // COMPLETE ITEM CATEGORIES WITH WEIGHTS (GRAMS)
 // ============================================================
 const ITEM_CATEGORIES = {
-  // ===== FOAM / ABRASSIVE (Weight in grams) =====
+  // ===== FOAM / ABRASSIVE =====
   'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5.9 },
   'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 11.8 },
   'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5 },
@@ -103,11 +103,8 @@ const ITEM_CATEGORIES = {
   'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
   'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 17.7 },
   'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 15 },
-  'QIA JIE SCOURING PAD QJ-0011': { category: 'Foam', hsCode: '6805.2', weight: 0 },
-  'SCRUB POWER SPONGE REGULAR 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
-  'SCRUB POWER NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
 
-  // ===== STEEL WOOL (Weight in grams) =====
+  // ===== STEEL WOOL =====
   'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 15 },
   'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 30 },
   'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 30 },
@@ -124,7 +121,7 @@ const ITEM_CATEGORIES = {
   'SCRUB POWER STEEL SCRUBBER JUMBO 2IN1': { category: 'Steel', hsCode: '7223', weight: 60 },
   'SCRUB POWER STEEL SCRUBBER REG': { category: 'Steel', hsCode: '7223', weight: 15 },
 
-  // ===== FANCY HANDLE (Weight = 0 — PCS basis) =====
+  // ===== FANCY HANDLE (Weight = 0) =====
   'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -136,17 +133,14 @@ const ITEM_CATEGORIES = {
   'FANCY NYLON': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'GOLA COLOR 6 PCS CHINA': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-  'GYF SCRUBBER VALUE PACK': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-  'GYF SCRUBBER STEEL HR72': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-  'GYF SCRUBBER STEEL HR76': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
 
-  // ===== MICRO FIBER (Weight = 0 — PCS basis) =====
+  // ===== MICRO FIBER (Weight = 0) =====
   'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.103', weight: 0 },
 
-  // ===== CLASSIC RAZOR (Weight = 0 — PCS basis) =====
+  // ===== CLASSIC RAZOR (Weight = 0) =====
   'CLASSIC RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 },
   'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 }
 };
@@ -547,7 +541,6 @@ function calcInvoice() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -571,7 +564,15 @@ function clearInvoiceForm() {
   calcInvoice();
   addInvoiceRow();
   editingInvTs = null;
+  document.getElementById('inv-cancel-btn').style.display = 'none';
   updateInvoiceNumber();
+}
+
+function cancelInvoiceEdit() {
+  editingInvTs = null;
+  document.getElementById('inv-cancel-btn').style.display = 'none';
+  clearInvoiceForm();
+  showNotification('Edit cancelled!', 'info');
 }
 
 // ============================================================
@@ -604,7 +605,6 @@ async function saveInvoiceNow() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -616,8 +616,16 @@ async function saveInvoiceNow() {
 
   let ts, invoiceNo, isEdit = false;
 
+  // CHECK: Agar editing mode mein hai toh UPDATE karein
   if (editingInvTs !== null) {
     ts = editingInvTs;
+    const existingInv = invoices.find(i => i.timestamp === ts);
+    if (existingInv) {
+      invoiceNo = existingInv.invoiceNo;
+    } else {
+      invoiceNo = getNextInvoiceNumber();
+    }
+    
     const row = {
       store_name: storeName, customer_name: customerName,
       ntn: customerNtn, strn: customerStrn, address: customerAddress,
@@ -630,25 +638,49 @@ async function saveInvoiceNow() {
       total_gst: totalGst.toFixed(2),
       final_total: final.toFixed(2)
     };
+    
     const ok = await sbUpdate('invoices', 'timestamp', ts, row);
     if (!ok) return;
+    
     const idx = invoices.findIndex(i => i.timestamp === ts);
     if (idx > -1) {
-      invoices[idx] = { ...invoices[idx], storeName, customerName, ntn: customerNtn, strn: customerStrn, address: customerAddress, date, items,
-        discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), afterDiscount: afterDisc.toFixed(2),
-        totalExcludingTax: totalExcludingTax.toFixed(2), totalGst: totalGst.toFixed(2), finalTotal: final.toFixed(2) };
+      invoices[idx] = { 
+        ...invoices[idx], 
+        storeName, customerName, 
+        ntn: customerNtn, strn: customerStrn, address: customerAddress, 
+        date, items,
+        discountPercent: disc, 
+        subTotal: sub.toFixed(2), 
+        discountAmt: discAmt.toFixed(2), 
+        afterDiscount: afterDisc.toFixed(2),
+        totalExcludingTax: totalExcludingTax.toFixed(2), 
+        totalGst: totalGst.toFixed(2), 
+        finalTotal: final.toFixed(2) 
+      };
     }
     isEdit = true;
+    editingInvTs = null;
+    document.getElementById('inv-cancel-btn').style.display = 'none';
     showNotification('Invoice updated successfully!');
+    
   } else {
+    // NEW INVOICE
     ts = Date.now();
     invoiceNo = getNextInvoiceNumber();
     const row = {
-      timestamp: ts, invoice_no: invoiceNo,
-      store_name: storeName, customer_name: customerName,
-      ntn: customerNtn, strn: customerStrn, address: customerAddress,
-      date, items, discount_percent: disc,
-      sub_total: sub.toFixed(2), discount_amt: discAmt.toFixed(2), after_discount: afterDisc.toFixed(2),
+      timestamp: ts, 
+      invoice_no: invoiceNo,
+      store_name: storeName, 
+      customer_name: customerName,
+      ntn: customerNtn, 
+      strn: customerStrn, 
+      address: customerAddress,
+      date, 
+      items, 
+      discount_percent: disc,
+      sub_total: sub.toFixed(2), 
+      discount_amt: discAmt.toFixed(2), 
+      after_discount: afterDisc.toFixed(2),
       total_excluding_tax: totalExcludingTax.toFixed(2),
       total_gst: totalGst.toFixed(2),
       final_total: final.toFixed(2)
@@ -656,17 +688,30 @@ async function saveInvoiceNow() {
     const ok = await sbInsert('invoices', row);
     if (!ok) return;
     invoices.push({
-      invoiceNo, timestamp: ts, storeName, customerName,
-      ntn: customerNtn, strn: customerStrn, address: customerAddress,
-      date, items,
-      discountPercent: disc, subTotal: sub.toFixed(2), discountAmt: discAmt.toFixed(2), afterDiscount: afterDisc.toFixed(2),
-      totalExcludingTax: totalExcludingTax.toFixed(2), totalGst: totalGst.toFixed(2), finalTotal: final.toFixed(2)
+      invoiceNo, 
+      timestamp: ts, 
+      storeName, 
+      customerName,
+      ntn: customerNtn, 
+      strn: customerStrn, 
+      address: customerAddress,
+      date, 
+      items,
+      discountPercent: disc, 
+      subTotal: sub.toFixed(2), 
+      discountAmt: discAmt.toFixed(2), 
+      afterDiscount: afterDisc.toFixed(2),
+      totalExcludingTax: totalExcludingTax.toFixed(2), 
+      totalGst: totalGst.toFixed(2), 
+      finalTotal: final.toFixed(2)
     });
     showNotification('Invoice saved!');
   }
 
+  // Generate Tax Invoice
   await generateAndSaveTaxInvoice(ts);
 
+  // SP Stock Out entries
   for (const item of items) {
     if (item.barcode && item.qty > 0) {
       const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -706,7 +751,7 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// TAX INVOICE — WITH KG CALCULATION
+// TAX INVOICE — WITH KG & SHEET CALCULATION
 // ============================================================
 async function generateAndSaveTaxInvoice(cashTimestamp) {
   const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
@@ -744,7 +789,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     if (catInfo.weight > 0) {
       categories[key].totalGram += (qty * catInfo.weight);
       categories[key].totalKg = categories[key].totalGram / 1000;
-      // Sheet calculation for Foam (1400 is sheet rate)
       if (key === 'Foam') {
         categories[key].totalSheet = categories[key].totalGram / 1400;
       }
@@ -1169,18 +1213,14 @@ function generateMonthlyReport() {
 
   const [year, monthNum] = month.split('-');
   
-  // Filter invoices by month (handling date object)
   const filteredInvoices = invoices.filter(inv => {
     if (!inv.date) return false;
-    // If date is string, convert to Date object
     let dateObj;
     if (typeof inv.date === 'string') {
-      // Try parsing YYYY-MM-DD
       const parts = inv.date.split('-');
       if (parts.length === 3 && parts[0].length === 4) {
         dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       } else {
-        // Try DD-MM-YYYY
         const parts2 = inv.date.split('-');
         if (parts2.length === 3 && parts2[2].length === 4) {
           dateObj = new Date(parseInt(parts2[2]), parseInt(parts2[1]) - 1, parseInt(parts2[0]));
@@ -1191,7 +1231,6 @@ function generateMonthlyReport() {
     } else {
       dateObj = new Date(inv.date);
     }
-    
     if (isNaN(dateObj.getTime())) return false;
     return dateObj.getFullYear() === parseInt(year) && 
            (dateObj.getMonth() + 1) === parseInt(monthNum);
@@ -1207,10 +1246,6 @@ function generateMonthlyReport() {
     `;
     return;
   }
-
-  // Rest of the function remains the same...
-  // (Copy the rest of generateMonthlyReport from previous code)
-
 
   let reportHTML = `
   <div class="monthly-report">
@@ -1429,7 +1464,7 @@ function printMonthlyReport() {
 }
 
 // ============================================================
-// TAX INVOICE HISTORY (SHORTENED - SAME AS BEFORE)
+// TAX INVOICE HISTORY (SHORTENED)
 // ============================================================
 function renderTaxHistory() {
   const from = document.getElementById('tax-hist-from').value;
@@ -1721,6 +1756,7 @@ function loadInvToForm(ts) {
   });
   calcInvoice();
   editingInvTs = ts;
+  document.getElementById('inv-cancel-btn').style.display = 'inline-flex';
   updateInvoiceNumber();
 }
 
@@ -1854,7 +1890,7 @@ function printStockEntry(type, srNo) {
 }
 
 // ============================================================
-// STOCK OUT
+// STOCK OUT (SHORTENED)
 // ============================================================
 function updateStockOutDropdown() {
   const select = document.getElementById('out-item-select');
