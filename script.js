@@ -92,7 +92,7 @@ const PRODUCTS = {
 // COMPLETE ITEM CATEGORIES WITH WEIGHTS (GRAMS)
 // ============================================================
 const ITEM_CATEGORIES = {
-  // ===== FOAM / ABRASSIVE =====
+  // FOAM / ABRASSIVE
   'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5.9 },
   'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 11.8 },
   'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5 },
@@ -104,7 +104,7 @@ const ITEM_CATEGORIES = {
   'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 17.7 },
   'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 15 },
 
-  // ===== STEEL WOOL =====
+  // STEEL WOOL
   'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 15 },
   'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 30 },
   'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 30 },
@@ -121,7 +121,7 @@ const ITEM_CATEGORIES = {
   'SCRUB POWER STEEL SCRUBBER JUMBO 2IN1': { category: 'Steel', hsCode: '7223', weight: 60 },
   'SCRUB POWER STEEL SCRUBBER REG': { category: 'Steel', hsCode: '7223', weight: 15 },
 
-  // ===== FANCY HANDLE (Weight = 0) =====
+  // FANCY HANDLE (Weight = 0)
   'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -134,13 +134,13 @@ const ITEM_CATEGORIES = {
   'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'GOLA COLOR 6 PCS CHINA': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
 
-  // ===== MICRO FIBER (Weight = 0) =====
+  // MICRO FIBER (Weight = 0)
   'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.103', weight: 0 },
 
-  // ===== CLASSIC RAZOR (Weight = 0) =====
+  // CLASSIC RAZOR (Weight = 0)
   'CLASSIC RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 },
   'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 }
 };
@@ -576,7 +576,7 @@ function cancelInvoiceEdit() {
 }
 
 // ============================================================
-// SAVE INVOICE — TAX INCLUSIVE (FIXED)
+// SAVE INVOICE — WITH DISCOUNT FOR TAX INVOICE
 // ============================================================
 async function saveInvoiceNow() {
   const customerName = document.getElementById('inv-customer').value.trim();
@@ -616,7 +616,6 @@ async function saveInvoiceNow() {
 
   let ts, invoiceNo, isEdit = false;
 
-  // CHECK: Agar editing mode mein hai toh UPDATE karein
   if (editingInvTs !== null) {
     ts = editingInvTs;
     const existingInv = invoices.find(i => i.timestamp === ts);
@@ -664,7 +663,6 @@ async function saveInvoiceNow() {
     showNotification('Invoice updated successfully!');
     
   } else {
-    // NEW INVOICE
     ts = Date.now();
     invoiceNo = getNextInvoiceNumber();
     const row = {
@@ -708,7 +706,7 @@ async function saveInvoiceNow() {
     showNotification('Invoice saved!');
   }
 
-  // Generate Tax Invoice
+  // Generate Tax Invoice with DISCOUNT applied
   await generateAndSaveTaxInvoice(ts);
 
   // SP Stock Out entries
@@ -751,7 +749,7 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// TAX INVOICE — WITH KG & SHEET CALCULATION
+// TAX INVOICE — WITH DISCOUNT APPLIED
 // ============================================================
 async function generateAndSaveTaxInvoice(cashTimestamp) {
   const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
@@ -759,6 +757,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
 
   const categories = {};
   let totalExcludingTax = 0;
+  const discountPercent = parseFloat(cashInv.discountPercent) || 0;
 
   cashInv.items.forEach(item => {
     const itemName = item.item || item.barcode;
@@ -767,13 +766,10 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     const qty = parseFloat(item.qty) || 0;
     const rate = parseFloat(item.rate) || 0;
     
-    // 👇 FIX: Calculate total AFTER discount (per item basis)
-    // Since discount is applied at invoice level, we need to calculate
-    // the discounted total for each item proportionally
+    // 👇 FIX: Apply discount per item
     const totalBeforeDiscount = qty * rate;
-    const discountPercent = parseFloat(cashInv.discountPercent) || 0;
-    const discountAmt = totalBeforeDiscount * (discountPercent / 100);
-    const totalAfterDiscount = totalBeforeDiscount - discountAmt;
+    const discAmt = totalBeforeDiscount * (discountPercent / 100);
+    const totalAfterDiscount = totalBeforeDiscount - discAmt;
 
     if (!categories[key]) {
       categories[key] = {
@@ -790,7 +786,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     }
 
     categories[key].totalPcs += qty;
-    categories[key].totalAmount += totalAfterDiscount;  // 👈 FIX: Use after discount
+    categories[key].totalAmount += totalAfterDiscount;
     categories[key].items.push(item);
     
     if (catInfo.weight > 0) {
@@ -801,11 +797,8 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
       }
     }
 
-    totalExcludingTax += totalAfterDiscount;  // 👈 FIX: Use after discount
+    totalExcludingTax += totalAfterDiscount;
   });
-
-  // Rest of the function remains the same...
-  // (Continue from here with existing code)
 
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
@@ -931,18 +924,9 @@ function renderTaxInvoiceDisplay(data) {
       </div>
 
       <div class="tax-info-grid">
-        <div class="tax-info-item">
-          <span class="label">Invoice #:</span>
-          <input type="text" id="tax-inv-no" value="${data.invoiceNo || ''}" class="tax-edit-input">
-        </div>
-        <div class="tax-info-item">
-          <span class="label">Date:</span>
-          <input type="date" id="tax-date" value="${data.date || ''}" class="tax-edit-input">
-        </div>
-        <div class="tax-info-item">
-          <span class="label">Time of Supply:</span>
-          <input type="time" id="tax-time" value="12:00" class="tax-edit-input">
-        </div>
+        <div class="tax-info-item"><span class="label">Invoice #:</span><input type="text" id="tax-inv-no" value="${data.invoiceNo || ''}" class="tax-edit-input"></div>
+        <div class="tax-info-item"><span class="label">Date:</span><input type="date" id="tax-date" value="${data.date || ''}" class="tax-edit-input"></div>
+        <div class="tax-info-item"><span class="label">Time of Supply:</span><input type="time" id="tax-time" value="12:00" class="tax-edit-input"></div>
       </div>
 
       <div class="tax-buyer-grid">
@@ -963,43 +947,17 @@ function renderTaxInvoiceDisplay(data) {
 
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th style="width:60px;">Qty (Pcs)</th>
-              <th style="min-width:140px;">Description</th>
-              <th style="width:100px;">HS Code</th>
-              <th style="width:70px;">Sheet</th>
-              <th style="width:70px;">KG</th>
-              <th style="width:90px;">Rate/Pcs</th>
-              <th style="width:110px;">Excl. Tax</th>
-              <th style="width:90px;">GST 18%</th>
-              <th style="width:110px;">Gross</th>
-              <th style="width:40px;"></th>
-            </tr>
-          </thead>
-          <tbody id="tax-table-body">
-            ${rows}
-          </tbody>
+          <thead><tr><th style="width:60px;">Qty (Pcs)</th><th style="min-width:140px;">Description</th><th style="width:100px;">HS Code</th><th style="width:70px;">Sheet</th><th style="width:70px;">KG</th><th style="width:90px;">Rate/Pcs</th><th style="width:110px;">Excl. Tax</th><th style="width:90px;">GST 18%</th><th style="width:110px;">Gross</th><th style="width:40px;"></th></tr></thead>
+          <tbody id="tax-table-body">${rows}</tbody>
         </table>
       </div>
 
-      <div class="tax-add-row">
-        <button class="btn btn-primary btn-sm" onclick="addTaxRow()"><i class="fas fa-plus"></i> Add Row</button>
-      </div>
+      <div class="tax-add-row"><button class="btn btn-primary btn-sm" onclick="addTaxRow()"><i class="fas fa-plus"></i> Add Row</button></div>
 
       <div class="tax-totals" id="tax-totals-display">
-        <div class="tax-total-item">
-          <span class="label">Total Excluding Tax:</span>
-          <span class="value" id="tax-total-excl">Rs. ${totalExcl.toFixed(2)}</span>
-        </div>
-        <div class="tax-total-item">
-          <span class="label">GST @ 18%:</span>
-          <span class="value gold" id="tax-total-gst">Rs. ${totalGst.toFixed(2)}</span>
-        </div>
-        <div class="tax-total-item">
-          <span class="label">💰 Gross Amount:</span>
-          <span class="value green" id="tax-total-gross">Rs. ${totalGross.toFixed(2)}</span>
-        </div>
+        <div class="tax-total-item"><span class="label">Total Excluding Tax:</span><span class="value" id="tax-total-excl">Rs. ${totalExcl.toFixed(2)}</span></div>
+        <div class="tax-total-item"><span class="label">GST @ 18%:</span><span class="value gold" id="tax-total-gst">Rs. ${totalGst.toFixed(2)}</span></div>
+        <div class="tax-total-item"><span class="label">💰 Gross Amount:</span><span class="value green" id="tax-total-gross">Rs. ${totalGross.toFixed(2)}</span></div>
       </div>
 
       <div class="tax-actions">
@@ -1180,39 +1138,34 @@ function printTaxInvoice() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>Tax Invoice</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .tax-invoice-display { max-width: 900px; margin: 0 auto; }
-    .header { text-align: center; border-bottom: 2px solid #22c99a; padding-bottom: 12px; margin-bottom: 16px; }
-    .header h2 { font-size: 22px; color: #22c99a; }
-    .tax-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
-    .tax-buyer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
-    td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-    .tax-totals { display: flex; justify-content: flex-end; gap: 30px; flex-wrap: wrap; padding: 12px 0; border-top: 2px solid #ddd; margin-top: 10px; }
-    .tax-total-item { text-align: right; }
-    .tax-total-item .label { font-size: 12px; color: #666; display: block; }
-    .tax-total-item .value { font-size: 18px; font-weight: 800; }
-    .green { color: #22c99a; }
-    .gold { color: #fbbf24; }
-    .tax-actions, .tax-add-row { display: none; }
-    input { border: none !important; background: transparent !important; color: #000 !important; }
-    @media print { th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="tax-invoice-display">${content}</div>
-  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+<head><title>Tax Invoice</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
+.tax-invoice-display { max-width: 900px; margin: 0 auto; }
+.header { text-align: center; border-bottom: 2px solid #22c99a; padding-bottom: 12px; margin-bottom: 16px; }
+.header h2 { font-size: 22px; color: #22c99a; }
+.tax-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
+.tax-buyer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
+td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+.tax-totals { display: flex; justify-content: flex-end; gap: 30px; flex-wrap: wrap; padding: 12px 0; border-top: 2px solid #ddd; margin-top: 10px; }
+.tax-total-item { text-align: right; }
+.tax-total-item .label { font-size: 12px; color: #666; display: block; }
+.tax-total-item .value { font-size: 18px; font-weight: 800; }
+.green { color: #22c99a; }
+.gold { color: #fbbf24; }
+.tax-actions, .tax-add-row { display: none; }
+input { border: none !important; background: transparent !important; color: #000 !important; }
+@media print { th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
+<body><div class="tax-invoice-display">${content}</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
 }
 
 // ============================================================
-// MONTHLY INVOICE LIST — WITH SHEET, KG, PCS
+// MONTHLY INVOICE LIST — WITH DISCOUNT APPLIED
 // ============================================================
 function generateMonthlyReport() {
   const month = document.getElementById('monthly-month').value;
@@ -1242,8 +1195,7 @@ function generateMonthlyReport() {
       dateObj = new Date(inv.date);
     }
     if (isNaN(dateObj.getTime())) return false;
-    return dateObj.getFullYear() === parseInt(year) && 
-           (dateObj.getMonth() + 1) === parseInt(monthNum);
+    return dateObj.getFullYear() === parseInt(year) && (dateObj.getMonth() + 1) === parseInt(monthNum);
   });
 
   if (filteredInvoices.length === 0) {
@@ -1278,13 +1230,15 @@ function generateMonthlyReport() {
         ntn: inv.ntn,
         strn: inv.strn,
         date: inv.date,
-        items: inv.items || []
+        items: inv.items || [],
+        discountPercent: parseFloat(inv.discountPercent) || 0
       };
     }
   });
 
   Object.values(groupedInvoices).forEach(inv => {
     const catData = {};
+    const discountPercent = inv.discountPercent || 0;
     
     inv.items.forEach(item => {
       const itemName = item.item || item.barcode;
@@ -1292,7 +1246,11 @@ function generateMonthlyReport() {
       const category = catInfo.category;
       const qty = parseFloat(item.qty) || 0;
       const rate = parseFloat(item.rate) || 0;
-      const total = qty * rate;
+      
+      // 👇 FIX: Apply discount
+      const totalBeforeDiscount = qty * rate;
+      const totalAfterDiscount = totalBeforeDiscount * (1 - discountPercent / 100);
+      
       const weight = catInfo.weight || 0;
 
       if (!catData[category]) {
@@ -1311,7 +1269,7 @@ function generateMonthlyReport() {
       }
 
       catData[category].totalPcs += qty;
-      catData[category].totalAmount += total;
+      catData[category].totalAmount += totalAfterDiscount;
 
       if (category === 'Foam' && weight > 0) {
         catData[category].totalSheet += (qty * weight) / 1400;
@@ -1375,33 +1333,18 @@ function generateMonthlyReport() {
     reportHTML += `
       <div class="invoice-report-card">
         <div class="invoice-report-header">
-          <div class="invoice-report-title">
-            <strong>Invoice #: ${inv.invoiceNo}</strong>
-          </div>
+          <div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
           <div class="invoice-report-details">
             <span><strong>Store:</strong> ${inv.storeName || inv.customerName || '-'}</span>
             <span><strong>NTN:</strong> ${inv.ntn || '-'}</span>
             <span><strong>STRN:</strong> ${inv.strn || '-'}</span>
             <span><strong>Date:</strong> ${inv.date || '-'}</span>
+            <span><strong>Discount:</strong> ${discountPercent}%</span>
           </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th style="min-width:150px;">Category</th>
-                <th style="width:60px;">PCS</th>
-                <th style="width:70px;">Sheet</th>
-                <th style="width:70px;">KG</th>
-                <th style="width:90px;">Rate/PCS</th>
-                <th style="width:90px;">Rate/Sheet</th>
-                <th style="width:90px;">Rate/KG</th>
-                <th style="width:110px;">Excl. Tax</th>
-                <th style="width:90px;">GST 18%</th>
-                <th style="width:110px;">Gross</th>
-                <th style="width:100px;">HS Code</th>
-              </tr>
-            </thead>
+            <thead><tr><th style="min-width:150px;">Category</th><th style="width:60px;">PCS</th><th style="width:70px;">Sheet</th><th style="width:70px;">KG</th><th style="width:90px;">Rate/PCS</th><th style="width:90px;">Rate/Sheet</th><th style="width:90px;">Rate/KG</th><th style="width:110px;">Excl. Tax</th><th style="width:90px;">GST 18%</th><th style="width:110px;">Gross</th><th style="width:100px;">HS Code</th></tr></thead>
             <tbody>
               ${tableRows}
               <tr style="font-weight:bold;border-top:2px solid var(--primary);">
@@ -1444,33 +1387,28 @@ function printMonthlyReport() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>Monthly Invoice List</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .monthly-report { max-width: 1300px; margin: 0 auto; }
-    .report-header { text-align: center; padding-bottom: 16px; border-bottom: 3px solid #22c99a; margin-bottom: 20px; }
-    .report-header h2 { font-size: 24px; color: #22c99a; }
-    .report-header h3 { font-size: 18px; margin-top: 4px; }
-    .report-header p { font-size: 12px; color: #666; margin-top: 2px; }
-    .invoice-report-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
-    .invoice-report-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-    .invoice-report-title { font-size: 14px; font-weight: 700; }
-    .invoice-report-details { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
-    .invoice-report-details span { background: #fff; padding: 2px 10px; border-radius: 4px; border: 1px solid #ddd; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; }
-    td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-    .report-footer { text-align: center; font-size: 11px; color: #999; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="monthly-report">${content}</div>
-  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+<head><title>Monthly Invoice List</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
+.monthly-report { max-width: 1300px; margin: 0 auto; }
+.report-header { text-align: center; padding-bottom: 16px; border-bottom: 3px solid #22c99a; margin-bottom: 20px; }
+.report-header h2 { font-size: 24px; color: #22c99a; }
+.report-header h3 { font-size: 18px; margin-top: 4px; }
+.report-header p { font-size: 12px; color: #666; margin-top: 2px; }
+.invoice-report-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+.invoice-report-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.invoice-report-title { font-size: 14px; font-weight: 700; }
+.invoice-report-details { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
+.invoice-report-details span { background: #fff; padding: 2px 10px; border-radius: 4px; border: 1px solid #ddd; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; }
+td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+.report-footer { text-align: center; font-size: 11px; color: #999; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px; }
+@media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
+<body><div class="monthly-report">${content}</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
 }
 
 // ============================================================
@@ -1633,31 +1571,29 @@ function printInvoiceByTs(ts) {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>KRT TRADERS - ${inv.invoiceNo}</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .invoice-wrapper { max-width: 780px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
-    .company h1 { font-size: 24px; color: #22c99a; }
-    .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; }
-    .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
-    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
-    .inv-number .num { font-size: 20px; font-weight: 800; color: #22c99a; }
-    .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; }
-    .info-table td { border: none; padding: 5px 10px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 80px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; text-transform: uppercase; }
-    td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
-    .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
-    .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
-    .totals .final { font-size: 16px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
-    .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
+<head><title>KRT TRADERS - ${inv.invoiceNo}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
+.invoice-wrapper { max-width: 780px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
+.company h1 { font-size: 24px; color: #22c99a; }
+.company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; }
+.company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
+.inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
+.inv-number .num { font-size: 20px; font-weight: 800; color: #22c99a; }
+.info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; }
+.info-table td { border: none; padding: 5px 10px; font-size: 11px; }
+.info-table .label { font-weight: 600; color: #666; width: 80px; }
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; text-transform: uppercase; }
+td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
+.totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
+.totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+.totals .final { font-size: 16px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
+.footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
+@media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
 <body>
 <div class="invoice-wrapper">
   <div class="header">
@@ -1677,34 +1613,25 @@ function printInvoiceByTs(ts) {
   </div>
 
   <table class="info-table">
-    <tr>
-      <td class="label">Customer:</td>
-      <td><strong>${inv.customerName || '-'}</strong></td>
-      <td class="label">Date:</td>
-      <td><strong>${inv.date}</strong></td>
-    </tr>
+    <tr><td class="label">Customer:</td><td><strong>${inv.customerName || '-'}</strong></td><td class="label">Date:</td><td><strong>${inv.date}</strong></td></tr>
     ${inv.storeName ? `<tr><td class="label">Store:</td><td colspan="3">${inv.storeName}</td></tr>` : ''}
     ${inv.ntn ? `<tr><td class="label">NTN:</td><td colspan="3">${inv.ntn}</td></tr>` : ''}
     ${inv.strn ? `<tr><td class="label">STRN:</td><td colspan="3">${inv.strn}</td></tr>` : ''}
     ${inv.address ? `<tr><td class="label">Address:</td><td colspan="3">${inv.address}</td></tr>` : ''}
   </table>
 
-  <table>
-    <thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
+  <tbody>${rows}</tbody></table>
 
   <div class="totals">
     <div class="row"><span>Sub Total:</span><span>Rs. ${sub.toFixed(2)}</span></div>
     <div class="row"><span>Discount (${disc}%):</span><span style="color:#e74c3c;">- Rs. ${discAmt.toFixed(2)}</span></div>
     <div class="row final"><span>FINAL TOTAL:</span><span>Rs. ${final.toFixed(2)}</span></div>
   </div>
-
   <div class="footer">Thank you for your business! — Goods once sold cannot be returned.</div>
 </div>
 <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+</body></html>`);
 }
 
 function viewInvModal(ts) {
@@ -2086,28 +2013,23 @@ function printStockBalance() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>Stock Balance Sheet</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
-    h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
-    td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
-    .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
+<head><title>Stock Balance Sheet</title>
+<style>
+body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
+h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+.footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+@media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
 <body>
   <h2>KRT TRADERS — Stock Balance Sheet</h2>
-  <table>
-    <thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody>
-  </table>
+  <table><thead><tr><th>Barcode</th><th>Item Name</th><th>Stock In</th><th>Stock Out</th><th>Balance</th></tr></thead>
+  <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody></table>
   <div class="footer">Generated on ${new Date().toLocaleDateString('en-PK')}</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+</body></html>`);
 }
 
 // ============================================================
@@ -2684,26 +2606,21 @@ function printSPOutTable() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>SP Stock Out Report</title>
-  <style>
-    body { font-family: Arial; font-size: 12px; margin: 20px; }
-    h2 { text-align: center; color: #22c99a; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
-    th { background: #22c99a; color: #fff; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
+<head><title>SP Stock Out Report</title>
+<style>
+body { font-family: Arial; font-size: 12px; margin: 20px; }
+h2 { text-align: center; color: #22c99a; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
+th { background: #22c99a; color: #fff; }
+@media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
 <body>
   <h2>KRT TRADERS — SP Stock Out Report</h2>
-  <table>
-    <thead><tr><th>#</th><th>Date</th><th>Store</th><th>Item</th><th>Barcode</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <table><thead><tr><th>#</th><th>Date</th><th>Store</th><th>Item</th><th>Barcode</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+  <tbody>${rows}</tbody></table>
   <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+</body></html>`);
 }
 
 // ============================================================
@@ -2824,26 +2741,21 @@ function printSPBalance() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html>
 <html>
-<head>
-  <title>SP Balance Sheet</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
-    h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
-    td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
-    .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
+<head><title>SP Balance Sheet</title>
+<style>
+body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; background: #fff; }
+h2 { text-align: center; color: #22c99a; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+.footer { text-align: center; margin-top: 20px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+@media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head>
 <body>
   <h2>KRT TRADERS — Store Prediction Balance Sheet</h2>
-  <table>
-    <thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody>
-  </table>
+  <table><thead><tr><th>Barcode</th><th>Item Name</th><th>Total In</th><th>Total Out</th><th>Balance</th><th>Balance (Ctn+Pcs)</th></tr></thead>
+  <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;">No stock found</td></tr>'}</tbody></table>
   <div class="footer">Generated on ${new Date().toLocaleDateString('en-PK')}</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body>
-</html>`);
+</body></html>`);
 }
