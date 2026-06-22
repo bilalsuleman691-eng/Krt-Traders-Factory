@@ -306,6 +306,7 @@ body {
 .card-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .card-actions input[type="text"],
 .card-actions input[type="date"],
+.card-actions input[type="month"],
 .card-actions select {
   padding: 6px 10px;
   border: 1.5px solid var(--border);
@@ -771,6 +772,38 @@ tr:hover td { background: #1a2030; }
 .tax-invoice-display .totals-row .item .value.gold { color: var(--warn); }
 
 /* ============================================================
+   MONTHLY REPORT
+   ============================================================ */
+.monthly-report { max-width: 1200px; margin: 0 auto; }
+.report-header { text-align: center; padding-bottom: 16px; border-bottom: 3px solid var(--primary); margin-bottom: 20px; }
+.report-header h2 { font-size: 24px; color: var(--primary); }
+.report-header h3 { font-size: 18px; margin-top: 4px; }
+.report-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.invoice-report-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.invoice-report-header {
+  background: var(--th-bg);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.invoice-report-title { font-size: 14px; font-weight: 700; }
+.invoice-report-details { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
+.invoice-report-details span { background: var(--white); padding: 2px 10px; border-radius: 4px; border: 1px solid var(--border); }
+
+.report-footer { text-align: center; font-size: 11px; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--border); margin-top: 12px; }
+
+/* ============================================================
    STOCK ITEMS
    ============================================================ */
 .stock-item-cell { display: flex; flex-direction: column; }
@@ -860,6 +893,7 @@ tr:hover td { background: #1a2030; }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .invoice-details-grid { grid-template-columns: 1fr; }
   .tax-invoice-display .totals-row { justify-content: flex-start; gap: 16px; }
+  .invoice-report-header { flex-direction: column; gap: 6px; }
 }
 
 @media (max-width: 768px) {
@@ -888,6 +922,7 @@ tr:hover td { background: #1a2030; }
   .topbar-right .logout-btn { padding: 6px 12px; font-size: 12px; }
   .stat-val { font-size: 18px; }
   .tax-invoice-display .info-row { flex-direction: column; gap: 2px; }
+  .invoice-report-details { flex-direction: column; gap: 4px; }
 }
 
 @media (max-width: 480px) {
@@ -910,8 +945,8 @@ tr:hover td { background: #1a2030; }
 
   #main-content { margin-left: 0 !important; }
   .page-section { display: none !important; }
+  #page-monthly-list { display: block !important; }
   #page-tax-invoice { display: block !important; }
-  #page-tax-invoice .no-print { display: none !important; }
 
   body { background: #fff; color: #000; }
   .card { border: 1px solid #ddd; box-shadow: none; background: #fff; }
@@ -929,8 +964,11 @@ tr:hover td { background: #1a2030; }
   .person-name { color: #000 !important; }
   .mini-stat { background: #fff !important; border-color: #ddd !important; }
   .mini-stat-val { color: #000 !important; }
-  #gulzar-total-credit, #kashif-total-credit { color: #2c6b45 !important; }
-  #gulzar-total-debit, #kashif-total-debit { color: #c73e3e !important; }
+  .invoice-report-header { background: #f5f5f5 !important; }
+  .invoice-report-details span { background: #fff !important; border-color: #ddd !important; }
+  .report-header { border-bottom-color: #000 !important; }
+  .report-header h2 { color: #000 !important; }
+  .monthly-report { max-width: 100% !important; }
 }
 
 /* ============================================================
