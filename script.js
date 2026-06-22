@@ -530,7 +530,7 @@ function onInvBarcode(el) {
 }
 
 // ============================================================
-// CALC INVOICE — WITH TAX INCLUSIVE LOGIC
+// CALC INVOICE — TAX INCLUSIVE (FIXED)
 // ============================================================
 function calcInvoice() {
   let sub = 0;
@@ -546,7 +546,7 @@ function calcInvoice() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // 👇 NEW: Calculate Excluding Tax & GST (Rate is Inclusive)
+  // 👇 FIX: Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -574,7 +574,7 @@ function clearInvoiceForm() {
 }
 
 // ============================================================
-// SAVE INVOICE — WITH TAX INCLUSIVE LOGIC
+// SAVE INVOICE — TAX INCLUSIVE (FIXED)
 // ============================================================
 async function saveInvoiceNow() {
   const customerName = document.getElementById('inv-customer').value.trim();
@@ -603,7 +603,7 @@ async function saveInvoiceNow() {
   const discAmt = sub * disc / 100;
   const afterDisc = sub - discAmt;
   
-  // 👇 NEW: Calculate Excluding Tax & GST (Rate is Inclusive)
+  // 👇 FIX: Rate is Inclusive, so divide by 1.18
   const totalInclusive = afterDisc;
   const totalExcludingTax = totalInclusive / 1.18;
   const totalGst = totalExcludingTax * 0.18;
@@ -811,7 +811,7 @@ function generateTaxInvoiceFromCash() {
 }
 
 // ============================================================
-// TAX INVOICE — RENDER EDITABLE TABLE WITH KG
+// TAX INVOICE — RENDER EDITABLE TABLE
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
   const container = document.getElementById('tax-invoice-container');
