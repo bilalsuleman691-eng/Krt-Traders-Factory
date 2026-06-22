@@ -57,11 +57,11 @@ async function sbDelete(table, idCol, idVal) {
 }
 
 // ============================================================
-// PRODUCT DATABASE
+// PRODUCT DATABASE (WITH BARCODES)
 // ============================================================
 const PRODUCTS = {
   "6957404902857": "SPONGE SCRUB 2 IN 1",
-  "8512532310967": "JUMBO SPIRAL 1 PCS 50 GRAM",
+  "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
   "6971432358486": "FANCY HANDLE 2 IN 1",
   "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
   "9031582648886": "FANCY HANDLE 3 IN 1",
@@ -76,8 +76,8 @@ const PRODUCTS = {
   "2215414451340": "LARGE LAMINATE 1 PCS",
   "8512532310295": "REGULAR PAD 1 PCS",
   "8500532310186": "LARGE PAD 1 PCS",
-  "6267207001641": "SMALL SPIRAL 2 IN 1",
-  "6267207001665": "JUMBO 2 IN 1",
+  "6267207001641": "REGULAR SPIRAL 2 IN 1",
+  "6267207001665": "JUMBO SPIRAL 2 IN 1",
   "230062603912": "REGULAR SPIRAL 1 PCS",
   "6267207001658": "JUMBO SPIRAL 1 PCS",
   "4684000000190": "JUMBO SPIRAL 4 IN 1",
@@ -89,9 +89,10 @@ const PRODUCTS = {
 };
 
 // ============================================================
-// ITEM CATEGORIES FOR TAX INVOICE
+// COMPLETE ITEM CATEGORIES WITH WEIGHTS (GRAMS)
 // ============================================================
 const ITEM_CATEGORIES = {
+  // ===== FOAM / ABRASSIVE (Weight in grams) =====
   'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5.9 },
   'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 11.8 },
   'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2', weight: 5 },
@@ -102,21 +103,51 @@ const ITEM_CATEGORIES = {
   'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
   'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 17.7 },
   'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 15 },
+  'QIA JIE SCOURING PAD QJ-0011': { category: 'Foam', hsCode: '6805.2', weight: 0 },
+  'SCRUB POWER SPONGE REGULAR 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
+  'SCRUB POWER NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2', weight: 0 },
+
+  // ===== STEEL WOOL (Weight in grams) =====
   'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 15 },
-  'SMALL SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 30 },
+  'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 30 },
   'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223', weight: 30 },
+  'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223', weight: 45 },
   'JUMBO SPIRAL 1 PCS 50 GRAM': { category: 'Steel', hsCode: '7223', weight: 50 },
-  'JUMBO 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 60 },
+  'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 60 },
   'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223', weight: 104 },
+  '4 IN 1 PATA JALI': { category: 'Steel', hsCode: '7223', weight: 104 },
   'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 10 },
+  'STEEL SPIRAL JUMBO 50 GRAM': { category: 'Steel', hsCode: '7223', weight: 50 },
+  '12 IN 1 PATA JALI': { category: 'Steel', hsCode: '7223', weight: 312 },
+  'SCRUB POWER STEEL SCRUBBERS 4PCS': { category: 'Steel', hsCode: '7223', weight: 0 },
+  'SCRUB POWER STEEL SCRUBBER JUMBO': { category: 'Steel', hsCode: '7223', weight: 30 },
+  'SCRUB POWER STEEL SCRUBBER JUMBO 2IN1': { category: 'Steel', hsCode: '7223', weight: 60 },
+  'SCRUB POWER STEEL SCRUBBER REG': { category: 'Steel', hsCode: '7223', weight: 15 },
+
+  // ===== FANCY HANDLE (Weight = 0 — PCS basis) =====
   'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY HANDLE 3 IN 1 SILVER COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'SILVER FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'AQUA PUFF BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'FANCY NYLON': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
   'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'GOLA COLOR 6 PCS CHINA': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'GYF SCRUBBER VALUE PACK': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'GYF SCRUBBER STEEL HR72': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+  'GYF SCRUBBER STEEL HR76': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+
+  // ===== MICRO FIBER (Weight = 0 — PCS basis) =====
+  'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.103', weight: 0 },
   'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+  'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+  'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+
+  // ===== CLASSIC RAZOR (Weight = 0 — PCS basis) =====
+  'CLASSIC RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 },
   'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 }
 };
 
@@ -642,14 +673,14 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// TAX INVOICE — EDITABLE TABLE (NEW)
+// TAX INVOICE — WITH KG CALCULATION
 // ============================================================
 
 async function generateAndSaveTaxInvoice(cashTimestamp) {
   const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
   if (!cashInv) return;
 
-  // Group items by category
+  // Group items by category with KG calculation
   const categories = {};
   let totalExcludingTax = 0;
 
@@ -666,6 +697,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         category: key,
         hsCode: catInfo.hsCode,
         totalPcs: 0,
+        totalGram: 0,
         totalKg: 0,
         totalAmount: 0,
         weight: catInfo.weight || 0,
@@ -676,13 +708,17 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
     categories[key].totalPcs += qty;
     categories[key].totalAmount += total;
     categories[key].items.push(item);
+    
+    // 👇 KG CALCULATION
     if (catInfo.weight > 0) {
-      categories[key].totalKg += (qty * catInfo.weight) / 1000;
+      categories[key].totalGram += (qty * catInfo.weight);
+      categories[key].totalKg = categories[key].totalGram / 1000;
     }
 
     totalExcludingTax += total;
   });
 
+  // Calculate Rate Per KG for each category
   const categoryList = Object.values(categories).map(cat => {
     const ratePerPcs = cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0;
     const ratePerKg = cat.totalKg > 0 ? cat.totalAmount / cat.totalKg : 0;
@@ -748,7 +784,7 @@ function generateTaxInvoiceFromCash() {
 }
 
 // ============================================================
-// TAX INVOICE — RENDER EDITABLE TABLE
+// TAX INVOICE — RENDER EDITABLE TABLE WITH KG
 // ============================================================
 
 function renderTaxInvoiceDisplay(data) {
@@ -786,8 +822,8 @@ function renderTaxInvoiceDisplay(data) {
         <td><input type="number" class="tax-qty" value="${qty}" min="0" step="1" onchange="updateTaxRow(${index})"></td>
         <td><input type="text" class="tax-category" value="${catName}" onchange="updateTaxRow(${index})"></td>
         <td><input type="text" class="tax-hs" value="${hsCode}" onchange="updateTaxRow(${index})"></td>
-        <td><input type="number" class="tax-kg" value="${kg}" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
-        <td><input type="number" class="tax-rate" value="${rate}" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
+        <td><input type="number" class="tax-kg" value="${kg.toFixed(3)}" min="0" step="0.001" onchange="updateTaxRow(${index})"></td>
+        <td><input type="number" class="tax-rate" value="${rate.toFixed(2)}" min="0" step="0.01" onchange="updateTaxRow(${index})"></td>
         <td class="tax-amount">Rs. ${amount.toFixed(2)}</td>
         <td class="tax-gst">Rs. ${gst.toFixed(2)}</td>
         <td class="tax-gross">Rs. ${gross.toFixed(2)}</td>
@@ -883,7 +919,6 @@ function renderTaxInvoiceDisplay(data) {
     </div>
   `;
 
-  // Store reference to current data
   window._taxData = data;
   window._taxCategories = categories;
   window._taxTimestamp = data.timestamp;
@@ -899,6 +934,7 @@ function updateTaxRow(index) {
 
   const qty = parseFloat(row.querySelector('.tax-qty').value) || 0;
   const rate = parseFloat(row.querySelector('.tax-rate').value) || 0;
+  const kg = parseFloat(row.querySelector('.tax-kg').value) || 0;
   const amount = qty * rate;
   const gst = amount * 0.18;
   const gross = amount + gst;
@@ -1007,7 +1043,6 @@ async function saveTaxInvoice() {
     totalGross: totalGross.toFixed(2)
   };
 
-  // Save to Supabase
   const row = {
     timestamp: taxData.timestamp,
     invoice_no: taxData.invoiceNo,
@@ -1027,7 +1062,6 @@ async function saveTaxInvoice() {
   const ok = await sbUpsert('tax_invoices', row, 'timestamp');
   if (!ok) return;
 
-  // Update local state
   const idx = taxInvoices.findIndex(i => i.timestamp === taxData.timestamp);
   if (idx > -1) {
     taxInvoices[idx] = taxData;
@@ -1174,7 +1208,7 @@ async function deleteTaxInvoice(ts) {
 }
 
 // ============================================================
-// CASH INVOICE HISTORY
+// CASH INVOICE HISTORY (SHORTENED - SAME AS BEFORE)
 // ============================================================
 function renderInvoiceHistory() {
   const from = document.getElementById('inv-hist-from').value;
@@ -1400,7 +1434,7 @@ async function deleteInvoice(ts) {
 }
 
 // ============================================================
-// STOCK IN
+// STOCK IN (SHORTENED - SAME AS BEFORE)
 // ============================================================
 function inBarcodeInput() {
   const bc = document.getElementById('in-barcode').value.trim();
@@ -1722,7 +1756,7 @@ function printStockBalance() {
 }
 
 // ============================================================
-// LEDGER (GULZAR / KASHIF)
+// LEDGER (GULZAR / KASHIF) — SHORTENED
 // ============================================================
 function getLedgerData(person) { return person === 'gulzar' ? gulzarData : kashifData; }
 function setLedgerData(person, data) { if (person === 'gulzar') gulzarData = data; else kashifData = data; }
