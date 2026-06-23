@@ -131,64 +131,6 @@ function getItemCategory(itemName) {
 }
 
 // ============================================================
-// GREEN SHEET CALCULATION
-// ============================================================
-function calculateGreenSheet(items) {
-    let totalPcs = 0;
-    let totalWeight = 0;
-    let totalAmount = 0;
-    const foamItems = [];
-
-    items.forEach(item => {
-        const itemName = item.item || item.barcode;
-        const catInfo = getItemCategory(itemName);
-
-        if (catInfo.category === 'Foam' && catInfo.weight > 0) {
-            const qty = parseFloat(item.qty) || 0;
-            const rate = parseFloat(item.rate) || 0;
-            const weight = catInfo.weight;
-            const amount = qty * rate;
-            const itemWeight = qty * weight;
-
-            totalPcs += qty;
-            totalWeight += itemWeight;
-            totalAmount += amount;
-
-            const pcsPerSheet = 1400 / weight;
-
-            foamItems.push({
-                name: itemName,
-                qty: qty,
-                rate: rate,
-                weight: weight,
-                totalWeight: itemWeight,
-                amount: amount,
-                sheets: itemWeight / 1400,
-                pcsPerSheet: pcsPerSheet,
-                pcsFromSheet: qty // Actual pcs entered
-            });
-        }
-    });
-
-    const totalSheets = totalWeight / 1400;
-    const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
-    const avgRatePerSheet = totalSheets > 0 ? totalAmount / totalSheets : 0;
-    const avgPcsPerSheet = totalSheets > 0 ? totalPcs / totalSheets : 0;
-
-    return {
-        category: 'Foam',
-        totalPcs: totalPcs,
-        totalWeight: totalWeight,
-        totalSheets: totalSheets,
-        totalAmount: totalAmount,
-        avgRatePerPcs: avgRatePerPcs,
-        avgRatePerSheet: avgRatePerSheet,
-        avgPcsPerSheet: avgPcsPerSheet,
-        items: foamItems
-    };
-}
-
-// ============================================================
 // STATE
 // ============================================================
 let storeRates = [];
@@ -227,8 +169,8 @@ const map = {
     taxInvoice: r => ({
         timestamp: r.timestamp, invoiceNo: r.invoice_no, storeName: r.store_name, customerName: r.customer_name,
         ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, categories: r.categories || [],
-        totalExcludingTax: r.total_excluding_tax, totalGst: r.total_gst, totalGross: r.total_gross,
-        cashInvoiceTimestamp: r.cash_invoice_timestamp, discountPercent: r.discount_percent || 0
+        totalGross: r.total_gross, discountPercent: r.discount_percent || 0,
+        cashInvoiceTimestamp: r.cash_invoice_timestamp
     }),
     stockIn: r => ({ srNo: r.sr_no, date: r.date, vendor: r.vendor, itemName: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
     stockOut: r => ({ srNo: r.sr_no, date: r.date, customer: r.customer, itemName: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }),
@@ -238,20 +180,37 @@ const map = {
 };
 
 // ============================================================
-// LOGIN / LOGOUT
+// LOGIN / LOGOUT - FIXED
 // ============================================================
 function login() {
-    if (document.getElementById('pass').value === '123') {
+    var pass = document.getElementById('pass').value;
+    if (pass === '123') {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app').style.display = 'flex';
         initApp();
     } else {
         document.getElementById('login-error').style.display = 'block';
+        setTimeout(function() {
+            document.getElementById('login-error').style.display = 'none';
+        }, 3000);
     }
 }
 
-function logout() { location.reload(); }
-document.getElementById('pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+function logout() {
+    location.reload();
+}
+
+// Enter key for login
+document.addEventListener('DOMContentLoaded', function() {
+    var passInput = document.getElementById('pass');
+    if (passInput) {
+        passInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    }
+});
 
 // ============================================================
 // INIT
@@ -265,6 +224,7 @@ async function initApp() {
     updateInvoiceNumber();
     showPage('dashboard', 'Dashboard');
     updateStockOutDropdown();
+    addInvoiceRow();
 }
 
 async function loadAllData() {
@@ -319,6 +279,7 @@ function getNextInvoiceNumber() {
     if (manualInvoiceNumber) {
         const no = manualInvoiceNumber;
         manualInvoiceNumber = '';
+        document.getElementById('inv-number').value = '';
         return no;
     }
     invoiceCounter++;
@@ -678,7 +639,6 @@ async function saveInvoiceNow() {
 
     let ts, invoiceNo, isEdit = false;
 
-    // Manual invoice number
     const manualNo = document.getElementById('inv-number')?.value?.trim() || '';
 
     if (editingInvTs !== null) {
@@ -771,7 +731,6 @@ async function saveInvoiceNow() {
 
     await generateAndSaveTaxInvoice(ts);
 
-    // SP Stock Out
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -828,7 +787,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         const qty = parseFloat(item.qty) || 0;
         const rate = parseFloat(item.rate) || 0;
 
-        // Apply discount
         const totalBeforeDiscount = qty * rate;
         const discAmt = totalBeforeDiscount * (discountPercent / 100);
         const totalAfterDiscount = totalBeforeDiscount - discAmt;
@@ -853,7 +811,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         if (catInfo.weight > 0) {
             categories[key].totalGram += (qty * catInfo.weight);
             categories[key].totalKg = categories[key].totalGram / 1000;
-            // Green Sheet: 1 sheet = 1400 grams
             categories[key].totalSheet = categories[key].totalGram / 1400;
         }
 
@@ -866,7 +823,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         const cat = categories[key];
 
         if (key === 'Foam') {
-            // Use Green Sheet calculation for Foam
             const foamItems = [];
             let foamTotalPcs = 0;
             let foamTotalAmount = 0;
@@ -921,7 +877,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
             });
 
         } else {
-            // Other categories
             const totalPcs = cat.totalPcs;
             const totalAmount = cat.totalGross;
             const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
@@ -1013,7 +968,6 @@ function renderTaxInvoiceDisplay(data) {
         const rate = cat.avgRatePerPcs || 0;
         const amount = cat.totalGross || 0;
 
-        // Green Sheet details (hidden in print)
         let greenSheetInfo = '';
         if (cat.category === 'Foam' && cat.totalGram > 0) {
             const pcsPerSheet = cat.totalSheet > 0 ? qty / cat.totalSheet : 0;
@@ -1126,7 +1080,6 @@ function generateTaxInvoiceFromCash() {
 }
 
 async function saveTaxInvoice() {
-    // Get current tax invoice data from display
     const container = document.getElementById('tax-invoice-container');
     const data = taxInvoiceData;
     if (!data) {
@@ -1134,7 +1087,6 @@ async function saveTaxInvoice() {
         return;
     }
 
-    // Update categories from table
     const categories = [];
     const rows = document.querySelectorAll('#tax-invoice-container tbody tr');
     rows.forEach(row => {
@@ -1148,7 +1100,6 @@ async function saveTaxInvoice() {
             const rate = parseFloat(cells[5].textContent) || 0;
             const amount = parseFloat(cells[6].textContent.replace('Rs. ', '')) || 0;
 
-            // Extract category name without green sheet info
             const catName = desc.split('(')[0].trim();
 
             categories.push({
@@ -2153,7 +2104,7 @@ td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
 }
 
 // ============================================================
-// LEDGER
+// LEDGER FUNCTIONS (GULZAR / KASHIF)
 // ============================================================
 function getLedgerData(person) { return person === 'gulzar' ? gulzarData : kashifData; }
 function setLedgerData(person, data) { if (person === 'gulzar') gulzarData = data; else kashifData = data; }
@@ -2302,7 +2253,7 @@ function clearLedgerHistoryFilter(person) {
 }
 
 // ============================================================
-// SALARY
+// SALARY FUNCTIONS
 // ============================================================
 function currentMonthStr() {
     const d = new Date();
@@ -2884,15 +2835,27 @@ td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
 // KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener('keydown', function(e) {
-    // Ctrl + S to save invoice
     if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
         if (document.getElementById('page-cash-invoice').classList.contains('active')) {
             saveInvoiceNow();
         }
     }
-    // Escape to close modal
     if (e.key === 'Escape') {
         closeInvModal();
+    }
+});
+
+// ============================================================
+// AUTO-LOAD ON PAGE READY
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    var passInput = document.getElementById('pass');
+    if (passInput) {
+        passInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
     }
 });
