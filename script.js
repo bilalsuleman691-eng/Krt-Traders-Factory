@@ -1330,10 +1330,11 @@ function generateMonthlyReport() {
         const catData = {};
         const disc = inv.discountPercent || 0;
         
-        // ✅ Get GST from cash invoice
+        // ✅ Get values from cash invoice
         const cashInv = invoices.find(i => i.invoiceNo === inv.invoiceNo);
         const invTotalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
         const invFinalTotal = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
+        const invTotalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
         
         inv.items.forEach(item => {
             const name = item.item || item.barcode;
@@ -1341,7 +1342,10 @@ function generateMonthlyReport() {
             const cat = info.category;
             const qty = parseFloat(item.qty) || 0;
             const rate = parseFloat(item.rate) || 0;
+            
+            // ✅ Amount AFTER discount (this is the final amount including GST)
             const amount = (qty * rate) * (1 - disc / 100);
+            
             if (!catData[cat]) {
                 catData[cat] = {
                     category: cat,
@@ -1349,12 +1353,18 @@ function generateMonthlyReport() {
                     totalPcs: 0,
                     totalSheet: 0,
                     totalKg: 0,
-                    totalAmount: 0,
+                    totalAmount: 0,  // This is the amount INCLUDING GST (After Discount)
+                    totalExclAmount: 0, // This is the amount EXCLUDING GST
                     weight: info.weight || 0
                 };
             }
             catData[cat].totalPcs += qty;
-            catData[cat].totalAmount += amount;
+            catData[cat].totalAmount += amount; // Including GST
+            
+            // ✅ Calculate Excluding GST for this item
+            const exclAmount = amount / 1.18;
+            catData[cat].totalExclAmount += exclAmount;
+            
             if (cat === 'Foam' && info.weight > 0) {
                 catData[cat].totalSheet += (qty * info.weight) / 1400;
             }
@@ -1366,6 +1376,7 @@ function generateMonthlyReport() {
         Object.values(catData).forEach(c => {
             if (c.totalPcs > 0) {
                 c.ratePerPcs = c.totalAmount / c.totalPcs;
+                c.ratePerPcsExcl = c.totalExclAmount / c.totalPcs;
             }
         });
 
@@ -1379,19 +1390,21 @@ function generateMonthlyReport() {
             'Razor': 'Classic Razor',
             'Other': 'Other Items'
         };
-        let invTotal = 0;
+        let invTotalAmount = 0;      // Including GST (After Discount)
+        let invTotalExclAmount = 0;  // Excluding GST
         
         order.forEach(key => {
             const c = catData[key];
             if (!c || c.totalPcs === 0) return;
-            invTotal += c.totalAmount;
+            invTotalAmount += c.totalAmount;
+            invTotalExclAmount += c.totalExclAmount;
+            
             const sheet = (key === 'Foam' && c.totalSheet > 0) ? c.totalSheet.toFixed(3) : '-';
             const kg = (key === 'Steel' && c.totalKg > 0) ? c.totalKg.toFixed(3) : '-';
             
-            // ✅ Calculate GST proportionally based on category amount
-            const proportion = invTotal > 0 ? c.totalAmount / invTotal : 0;
-            const gstAmount = invTotalGst * proportion;
-            const gross = c.totalAmount + gstAmount;
+            // ✅ GST = Amount - Excluding Amount
+            const gstAmount = c.totalAmount - c.totalExclAmount;
+            const gross = c.totalAmount; // Amount is already including GST
             
             rows += `<tr>
                 <td>${labels[key] || key}</td>
@@ -1399,16 +1412,15 @@ function generateMonthlyReport() {
                 <td style="text-align:center;">${sheet}</td>
                 <td style="text-align:center;">${kg}</td>
                 <td style="text-align:right;">${(c.ratePerPcs || 0).toFixed(2)}</td>
-                <td style="text-align:right;">${c.totalAmount.toFixed(2)}</td>
+                <td style="text-align:right;">${c.totalExclAmount.toFixed(2)}</td>
                 <td style="text-align:right;">${gstAmount.toFixed(2)}</td>
                 <td style="text-align:right;">${gross.toFixed(2)}</td>
                 <td style="text-align:center;">${c.hsCode}</td>
             </tr>`;
         });
         
-        // ✅ Use GST from cash invoice
-        const gstTotal = invTotalGst;
-        const grossTotal = invTotal + gstTotal;
+        const gstTotal = invTotalAmount - invTotalExclAmount;
+        const grossTotal = invTotalAmount;
         grandTotal += grossTotal;
 
         html += `
@@ -1433,7 +1445,7 @@ function generateMonthlyReport() {
                                 <th style="width:70px;">Sheet</th>
                                 <th style="width:70px;">KG</th>
                                 <th style="width:90px;">Rate/PCS</th>
-                                <th style="width:110px;">Amount</th>
+                                <th style="width:110px;">Amount (Excl Tax)</th>
                                 <th style="width:90px;">GST 18%</th>
                                 <th style="width:110px;">Gross</th>
                                 <th style="width:100px;">HS Code</th>
@@ -1443,7 +1455,7 @@ function generateMonthlyReport() {
                             ${rows}
                             <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
                                 <td colspan="5" style="text-align:right;color:var(--primary);">TOTAL</td>
-                                <td style="text-align:right;color:var(--primary);">${invTotal.toFixed(2)}</td>
+                                <td style="text-align:right;color:var(--primary);">${invTotalExclAmount.toFixed(2)}</td>
                                 <td style="text-align:right;color:var(--primary);">${gstTotal.toFixed(2)}</td>
                                 <td style="text-align:right;color:var(--primary);">${grossTotal.toFixed(2)}</td>
                                 <td></td>
@@ -1459,7 +1471,7 @@ function generateMonthlyReport() {
         <div class="report-footer">
             <p>Generated by KRT TRADERS ERP System</p>
             <p>Total Invoices: ${Object.keys(grouped).length}</p>
-            <p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total (with GST): Rs. ${grandTotal.toFixed(2)}</p>
+            <p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total: Rs. ${grandTotal.toFixed(2)}</p>
         </div>
     </div>`;
     
