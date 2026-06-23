@@ -975,23 +975,6 @@ table tbody tr.no-data td {
     font-size: 13px;
 }
 
-.tax-edit-input {
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 13px;
-    background: #fff;
-    width: 100%;
-}
-
-.tax-edit-input-sm {
-    padding: 3px 6px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 12px;
-    width: 120px;
-}
-
 .tax-totals {
     display: flex;
     justify-content: flex-end;
@@ -1025,15 +1008,54 @@ table tbody tr.no-data td {
     color: #f6ad55;
 }
 
-.tax-add-row {
-    margin-top: 10px;
-}
-
 .tax-actions {
     display: flex;
     gap: 10px;
     margin-top: 16px;
     flex-wrap: wrap;
+}
+
+/* ============================================================
+   INVOICE TOTALS - FIXED LAYOUT
+   ============================================================ */
+.invoice-totals-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.invoice-totals-section .discount-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.invoice-totals-section .totals-section {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.invoice-totals-section .totals-section .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+}
+
+.invoice-totals-section .totals-section .total-row.final {
+    font-size: 20px;
+    font-weight: 800;
+    border-top: 2px solid var(--primary);
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.invoice-totals-section .totals-section .total-row.final .final-amount {
+    color: var(--primary);
 }
 
 /* ============================================================
@@ -1396,7 +1418,6 @@ table tbody tr.no-data td {
         font-size: 18px;
     }
 
-    /* Phone Fix - Company Info */
     .company-info-box {
         flex-direction: column;
         gap: 8px;
@@ -1420,7 +1441,6 @@ table tbody tr.no-data td {
         justify-content: center;
     }
 
-    /* Table responsive */
     .table-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -1438,19 +1458,16 @@ table tbody tr.no-data td {
     }
 
     /* Invoice totals on phone */
-    .card-header {
-        flex-direction: column;
-        align-items: stretch;
+    .invoice-totals-section {
+        grid-template-columns: 1fr;
     }
-
-    /* Discount and totals section */
-    #page-cash-invoice .card > div:last-child {
-        grid-template-columns: 1fr !important;
+    
+    .invoice-totals-section .totals-section {
+        text-align: left;
     }
-
-    #page-cash-invoice .card > div:last-child > div:last-child {
-        text-align: left !important;
-        margin-top: 12px;
+    
+    .invoice-totals-section .totals-section .total-row {
+        justify-content: space-between;
     }
 }
 
@@ -1502,11 +1519,9 @@ table tbody tr.no-data td {
         font-size: 11px;
     }
 
-    /* Make input fields full width on phone */
     .form-group input,
     .form-group select,
     .form-group textarea {
         font-size: 16px;
-        /* Prevents iOS zoom */
     }
 }
