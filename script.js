@@ -63,7 +63,7 @@ async function sbDelete(table, idCol, idVal) {
 }
 
 // ============================================================
-// PRODUCTS
+// PRODUCT DATABASE
 // ============================================================
 const PRODUCTS = {
     "6957404902857": "SPONGE SCRUB 2 IN 1",
@@ -96,7 +96,7 @@ const PRODUCTS = {
 };
 
 // ============================================================
-// CATEGORIES
+// ITEM CATEGORIES WITH WEIGHTS
 // ============================================================
 const ITEM_CATEGORIES = {
     'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
@@ -106,6 +106,7 @@ const ITEM_CATEGORIES = {
     'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
     'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
     'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
+    'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
     'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
     'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
     'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
@@ -117,6 +118,8 @@ const ITEM_CATEGORIES = {
     'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
     'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+    'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+    'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -146,6 +149,7 @@ let spInEntries = [];
 let spOutEntries = [];
 let editingRateId = null;
 let editingInvTs = null;
+let editingTaxInvTs = null;
 let editingStockInId = null;
 let editingStockOutId = null;
 let editingSPInId = null;
@@ -180,7 +184,7 @@ const map = {
 };
 
 // ============================================================
-// LOGIN
+// LOGIN / LOGOUT
 // ============================================================
 function login() {
     var pass = document.getElementById('pass').value;
@@ -196,13 +200,17 @@ function login() {
     }
 }
 
-function logout() { location.reload(); }
+function logout() {
+    location.reload();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     var passInput = document.getElementById('pass');
     if (passInput) {
         passInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') login();
+            if (e.key === 'Enter') {
+                login();
+            }
         });
     }
 });
@@ -594,7 +602,7 @@ function cancelInvoiceEdit() {
 }
 
 // ============================================================
-// SAVE INVOICE - FIXED: No duplicate Tax & SP
+// SAVE INVOICE - FIXED: Tax & SP update on edit
 // ============================================================
 async function saveInvoiceNow() {
     const customerName = document.getElementById('inv-customer').value.trim();
@@ -618,15 +626,14 @@ async function saveInvoiceNow() {
         return;
     }
 
-    const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
+    // ✅ CALCULATE
     const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
+    const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
     const discAmt = sub * disc / 100;
     const afterDisc = sub - discAmt;
-
-    const totalInclusive = afterDisc;
-    const totalExcludingTax = totalInclusive / 1.18;
-    const totalGst = totalExcludingTax * 0.18;
-    const final = totalInclusive;
+    const totalExcl = afterDisc / 1.18;
+    const totalGst = totalExcl * 0.18;
+    const final = afterDisc;
 
     const customerNtn = document.getElementById('inv-customer-ntn').value;
     const customerStrn = document.getElementById('inv-customer-strn').value;
@@ -635,15 +642,11 @@ async function saveInvoiceNow() {
     let ts, invoiceNo, isEdit = false;
     const manualNo = document.getElementById('inv-number')?.value?.trim() || '';
 
-    // ✅ Check if editing existing invoice
+    // ✅ Check if editing
     if (editingInvTs !== null) {
         ts = editingInvTs;
         const existingInv = invoices.find(i => i.timestamp === ts);
-        if (existingInv) {
-            invoiceNo = existingInv.invoiceNo;
-        } else {
-            invoiceNo = manualNo || getNextInvoiceNumber();
-        }
+        invoiceNo = existingInv ? existingInv.invoiceNo : (manualNo || getNextInvoiceNumber());
 
         // ✅ UPDATE Cash Invoice
         const row = {
@@ -654,7 +657,7 @@ async function saveInvoiceNow() {
             sub_total: sub.toFixed(2),
             discount_amt: discAmt.toFixed(2),
             after_discount: afterDisc.toFixed(2),
-            total_excluding_tax: totalExcludingTax.toFixed(2),
+            total_excluding_tax: totalExcl.toFixed(2),
             total_gst: totalGst.toFixed(2),
             final_total: final.toFixed(2)
         };
@@ -666,14 +669,14 @@ async function saveInvoiceNow() {
         if (idx > -1) {
             invoices[idx] = {
                 ...invoices[idx],
-                storeName, customerName,
+                invoiceNo, storeName, customerName,
                 ntn: customerNtn, strn: customerStrn, address: customerAddress,
                 date, items,
                 discountPercent: disc,
                 subTotal: sub.toFixed(2),
                 discountAmt: discAmt.toFixed(2),
                 afterDiscount: afterDisc.toFixed(2),
-                totalExcludingTax: totalExcludingTax.toFixed(2),
+                totalExcludingTax: totalExcl.toFixed(2),
                 totalGst: totalGst.toFixed(2),
                 finalTotal: final.toFixed(2)
             };
@@ -683,17 +686,17 @@ async function saveInvoiceNow() {
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('Invoice updated successfully!');
 
-        // ✅ DELETE old Tax Invoice (if exists) - FIX: No duplicate
-        const oldTaxInv = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
-        if (oldTaxInv) {
-            await sbDelete('tax_invoices', 'timestamp', oldTaxInv.timestamp);
-            taxInvoices = taxInvoices.filter(i => i.timestamp !== oldTaxInv.timestamp);
+        // ✅ DELETE old Tax Invoice
+        const oldTax = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
+        if (oldTax) {
+            await sbDelete('tax_invoices', 'timestamp', oldTax.timestamp);
+            taxInvoices = taxInvoices.filter(i => i.timestamp !== oldTax.timestamp);
         }
 
-        // ✅ DELETE old SP Stock Out (if exists)
-        const oldSpOuts = spOutEntries.filter(e => e.invoiceTimestamp === ts);
-        if (oldSpOuts.length > 0) {
-            for (const sp of oldSpOuts) {
+        // ✅ DELETE old SP Stock Out
+        const oldSP = spOutEntries.filter(e => e.invoiceTimestamp === ts);
+        if (oldSP.length > 0) {
+            for (const sp of oldSP) {
                 await sbDelete('sp_stock_out', 'sr_no', sp.srNo);
             }
             spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== ts);
@@ -716,34 +719,29 @@ async function saveInvoiceNow() {
             sub_total: sub.toFixed(2),
             discount_amt: discAmt.toFixed(2),
             after_discount: afterDisc.toFixed(2),
-            total_excluding_tax: totalExcludingTax.toFixed(2),
+            total_excluding_tax: totalExcl.toFixed(2),
             total_gst: totalGst.toFixed(2),
             final_total: final.toFixed(2)
         };
         const ok = await sbInsert('invoices', row);
         if (!ok) return;
         invoices.push({
-            invoiceNo,
-            timestamp: ts,
-            storeName,
-            customerName,
-            ntn: customerNtn,
-            strn: customerStrn,
-            address: customerAddress,
+            invoiceNo, timestamp: ts, storeName, customerName,
+            ntn: customerNtn, strn: customerStrn, address: customerAddress,
             date, items,
             discountPercent: disc,
             subTotal: sub.toFixed(2),
             discountAmt: discAmt.toFixed(2),
             afterDiscount: afterDisc.toFixed(2),
-            totalExcludingTax: totalExcludingTax.toFixed(2),
+            totalExcludingTax: totalExcl.toFixed(2),
             totalGst: totalGst.toFixed(2),
             finalTotal: final.toFixed(2)
         });
         showNotification('Invoice saved!');
     }
 
-    // ✅ Generate NEW Tax Invoice
-    await generateAndSaveTaxInvoice(ts);
+    // ✅ Generate NEW Tax Invoice (WITH DISCOUNT + GST)
+    await generateTaxInvoice(ts, disc, sub, discAmt, afterDisc, final, totalExcl, totalGst, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo);
 
     // ✅ Insert NEW SP Stock Out
     for (const item of items) {
@@ -785,17 +783,14 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// GENERATE TAX INVOICE
+// GENERATE TAX INVOICE - FIXED: DISCOUNT + GST SHOW
 // ============================================================
-async function generateAndSaveTaxInvoice(cashTimestamp) {
-    const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
-    if (!cashInv) return;
-
+async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, final, totalExcl, totalGst, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo) {
     const categories = {};
-    let totalGross = 0;
-    const discountPercent = parseFloat(cashInv.discountPercent) || 0;
+    const discountPercent = disc || 0;
 
-    cashInv.items.forEach(item => {
+    // ✅ Apply discount to each item
+    items.forEach(item => {
         const itemName = item.item || item.barcode;
         const catInfo = getItemCategory(itemName);
         const key = catInfo.category;
@@ -803,8 +798,8 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         const rate = parseFloat(item.rate) || 0;
 
         const totalBeforeDiscount = qty * rate;
-        const discAmt = totalBeforeDiscount * (discountPercent / 100);
-        const totalAfterDiscount = totalBeforeDiscount - discAmt;
+        const discAmtItem = totalBeforeDiscount * (discountPercent / 100);
+        const totalAfterDiscount = totalBeforeDiscount - discAmtItem;
 
         if (!categories[key]) {
             categories[key] = {
@@ -814,114 +809,71 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
                 totalGram: 0,
                 totalKg: 0,
                 totalSheet: 0,
-                totalGross: 0,
+                totalAmount: 0,
                 weight: catInfo.weight || 0,
                 items: []
             };
         }
 
         categories[key].totalPcs += qty;
-        categories[key].totalGross += totalAfterDiscount;
+        categories[key].totalAmount += totalAfterDiscount;
 
         if (catInfo.weight > 0) {
             categories[key].totalGram += (qty * catInfo.weight);
             categories[key].totalKg = categories[key].totalGram / 1000;
             categories[key].totalSheet = categories[key].totalGram / 1400;
         }
-
-        totalGross += totalAfterDiscount;
     });
 
     const categoryList = [];
 
     Object.keys(categories).forEach(key => {
         const cat = categories[key];
+        const totalAmount = cat.totalAmount || 0;
+        const avgRatePerPcs = cat.totalPcs > 0 ? totalAmount / cat.totalPcs : 0;
 
-        if (key === 'Foam') {
-            const foamItems = [];
-            let foamTotalPcs = 0;
-            let foamTotalAmount = 0;
-            let foamTotalWeight = 0;
-
-            cat.items.forEach(item => {
-                const itemName = item.item || item.barcode;
-                const info = getItemCategory(itemName);
-                const qty = parseFloat(item.qty) || 0;
-                const rate = parseFloat(item.rate) || 0;
-                const weight = info.weight || 0;
-                const totalBeforeDisc = qty * rate;
-                const discAmt = totalBeforeDisc * (discountPercent / 100);
-                const amount = totalBeforeDisc - discAmt;
-
-                foamTotalPcs += qty;
-                foamTotalAmount += amount;
-                foamTotalWeight += (qty * weight);
-
-                const pcsPerSheet = weight > 0 ? 1400 / weight : 0;
-
-                foamItems.push({
-                    name: itemName,
-                    qty: qty,
-                    rate: rate,
-                    weight: weight,
-                    totalWeight: qty * weight,
-                    amount: amount,
-                    sheets: (qty * weight) / 1400,
-                    pcsPerSheet: pcsPerSheet,
-                    pcsFromSheet: qty
-                });
-            });
-
-            const totalSheets = foamTotalWeight / 1400;
-            const avgRatePerPcs = foamTotalPcs > 0 ? foamTotalAmount / foamTotalPcs : 0;
-            const avgRatePerSheet = totalSheets > 0 ? foamTotalAmount / totalSheets : 0;
-            const avgPcsPerSheet = totalSheets > 0 ? foamTotalPcs / totalSheets : 0;
-
-            categoryList.push({
-                category: 'Foam',
-                totalPcs: foamTotalPcs,
-                totalGram: foamTotalWeight,
-                totalKg: foamTotalWeight / 1000,
-                totalSheet: totalSheets,
-                totalGross: foamTotalAmount,
-                avgRatePerPcs: avgRatePerPcs,
-                avgRatePerSheet: avgRatePerSheet,
-                avgPcsPerSheet: avgPcsPerSheet,
-                items: foamItems,
-                hsCode: '6805.2'
-            });
-
-        } else {
-            const totalPcs = cat.totalPcs;
-            const totalAmount = cat.totalGross;
-            const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
-
-            categoryList.push({
-                category: key,
-                totalPcs: totalPcs,
-                totalGram: cat.totalGram || 0,
-                totalKg: cat.totalKg || 0,
-                totalSheet: cat.totalSheet || 0,
-                totalGross: totalAmount,
-                avgRatePerPcs: avgRatePerPcs,
-                avgRatePerSheet: 0,
-                avgPcsPerSheet: 0,
-                items: cat.items || [],
-                hsCode: cat.hsCode || '0000'
-            });
-        }
+        categoryList.push({
+            category: key,
+            totalPcs: cat.totalPcs || 0,
+            totalGram: cat.totalGram || 0,
+            totalKg: cat.totalKg || 0,
+            totalSheet: cat.totalSheet || 0,
+            totalAmount: totalAmount,
+            avgRatePerPcs: avgRatePerPcs,
+            hsCode: cat.hsCode || '0000'
+        });
     });
 
+    // ✅ Calculate GST per category
+    const categoryListWithGST = categoryList.map(cat => {
+        const amount = cat.totalAmount || 0;
+        const gst = amount * 0.18;
+        const gross = amount + gst;
+        return {
+            ...cat,
+            gst: gst,
+            gross: gross
+        };
+    });
+
+    // ✅ Totals
+    const totalGross = categoryListWithGST.reduce((s, cat) => s + cat.gross, 0);
+    const totalGstAll = categoryListWithGST.reduce((s, cat) => s + cat.gst, 0);
+    const totalAmountAll = categoryListWithGST.reduce((s, cat) => s + cat.totalAmount, 0);
+
+    // ✅ Tax Invoice Data
     const taxInvoiceData = {
         timestamp: Date.now(),
-        invoiceNo: cashInv.invoiceNo + '-TAX',
-        storeName: cashInv.storeName,
-        customerName: cashInv.customerName,
-        ntn: cashInv.ntn,
-        strn: cashInv.strn,
-        address: cashInv.address,
-        date: cashInv.date,
-        categories: categoryList,
+        invoiceNo: invoiceNo + '-TAX',
+        storeName: storeName,
+        customerName: customerName,
+        ntn: customerNtn,
+        strn: customerStrn,
+        address: customerAddress,
+        date: date,
+        categories: categoryListWithGST,
+        totalAmount: totalAmountAll.toFixed(2),
+        totalGst: totalGstAll.toFixed(2),
         totalGross: totalGross.toFixed(2),
         discountPercent: discountPercent,
         cashInvoiceTimestamp: cashTimestamp
@@ -937,21 +889,23 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         address: taxInvoiceData.address,
         date: taxInvoiceData.date,
         categories: taxInvoiceData.categories,
+        total_amount: taxInvoiceData.totalAmount,
+        total_gst: taxInvoiceData.totalGst,
         total_gross: taxInvoiceData.totalGross,
         discount_percent: taxInvoiceData.discountPercent,
         cash_invoice_timestamp: taxInvoiceData.cashInvoiceTimestamp
     };
 
     const ok = await sbInsert('tax_invoices', row);
-    if (!ok) return;
-
-    taxInvoices.push(taxInvoiceData);
-    showNotification('Tax Invoice generated successfully!');
-    renderTaxInvoiceDisplay(taxInvoiceData);
+    if (ok) {
+        taxInvoices.push(taxInvoiceData);
+        showNotification('Tax Invoice generated successfully!');
+        renderTaxInvoiceDisplay(taxInvoiceData);
+    }
 }
 
 // ============================================================
-// TAX INVOICE DISPLAY
+// TAX INVOICE DISPLAY - WITH GST
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
     const container = document.getElementById('tax-invoice-container');
@@ -961,13 +915,15 @@ function renderTaxInvoiceDisplay(data) {
         container.innerHTML = `
             <div class="tax-invoice-placeholder">
                 <i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i>
-                <p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p>
+                <p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.</p>
             </div>
         `;
         return;
     }
 
     const categories = data.categories || [];
+    const totalAmount = parseFloat(data.totalAmount) || 0;
+    const totalGst = parseFloat(data.totalGst) || 0;
     const totalGross = parseFloat(data.totalGross) || 0;
     const discountPercent = parseFloat(data.discountPercent) || 0;
     const discountAmt = totalGross * (discountPercent / 100);
@@ -981,7 +937,9 @@ function renderTaxInvoiceDisplay(data) {
         const kg = cat.totalKg || 0;
         const sheet = cat.totalSheet || 0;
         const rate = cat.avgRatePerPcs || 0;
-        const amount = cat.totalGross || 0;
+        const amount = cat.totalAmount || 0;
+        const gst = cat.gst || 0;
+        const gross = cat.gross || 0;
 
         let greenSheetInfo = '';
         if (cat.category === 'Foam' && cat.totalGram > 0) {
@@ -1002,6 +960,8 @@ function renderTaxInvoiceDisplay(data) {
                 <td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
                 <td>${rate.toFixed(2)}</td>
                 <td class="tax-amount">Rs. ${amount.toFixed(2)}</td>
+                <td class="tax-gst">Rs. ${gst.toFixed(2)}</td>
+                <td class="tax-gross">Rs. ${gross.toFixed(2)}</td>
             </tr>
         `;
     });
@@ -1010,71 +970,37 @@ function renderTaxInvoiceDisplay(data) {
         <div class="tax-invoice-display">
             <div class="header">
                 <h2>KRT TRADERS</h2>
-                <p><em>Deals in all kinds of cleaning item and general products</em></p>
-                <p><strong>SALES TAX INVOICE</strong> — Original/Duplicate</p>
+                <p><strong>SALES TAX INVOICE</strong></p>
             </div>
-
             <div class="tax-info-grid">
                 <div class="tax-info-item"><span class="label">Invoice #:</span><strong>${data.invoiceNo || ''}</strong></div>
                 <div class="tax-info-item"><span class="label">Date:</span><strong>${data.date || ''}</strong></div>
-                <div class="tax-info-item"><span class="label">Time of Supply:</span><strong>12:00</strong></div>
+                <div class="tax-info-item"><span class="label">Discount:</span><strong>${discountPercent}%</strong></div>
             </div>
-
             <div class="tax-buyer-grid">
-                <div class="tax-buyer-box">
-                    <strong>Supplier:</strong> KRT TRADERS
-                    <div>NTN: 2995454-1</div>
-                    <div>STRN: 300299545411</div>
-                    <div>Address: Lahore, Pakistan</div>
-                </div>
-                <div class="tax-buyer-box">
-                    <strong>Buyer:</strong>
-                    <div><strong>${data.customerName || data.storeName || ''}</strong></div>
-                    <div>NTN: ${data.ntn || '-'}</div>
-                    <div>STRN: ${data.strn || '-'}</div>
-                    <div>Address: ${data.address || '-'}</div>
-                </div>
+                <div class="tax-buyer-box"><strong>Supplier:</strong> KRT TRADERS<div>NTN: 2995454-1</div><div>STRN: 300299545411</div></div>
+                <div class="tax-buyer-box"><strong>Buyer:</strong><div><strong>${data.customerName || data.storeName || ''}</strong></div>
+                <div>NTN: ${data.ntn || '-'}</div><div>STRN: ${data.strn || '-'}</div></div>
             </div>
-
             <div class="table-wrap">
                 <table>
-                    <thead><tr>
-                        <th style="width:60px;">Qty (Pcs)</th>
-                        <th style="min-width:180px;">Description</th>
-                        <th style="width:100px;">HS Code</th>
-                        <th style="width:70px;">Sheet</th>
-                        <th style="width:70px;">KG</th>
-                        <th style="width:90px;">Rate/Pcs</th>
-                        <th style="width:110px;">Gross Amount</th>
-                    </tr></thead>
+                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Amount</th><th>GST 18%</th><th>Gross</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>
-
             <div class="tax-totals">
-                <div class="tax-total-item">
-                    <span class="label">Total Gross:</span>
-                    <span class="value green">Rs. ${totalGross.toFixed(2)}</span>
-                </div>
+                <div class="tax-total-item"><span class="label">Total Amount:</span><span class="value">Rs. ${totalAmount.toFixed(2)}</span></div>
+                <div class="tax-total-item"><span class="label">GST @ 18%:</span><span class="value gold">Rs. ${totalGst.toFixed(2)}</span></div>
+                <div class="tax-total-item"><span class="label">Total Gross:</span><span class="value green">Rs. ${totalGross.toFixed(2)}</span></div>
                 ${discountPercent > 0 ? `
-                <div class="tax-total-item">
-                    <span class="label">Discount (${discountPercent}%):</span>
-                    <span class="value" style="color:var(--danger);">- Rs. ${discountAmt.toFixed(2)}</span>
-                </div>
-                <div class="tax-total-item">
-                    <span class="label">💰 Net Amount:</span>
-                    <span class="value green" style="font-size:22px;">Rs. ${netAmount.toFixed(2)}</span>
-                </div>
+                <div class="tax-total-item"><span class="label">Discount (${discountPercent}%):</span><span class="value" style="color:var(--danger);">- Rs. ${discountAmt.toFixed(2)}</span></div>
+                <div class="tax-total-item"><span class="label">💰 Net Amount:</span><span class="value green" style="font-size:22px;">Rs. ${netAmount.toFixed(2)}</span></div>
                 ` : `
-                <div class="tax-total-item">
-                    <span class="label">💰 Total Amount:</span>
-                    <span class="value green" style="font-size:22px;">Rs. ${totalGross.toFixed(2)}</span>
-                </div>
+                <div class="tax-total-item"><span class="label">💰 Total Amount:</span><span class="value green" style="font-size:22px;">Rs. ${totalGross.toFixed(2)}</span></div>
                 `}
             </div>
-
             <div class="tax-actions no-print">
-                <button class="btn btn-primary" onclick="saveTaxInvoice()"><i class="fas fa-save"></i> Save Tax Invoice</button>
+                <button class="btn btn-primary" onclick="saveTaxInvoice()"><i class="fas fa-save"></i> Save</button>
                 <button class="btn btn-print" onclick="printTaxInvoice()"><i class="fas fa-print"></i> Print</button>
                 <button class="btn btn-outline" onclick="clearTaxInvoice()"><i class="fas fa-trash"></i> Clear</button>
             </div>
@@ -1084,106 +1010,40 @@ function renderTaxInvoiceDisplay(data) {
 
 function generateTaxInvoiceFromCash() {
     const lastInv = invoices.length > 0 ? invoices[invoices.length - 1] : null;
-    if (!lastInv) {
-        showNotification('No cash invoice found! Please save a cash invoice first.', 'error');
-        return;
-    }
-    generateAndSaveTaxInvoice(lastInv.timestamp);
+    if (!lastInv) { showNotification('No cash invoice found!', 'error'); return; }
+    const inv = lastInv;
+    generateTaxInvoice(
+        inv.timestamp,
+        inv.discountPercent || 0,
+        parseFloat(inv.subTotal) || 0,
+        parseFloat(inv.discountAmt) || 0,
+        parseFloat(inv.afterDiscount) || 0,
+        parseFloat(inv.finalTotal) || 0,
+        parseFloat(inv.totalExcludingTax) || 0,
+        parseFloat(inv.totalGst) || 0,
+        inv.items || [],
+        inv.storeName || '',
+        inv.customerName || '',
+        inv.ntn || '',
+        inv.strn || '',
+        inv.address || '',
+        inv.date || '',
+        inv.invoiceNo || ''
+    );
 }
 
 async function saveTaxInvoice() {
-    const container = document.getElementById('tax-invoice-container');
     const data = taxInvoiceData;
-    if (!data) {
-        showNotification('No tax invoice data to save!', 'error');
-        return;
-    }
-
-    const categories = [];
-    const rows = document.querySelectorAll('#tax-invoice-container tbody tr');
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 7) {
-            const qty = parseFloat(cells[0].textContent) || 0;
-            const desc = cells[1].textContent.trim();
-            const hsCode = cells[2].textContent.trim() || '0000';
-            const sheet = parseFloat(cells[3].textContent) || 0;
-            const kg = parseFloat(cells[4].textContent) || 0;
-            const rate = parseFloat(cells[5].textContent) || 0;
-            const amount = parseFloat(cells[6].textContent.replace('Rs. ', '')) || 0;
-
-            const catName = desc.split('(')[0].trim();
-
-            categories.push({
-                category: catName,
-                hsCode: hsCode,
-                totalPcs: qty,
-                totalSheet: sheet,
-                totalKg: kg,
-                avgRatePerPcs: rate,
-                totalGross: amount
-            });
-        }
-    });
-
-    if (categories.length === 0) {
-        showNotification('No categories found!', 'error');
-        return;
-    }
-
-    const totalGross = categories.reduce((s, c) => s + (c.totalGross || 0), 0);
-    const discountPercent = parseFloat(data.discountPercent) || 0;
-
-    const taxData = {
-        timestamp: data.timestamp || Date.now(),
-        invoiceNo: data.invoiceNo || 'TAX-001',
-        storeName: data.storeName || '',
-        customerName: data.customerName || '',
-        ntn: data.ntn || '',
-        strn: data.strn || '',
-        address: data.address || '',
-        date: data.date || new Date().toISOString().split('T')[0],
-        categories: categories,
-        totalGross: totalGross.toFixed(2),
-        discountPercent: discountPercent,
-        cashInvoiceTimestamp: data.cashInvoiceTimestamp || null
-    };
-
-    const row = {
-        timestamp: taxData.timestamp,
-        invoice_no: taxData.invoiceNo,
-        store_name: taxData.storeName,
-        customer_name: taxData.customerName,
-        ntn: taxData.ntn,
-        strn: taxData.strn,
-        address: taxData.address,
-        date: taxData.date,
-        categories: taxData.categories,
-        total_gross: taxData.totalGross,
-        discount_percent: taxData.discountPercent,
-        cash_invoice_timestamp: taxData.cashInvoiceTimestamp
-    };
-
-    const ok = await sbUpsert('tax_invoices', row, 'timestamp');
-    if (!ok) return;
-
-    const idx = taxInvoices.findIndex(i => i.timestamp === taxData.timestamp);
-    if (idx > -1) {
-        taxInvoices[idx] = taxData;
-    } else {
-        taxInvoices.push(taxData);
-    }
-
-    showNotification('Tax Invoice saved successfully!');
-    renderTaxInvoiceDisplay(taxData);
-    renderTaxHistory();
+    if (!data) { showNotification('No tax invoice data to save!', 'error'); return; }
+    const ok = await sbUpsert('tax_invoices', data, 'timestamp');
+    if (ok) showNotification('Tax Invoice saved!');
 }
 
 function clearTaxInvoice() {
     document.getElementById('tax-invoice-container').innerHTML = `
         <div class="tax-invoice-placeholder">
             <i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i>
-            <p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.<br>Save a Cash Invoice or click "Generate from Cash"</p>
+            <p>No Tax Invoice generated yet.</p>
         </div>
     `;
     taxInvoiceData = null;
@@ -1192,71 +1052,48 @@ function clearTaxInvoice() {
 function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container').innerHTML;
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html>
-<html>
-<head><title>Tax Invoice</title>
-<style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .tax-invoice-display { max-width: 900px; margin: 0 auto; }
-    .header { text-align: center; border-bottom: 2px solid #22c99a; padding-bottom: 12px; margin-bottom: 16px; }
-    .header h2 { font-size: 22px; color: #22c99a; }
-    .tax-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
-    .tax-buyer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 10px 0; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    th { background: #f0f0f0; padding: 8px 10px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
-    td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-    .tax-totals { display: flex; justify-content: flex-end; gap: 30px; flex-wrap: wrap; padding: 12px 0; border-top: 2px solid #ddd; margin-top: 10px; }
-    .tax-total-item { text-align: right; }
-    .tax-total-item .label { font-size: 12px; color: #666; display: block; }
-    .tax-total-item .value { font-size: 18px; font-weight: 800; }
-    .green { color: #22c99a; }
-    .tax-actions, .tax-add-row, .no-print { display: none !important; }
-    .hidden-print { display: none !important; }
-    input { border: none !important; background: transparent !important; color: #000 !important; }
-    @media print { th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-</style></head>
-<body><div class="tax-invoice-display">${content}</div>
-<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Tax Invoice</title><style>
+        body{font-family:Arial;font-size:12px;margin:20px}.tax-invoice-display{max-width:900px;margin:0 auto}
+        .header{text-align:center;border-bottom:2px solid #22c99a;padding-bottom:12px;margin-bottom:16px}
+        .tax-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:12px}
+        .tax-buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px 10px;text-align:left;border-bottom:2px solid #ddd}
+        td{padding:6px 10px;border-bottom:1px solid #eee}
+        .tax-totals{display:flex;justify-content:flex-end;gap:30px;flex-wrap:wrap;padding:12px 0;border-top:2px solid #ddd;margin-top:10px}
+        .tax-total-item{text-align:right}.tax-total-item .label{font-size:12px;color:#666;display:block}
+        .tax-total-item .value{font-size:18px;font-weight:800}.green{color:#22c99a}.gold{color:#f6ad55}
+        .no-print{display:none !important}.hidden-print{display:none !important}
+    </style></head><body><div class="tax-invoice-display">${content}</div><script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script></body></html>`);
 }
 
 // ============================================================
-// DELETE INVOICE - COMPLETE FIXED
+// DELETE INVOICE - COMPLETE
 // ============================================================
 async function deleteInvoice(ts) {
-    if (!confirm('Delete this invoice and all related records (Tax Invoice + SP Stock Out)?')) return;
+    if (!confirm('Delete this invoice and all related records?')) return;
 
-    // 1️⃣ Delete Cash Invoice
-    const ok = await sbDelete('invoices', 'timestamp', ts);
-    if (!ok) return;
+    await sbDelete('invoices', 'timestamp', ts);
     invoices = invoices.filter(i => i.timestamp !== ts);
 
-    // 2️⃣ Delete Tax Invoice (if exists)
     const taxInv = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
     if (taxInv) {
-        const taxOk = await sbDelete('tax_invoices', 'timestamp', taxInv.timestamp);
-        if (taxOk) {
-            taxInvoices = taxInvoices.filter(i => i.timestamp !== taxInv.timestamp);
-            showNotification('Tax Invoice deleted!', 'info');
-        }
+        await sbDelete('tax_invoices', 'timestamp', taxInv.timestamp);
+        taxInvoices = taxInvoices.filter(i => i.timestamp !== taxInv.timestamp);
     }
 
-    // 3️⃣ Delete SP Stock Out entries (if exists)
     const spOuts = spOutEntries.filter(e => e.invoiceTimestamp === ts);
     if (spOuts.length > 0) {
         for (const sp of spOuts) {
             await sbDelete('sp_stock_out', 'sr_no', sp.srNo);
         }
         spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== ts);
-        showNotification(`SP Stock Out (${spOuts.length} entries) deleted!`, 'info');
     }
 
-    // 4️⃣ Refresh UI
     renderInvoiceHistory();
     renderTaxHistory();
     renderSPOutTable();
     loadDashboard();
-    showNotification('Invoice and all related records deleted successfully!');
+    showNotification('Invoice and all related records deleted!');
 }
 
 // ============================================================
@@ -1280,10 +1117,7 @@ function viewInvModal(ts) {
             <div><label>Address</label>${inv.address || '-'}</div>
             <div><label>Discount</label>${inv.discountPercent || 0}%</div>
         </div>
-        <div class="table-wrap">
-            <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
-            <tbody>${rows}</tbody></table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
         <div style="margin-top:12px;text-align:right">
             <div>Sub Total: Rs. ${parseFloat(inv.subTotal || 0).toFixed(2)}</div>
             <div>Discount (${inv.discountPercent || 0}%): - Rs. ${parseFloat(inv.discountAmt || 0).toFixed(2)}</div>
@@ -1292,11 +1126,6 @@ function viewInvModal(ts) {
     document.getElementById('modal-del-btn').onclick = () => { deleteInvoice(ts); closeInvModal(); };
     document.getElementById('inv-modal').classList.add('open');
     window._modalInvTs = ts;
-}
-
-function editInvoiceFromModal() {
-    closeInvModal();
-    if (window._modalInvTs) loadInvToForm(window._modalInvTs);
 }
 
 function loadInvToForm(ts) {
@@ -1328,26 +1157,11 @@ function loadInvToForm(ts) {
     updateInvoiceNumber();
 }
 
-function closeInvModal() {
-    document.getElementById('inv-modal').classList.remove('open');
-}
+function editInvoiceFromModal() { closeInvModal(); if (window._modalInvTs) loadInvToForm(window._modalInvTs); }
+function closeInvModal() { document.getElementById('inv-modal').classList.remove('open'); }
+function printModal() { printInvoiceByTs(window._modalInvTs); }
+function printInvoice() { const last = invoices.length > 0 ? invoices[invoices.length - 1] : null; if (last) printInvoiceByTs(last.timestamp); }
 
-function printModal() {
-    printInvoiceByTs(window._modalInvTs);
-}
-
-function printInvoice() {
-    const lastInv = invoices.length > 0 ? invoices[invoices.length - 1] : null;
-    if (!lastInv) {
-        showNotification('No invoice to print! Please save first.', 'error');
-        return;
-    }
-    printInvoiceByTs(lastInv.timestamp);
-}
-
-// ============================================================
-// PRINT INVOICE
-// ============================================================
 function printInvoiceByTs(ts) {
     const inv = invoices.find(i => i.timestamp === ts);
     if (!inv) return;
@@ -1362,50 +1176,30 @@ function printInvoiceByTs(ts) {
     const final = parseFloat(inv.finalTotal || 0);
 
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html>
-<html>
-<head><title>KRT TRADERS - ${inv.invoiceNo}</title>
-<style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .invoice-wrapper { max-width: 780px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
-    .company h1 { font-size: 24px; color: #22c99a; }
-    .company p { font-size: 12px; color: #555; margin-top: 2px; }
-    .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; }
-    .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
-    .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
-    .inv-number .num { font-size: 20px; font-weight: 800; color: #22c99a; }
-    .info-table { width: 100%; margin: 10px 0 14px; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; }
-    .info-table td { border: none; padding: 5px 10px; font-size: 11px; }
-    .info-table .label { font-weight: 600; color: #666; width: 80px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; font-size: 10px; text-transform: uppercase; }
-    td { padding: 6px 10px; border-bottom: 1px solid #e8e8e8; }
-    .totals { width: 280px; float: right; margin-top: 12px; background: #f8f9fa; padding: 14px 18px; border-radius: 8px; border: 1px solid #e8e8e8; }
-    .totals .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
-    .totals .final { font-size: 16px; font-weight: 800; border-top: 2px solid #22c99a; padding-top: 8px; margin-top: 4px; color: #22c99a; }
-    .footer { margin-top: 24px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 12px; clear: both; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-</style></head>
-<body>
+    w.document.write(`<!DOCTYPE html><html><head><title>KRT TRADERS - ${inv.invoiceNo}</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:12px;margin:20px;background:#fff;color:#000}
+    .invoice-wrapper{max-width:780px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #22c99a;margin-bottom:16px;flex-wrap:wrap}
+    .company h1{font-size:24px;color:#22c99a}.company-details{font-size:10px;color:#666;margin-top:4px;display:flex;flex-wrap:wrap;gap:8px}
+    .company-details span{background:#f5f5f5;padding:2px 10px;border-radius:4px}
+    .inv-number{text-align:right;background:#f8f9fa;padding:8px 16px;border-radius:8px;border:1px solid #e0e0e0;min-width:140px}
+    .inv-number .num{font-size:20px;font-weight:800;color:#22c99a}
+    .info-table{width:100%;margin:10px 0 14px;border-collapse:collapse;background:#f8f9fa;border-radius:6px}
+    .info-table td{border:none;padding:5px 10px;font-size:11px}.info-table .label{font-weight:600;color:#666;width:80px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#22c99a;color:#fff;padding:8px 10px;font-size:10px;text-transform:uppercase}
+    td{padding:6px 10px;border-bottom:1px solid #e8e8e8}
+    .totals{width:280px;float:right;margin-top:12px;background:#f8f9fa;padding:14px 18px;border-radius:8px;border:1px solid #e8e8e8}
+    .totals .row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+    .totals .final{font-size:16px;font-weight:800;border-top:2px solid #22c99a;padding-top:8px;margin-top:4px;color:#22c99a}
+    .footer{margin-top:24px;text-align:center;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:12px;clear:both}
+    @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
 <div class="invoice-wrapper">
     <div class="header">
-        <div class="company">
-            <h1>KRT TRADERS</h1>
-            <p>CASH INVOICE</p>
-            <div class="company-details">
-                <span><strong>NTN:</strong> 2995454-1</span>
-                <span><strong>STRN:</strong> 300299545411</span>
-                <span><strong>Address:</strong> Lahore, Pakistan</span>
-            </div>
+        <div class="company"><h1>KRT TRADERS</h1><p>CASH INVOICE</p>
+            <div class="company-details"><span><strong>NTN:</strong> 2995454-1</span><span><strong>STRN:</strong> 300299545411</span><span><strong>Address:</strong> Lahore, Pakistan</span></div>
         </div>
-        <div class="inv-number">
-            <label style="font-size:10px;color:#888;font-weight:600;display:block;">INVOICE #</label>
-            <div class="num">${inv.invoiceNo}</div>
-        </div>
+        <div class="inv-number"><label style="font-size:10px;color:#888;font-weight:600;display:block;">INVOICE #</label><div class="num">${inv.invoiceNo}</div></div>
     </div>
-
     <table class="info-table">
         <tr><td class="label">Customer:</td><td><strong>${inv.customerName || '-'}</strong></td><td class="label">Date:</td><td><strong>${inv.date}</strong></td></tr>
         ${inv.storeName ? `<tr><td class="label">Store:</td><td colspan="3">${inv.storeName}</td></tr>` : ''}
@@ -1413,10 +1207,7 @@ function printInvoiceByTs(ts) {
         ${inv.strn ? `<tr><td class="label">STRN:</td><td colspan="3">${inv.strn}</td></tr>` : ''}
         ${inv.address ? `<tr><td class="label">Address:</td><td colspan="3">${inv.address}</td></tr>` : ''}
     </table>
-
-    <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-
+    <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="totals">
         <div class="row"><span>Sub Total:</span><span>Rs. ${sub.toFixed(2)}</span></div>
         <div class="row"><span>Discount (${disc}%):</span><span style="color:#e74c3c;">- Rs. ${discAmt.toFixed(2)}</span></div>
@@ -1424,8 +1215,7 @@ function printInvoiceByTs(ts) {
     </div>
     <div class="footer">Thank you for your business! — Goods once sold cannot be returned.</div>
 </div>
-<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-</body></html>`);
+<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
 }
 
 // ============================================================
@@ -1437,25 +1227,12 @@ function renderInvoiceHistory() {
     let list = [...invoices].reverse();
     if (from) list = list.filter(i => i.date >= from);
     if (to) list = list.filter(i => i.date <= to);
-
-    const tbody = document.getElementById('inv-history-body');
-    tbody.innerHTML = list.length === 0
-        ? '<tr class="no-data"><td colspan="7">No invoices found</td></tr>'
-        : list.map(i => `
-            <tr>
-                <td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td>
-                <td>${i.storeName || '-'}</td>
-                <td>${i.customerName || '-'}</td>
-                <td>${i.date}</td>
-                <td>${(i.items || []).length} items</td>
-                <td><strong>Rs. ${parseFloat(i.finalTotal).toLocaleString()}</strong></td>
-                <td class="action-cell" style="white-space:nowrap">
-                    <button class="btn btn-outline btn-sm" onclick="viewInvModal(${i.timestamp})"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-edit btn-sm" onclick="loadInvToForm(${i.timestamp})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-print btn-sm" onclick="printInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`).join('');
+    document.getElementById('inv-history-body').innerHTML = list.length === 0 ? '<tr class="no-data"><td colspan="7">No invoices found</td></tr>' :
+        list.map(i => `<tr><td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td><td>${i.storeName || '-'}</td><td>${i.customerName || '-'}</td><td>${i.date}</td><td>${(i.items || []).length} items</td><td><strong>Rs. ${parseFloat(i.finalTotal).toLocaleString()}</strong></td>
+        <td><button class="btn btn-outline btn-sm" onclick="viewInvModal(${i.timestamp})"><i class="fas fa-eye"></i></button>
+        <button class="btn btn-edit btn-sm" onclick="loadInvToForm(${i.timestamp})"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-print btn-sm" onclick="printInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
 }
 
 function clearInvoiceHistoryFilter() {
@@ -1470,72 +1247,45 @@ function exportInvoiceHistory() {
     let list = [...invoices].reverse();
     if (from) list = list.filter(i => i.date >= from);
     if (to) list = list.filter(i => i.date <= to);
-
     let text = 'Invoice #,Store,Customer,Date,Items,Total\n';
-    list.forEach(i => {
-        text += `${i.invoiceNo},${i.storeName || ''},${i.customerName || ''},${i.date},${(i.items || []).length},${i.finalTotal}\n`;
-    });
+    list.forEach(i => { text += `${i.invoiceNo},${i.storeName || ''},${i.customerName || ''},${i.date},${(i.items || []).length},${i.finalTotal}\n`; });
     const blob = new Blob([text], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'invoices_export.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'invoices_export.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 // ============================================================
-// TAX HISTORY - FIXED (No duplicate)
+// TAX HISTORY - FIXED: WITH GST
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from').value;
     const to = document.getElementById('tax-hist-to').value;
     const search = (document.getElementById('tax-hist-search').value || '').toLowerCase();
 
-    // ✅ Use Set to remove duplicates based on invoiceNo
+    // ✅ Remove duplicates
     const uniqueMap = new Map();
     [...taxInvoices].reverse().forEach(i => {
-        const key = i.invoiceNo;
-        if (!uniqueMap.has(key)) {
-            uniqueMap.set(key, i);
+        if (!uniqueMap.has(i.invoiceNo)) {
+            uniqueMap.set(i.invoiceNo, i);
         }
     });
     let list = Array.from(uniqueMap.values());
 
     if (from) list = list.filter(i => i.date >= from);
     if (to) list = list.filter(i => i.date <= to);
-    if (search) list = list.filter(i =>
-        (i.invoiceNo || '').toLowerCase().includes(search) ||
-        (i.storeName || '').toLowerCase().includes(search) ||
-        (i.customerName || '').toLowerCase().includes(search)
-    );
+    if (search) list = list.filter(i => (i.invoiceNo || '').toLowerCase().includes(search) || (i.storeName || '').toLowerCase().includes(search) || (i.customerName || '').toLowerCase().includes(search));
 
-    const tbody = document.getElementById('tax-history-body');
-    if (tbody) {
-        tbody.innerHTML = list.length === 0
-            ? '<tr class="no-data"><td colspan="9">No tax invoices found</td></tr>'
-            : list.map(i => {
-                const gross = parseFloat(i.totalGross) || 0;
-                const disc = parseFloat(i.discountPercent) || 0;
-                const net = gross - (gross * disc / 100);
-                return `
-                <tr>
-                    <td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td>
-                    <td>${i.storeName || '-'}</td>
-                    <td>${i.customerName || '-'}</td>
-                    <td>${i.date}</td>
-                    <td>${(i.categories || []).length} categories</td>
-                    <td><strong>Rs. ${gross.toLocaleString()}</strong></td>
-                    <td>${disc}%</td>
-                    <td><strong style="color:var(--primary);">Rs. ${net.toLocaleString()}</strong></td>
-                    <td class="action-cell" style="white-space:nowrap">
-                        <button class="btn btn-outline btn-sm" onclick="viewTaxInvoice(${i.timestamp})"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-print btn-sm" onclick="printTaxInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTaxInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            }).join('');
-    }
+    document.getElementById('tax-history-body').innerHTML = list.length === 0 ? '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>' :
+        list.map(i => {
+            const gross = parseFloat(i.totalGross) || 0;
+            const gst = parseFloat(i.totalGst) || 0;
+            const amount = parseFloat(i.totalAmount) || 0;
+            const disc = parseFloat(i.discountPercent) || 0;
+            const net = gross - (gross * disc / 100);
+            return `<tr><td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td><td>${i.storeName || '-'}</td><td>${i.customerName || '-'}</td><td>${i.date}</td><td>${(i.categories || []).length} categories</td>
+            <td>Rs. ${amount.toFixed(2)}</td><td>Rs. ${gst.toFixed(2)}</td><td><strong>Rs. ${gross.toFixed(2)}</strong></td><td>${disc}%</td>
+            <td><button class="btn btn-print btn-sm" onclick="printTaxInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTaxInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button></td></tr>`;
+        }).join('');
 }
 
 function clearTaxHistoryFilter() {
@@ -1543,41 +1293,6 @@ function clearTaxHistoryFilter() {
     document.getElementById('tax-hist-to').value = '';
     document.getElementById('tax-hist-search').value = '';
     renderTaxHistory();
-}
-
-function exportTaxHistory() {
-    const from = document.getElementById('tax-hist-from').value;
-    const to = document.getElementById('tax-hist-to').value;
-    const uniqueMap = new Map();
-    [...taxInvoices].reverse().forEach(i => {
-        const key = i.invoiceNo;
-        if (!uniqueMap.has(key)) uniqueMap.set(key, i);
-    });
-    let list = Array.from(uniqueMap.values());
-    if (from) list = list.filter(i => i.date >= from);
-    if (to) list = list.filter(i => i.date <= to);
-
-    let text = 'Invoice #,Store,Customer,Date,Categories,Gross,Discount,Net\n';
-    list.forEach(i => {
-        const gross = parseFloat(i.totalGross) || 0;
-        const disc = parseFloat(i.discountPercent) || 0;
-        const net = gross - (gross * disc / 100);
-        text += `${i.invoiceNo},${i.storeName || ''},${i.customerName || ''},${i.date},${(i.categories || []).length},${gross.toFixed(2)},${disc}%,${net.toFixed(2)}\n`;
-    });
-    const blob = new Blob([text], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tax_invoices_export.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function viewTaxInvoice(ts) {
-    const inv = taxInvoices.find(i => i.timestamp === ts);
-    if (!inv) { showNotification('Tax Invoice not found!', 'error'); return; }
-    renderTaxInvoiceDisplay(inv);
-    showPage('tax-invoice', 'Tax Invoice');
 }
 
 function printTaxInvoiceByTs(ts) {
@@ -1590,275 +1305,95 @@ function printTaxInvoiceByTs(ts) {
 async function deleteTaxInvoice(ts) {
     if (!confirm('Delete this tax invoice?')) return;
     const ok = await sbDelete('tax_invoices', 'timestamp', ts);
-    if (!ok) return;
-    taxInvoices = taxInvoices.filter(i => i.timestamp !== ts);
-    renderTaxHistory();
-    showNotification('Tax Invoice deleted!');
+    if (ok) { taxInvoices = taxInvoices.filter(i => i.timestamp !== ts); renderTaxHistory(); showNotification('Tax Invoice deleted!'); }
 }
 
 // ============================================================
-// MONTHLY REPORT
+// MONTHLY REPORT - FIXED: WITH GST
 // ============================================================
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month').value;
-    if (!month) {
-        showNotification('Please select a month!', 'error');
-        return;
-    }
-
+    if (!month) { showNotification('Please select a month!', 'error'); return; }
     const [year, monthNum] = month.split('-');
-
-    const filteredInvoices = invoices.filter(inv => {
+    const filtered = invoices.filter(inv => {
         if (!inv.date) return false;
-        let dateObj;
-        if (typeof inv.date === 'string') {
-            const parts = inv.date.split('-');
-            if (parts.length === 3 && parts[0].length === 4) {
-                dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-            } else {
-                const parts2 = inv.date.split('-');
-                if (parts2.length === 3 && parts2[2].length === 4) {
-                    dateObj = new Date(parseInt(parts2[2]), parseInt(parts2[1]) - 1, parseInt(parts2[0]));
-                } else {
-                    dateObj = new Date(inv.date);
-                }
-            }
-        } else {
-            dateObj = new Date(inv.date);
-        }
-        if (isNaN(dateObj.getTime())) return false;
-        return dateObj.getFullYear() === parseInt(year) && (dateObj.getMonth() + 1) === parseInt(monthNum);
+        const d = new Date(inv.date);
+        return !isNaN(d.getTime()) && d.getFullYear() === parseInt(year) && (d.getMonth() + 1) === parseInt(monthNum);
     });
-
-    if (filteredInvoices.length === 0) {
-        showNotification('No invoices found for this month!', 'error');
-        document.getElementById('monthly-report-container').innerHTML = `
-            <div class="tax-invoice-placeholder">
-                <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i>
-                <p style="margin-top:12px;color:var(--text-light);">No invoices found for ${month}</p>
-            </div>
-        `;
+    if (filtered.length === 0) { showNotification('No invoices found!', 'error');
+        document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>No invoices found</p></div>`;
         return;
     }
 
-    let reportHTML = `
-    <div class="monthly-report">
-        <div class="report-header">
-            <h2>KRT TRADERS</h2>
-            <h3>Monthly Invoice List</h3>
-            <p>Month: ${month}</p>
-            <p>Generated: ${new Date().toLocaleDateString('en-PK')}</p>
-            <p>Total Invoices: ${filteredInvoices.length}</p>
-        </div>
-    `;
+    let html = `<div class="monthly-report"><div class="report-header"><h2>KRT TRADERS</h2><h3>Monthly Invoice List</h3><p>Month: ${month}</p><p>Total Invoices: ${filtered.length}</p></div>`;
+    let grandTotal = 0;
+    const grouped = {};
+    filtered.forEach(inv => { if (!grouped[inv.invoiceNo]) grouped[inv.invoiceNo] = { ...inv }; });
 
-    const groupedInvoices = {};
-    filteredInvoices.forEach(inv => {
-        const key = inv.invoiceNo;
-        if (!groupedInvoices[key]) {
-            groupedInvoices[key] = {
-                invoiceNo: inv.invoiceNo,
-                storeName: inv.storeName,
-                customerName: inv.customerName,
-                ntn: inv.ntn,
-                strn: inv.strn,
-                date: inv.date,
-                items: inv.items || [],
-                discountPercent: parseFloat(inv.discountPercent) || 0,
-                finalTotal: parseFloat(inv.finalTotal) || 0
-            };
-        }
-    });
-
-    let grandTotalAll = 0;
-
-    Object.values(groupedInvoices).forEach(inv => {
+    Object.values(grouped).forEach(inv => {
         const catData = {};
-        const discountPercent = inv.discountPercent || 0;
-
+        const disc = inv.discountPercent || 0;
         inv.items.forEach(item => {
-            const itemName = item.item || item.barcode;
-            const catInfo = getItemCategory(itemName);
-            const category = catInfo.category;
+            const name = item.item || item.barcode;
+            const info = getItemCategory(name);
+            const cat = info.category;
             const qty = parseFloat(item.qty) || 0;
             const rate = parseFloat(item.rate) || 0;
-
-            const totalBeforeDiscount = qty * rate;
-            const totalAfterDiscount = totalBeforeDiscount * (1 - discountPercent / 100);
-
-            const weight = catInfo.weight || 0;
-
-            if (!catData[category]) {
-                catData[category] = {
-                    category: category,
-                    hsCode: catInfo.hsCode,
-                    totalPcs: 0,
-                    totalSheet: 0,
-                    totalKg: 0,
-                    totalAmount: 0,
-                    ratePerPcs: 0,
-                    ratePerSheet: 0,
-                    ratePerKg: 0,
-                    weight: weight
-                };
-            }
-
-            catData[category].totalPcs += qty;
-            catData[category].totalAmount += totalAfterDiscount;
-
-            if (category === 'Foam' && weight > 0) {
-                catData[category].totalSheet += (qty * weight) / 1400;
-            }
-            if (category === 'Steel' && weight > 0) {
-                catData[category].totalKg += (qty * weight) / 1000;
-            }
+            const amount = (qty * rate) * (1 - disc / 100);
+            if (!catData[cat]) catData[cat] = { category: cat, hsCode: info.hsCode, totalPcs: 0, totalSheet: 0, totalKg: 0, totalAmount: 0, weight: info.weight || 0 };
+            catData[cat].totalPcs += qty;
+            catData[cat].totalAmount += amount;
+            if (cat === 'Foam' && info.weight > 0) catData[cat].totalSheet += (qty * info.weight) / 1400;
+            if (cat === 'Steel' && info.weight > 0) catData[cat].totalKg += (qty * info.weight) / 1000;
         });
+        Object.values(catData).forEach(c => { if (c.totalPcs > 0) c.ratePerPcs = c.totalAmount / c.totalPcs; });
 
-        Object.values(catData).forEach(cat => {
-            if (cat.totalPcs > 0) cat.ratePerPcs = cat.totalAmount / cat.totalPcs;
-            if (cat.totalSheet > 0) cat.ratePerSheet = cat.totalAmount / cat.totalSheet;
-            if (cat.totalKg > 0) cat.ratePerKg = cat.totalAmount / cat.totalKg;
+        let rows = '';
+        const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
+        const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+        let invTotal = 0;
+        order.forEach(key => {
+            const c = catData[key];
+            if (!c || c.totalPcs === 0) return;
+            invTotal += c.totalAmount;
+            const sheet = key === 'Foam' && c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-';
+            const kg = key === 'Steel' && c.totalKg > 0 ? c.totalKg.toFixed(3) : '-';
+            const gst = c.totalAmount * 0.18;
+            const gross = c.totalAmount + gst;
+            rows += `<tr><td>${labels[key] || key}</td><td>${c.totalPcs.toFixed(0)}</td><td>${sheet}</td><td>${kg}</td><td>${(c.ratePerPcs || 0).toFixed(2)}</td><td>${c.totalAmount.toFixed(2)}</td><td>${gst.toFixed(2)}</td><td>${gross.toFixed(2)}</td><td>${c.hsCode}</td></tr>`;
         });
+        const gstTotal = invTotal * 0.18;
+        const grossTotal = invTotal + gstTotal;
+        grandTotal += grossTotal;
 
-        let tableRows = '';
-        let grandTotal = 0;
-
-        const categoryOrder = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
-        const categoryLabels = {
-            'Foam': 'Abrasive Sheet',
-            'Steel': 'Stainless Steel',
-            'Fancy': 'Home Consumption',
-            'Micro': 'Micro Fiber',
-            'Razor': 'Classic Razor',
-            'Other': 'Other Items'
-        };
-
-        categoryOrder.forEach(catKey => {
-            const cat = catData[catKey];
-            if (!cat || cat.totalPcs === 0) return;
-
-            grandTotal += cat.totalAmount;
-
-            const displayName = categoryLabels[catKey] || catKey;
-
-            let sheetDisplay = '-';
-            let kgDisplay = '-';
-            
-            if (catKey === 'Foam' && cat.totalSheet > 0) {
-                sheetDisplay = cat.totalSheet.toFixed(3);
-            }
-            if (catKey === 'Steel' && cat.totalKg > 0) {
-                kgDisplay = cat.totalKg.toFixed(3);
-            }
-
-            tableRows += `
-                <tr>
-                    <td>${displayName}</td>
-                    <td style="text-align:center;">${cat.totalPcs.toFixed(0)}</td>
-                    <td style="text-align:center;">${sheetDisplay}</td>
-                    <td style="text-align:center;">${kgDisplay}</td>
-                    <td style="text-align:right;">${cat.ratePerPcs > 0 ? cat.ratePerPcs.toFixed(2) : '-'}</td>
-                    <td style="text-align:right;">${cat.ratePerSheet > 0 ? cat.ratePerSheet.toFixed(2) : '-'}</td>
-                    <td style="text-align:right;">${cat.ratePerKg > 0 ? cat.ratePerKg.toFixed(2) : '-'}</td>
-                    <td style="text-align:right;font-weight:bold;">${cat.totalAmount.toFixed(2)}</td>
-                    <td style="text-align:center;">${cat.hsCode}</td>
-                </tr>
-            `;
-        });
-
-        const discAmt = grandTotal * (discountPercent / 100);
-        const netTotal = grandTotal - discAmt;
-        grandTotalAll += netTotal;
-
-        reportHTML += `
-            <div class="invoice-report-card">
-                <div class="invoice-report-header">
-                    <div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
-                    <div class="invoice-report-details">
-                        <span><strong>Store:</strong> ${inv.storeName || inv.customerName || '-'}</span>
-                        <span><strong>NTN:</strong> ${inv.ntn || '-'}</span>
-                        <span><strong>STRN:</strong> ${inv.strn || '-'}</span>
-                        <span><strong>Date:</strong> ${inv.date || '-'}</span>
-                        <span><strong>Discount:</strong> ${discountPercent}%</span>
-                        <span><strong>Total:</strong> Rs. ${inv.finalTotal.toFixed(2)}</span>
-                    </div>
-                </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr>
-                            <th style="min-width:150px;">Category</th>
-                            <th style="width:60px;">PCS</th>
-                            <th style="width:70px;">Sheet</th>
-                            <th style="width:70px;">KG</th>
-                            <th style="width:90px;">Rate/PCS</th>
-                            <th style="width:90px;">Rate/Sheet</th>
-                            <th style="width:90px;">Rate/KG</th>
-                            <th style="width:110px;">Amount</th>
-                            <th style="width:100px;">HS Code</th>
-                        </tr></thead>
-                        <tbody>
-                            ${tableRows}
-                            <tr style="font-weight:bold;font-size:14px;border-top:2px solid var(--primary);background:#e8f5f0;">
-                                <td colspan="7" style="text-align:right;color:var(--primary);">TOTAL</td>
-                                <td style="text-align:right;color:var(--primary);">${netTotal.toFixed(2)}</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
+        html += `<div class="invoice-report-card"><div class="invoice-report-header"><div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
+            <div class="invoice-report-details"><span>Store: ${inv.storeName || inv.customerName || '-'}</span><span>NTN: ${inv.ntn || '-'}</span><span>STRN: ${inv.strn || '-'}</span><span>Date: ${inv.date || '-'}</span><span>Discount: ${disc}%</span><span>Total: Rs. ${parseFloat(inv.finalTotal).toFixed(2)}</span></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Amount</th><th>GST 18%</th><th>Gross</th><th>HS Code</th></tr></thead>
+            <tbody>${rows}<tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
+                <td colspan="5" style="text-align:right;">TOTAL</td>
+                <td>${invTotal.toFixed(2)}</td><td>${gstTotal.toFixed(2)}</td><td>${grossTotal.toFixed(2)}</td><td></td></tr></tbody></table></div></div>`;
     });
-
-    reportHTML += `
-        <div class="report-footer">
-            <p>Generated by KRT TRADERS ERP System</p>
-            <p>Total Invoices: ${Object.keys(groupedInvoices).length}</p>
-            <p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total: Rs. ${grandTotalAll.toFixed(2)}</p>
-        </div>
-    </div>
-    `;
-
-    document.getElementById('monthly-report-container').innerHTML = reportHTML;
-    document.getElementById('monthly-report-container').style.display = 'block';
+    html += `<div class="report-footer"><p>Generated by KRT TRADERS ERP System</p><p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total (with GST): Rs. ${grandTotal.toFixed(2)}</p></div></div>`;
+    document.getElementById('monthly-report-container').innerHTML = html;
 }
 
 function clearMonthlyReport() {
-    document.getElementById('monthly-report-container').innerHTML = `
-        <div class="tax-invoice-placeholder">
-            <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i>
-            <p style="margin-top:12px;color:var(--text-light);">Select a month and click "Generate" to view monthly invoice list</p>
-        </div>
-    `;
+    document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>Select a month and click "Generate"</p></div>`;
 }
 
 function printMonthlyReport() {
     const content = document.getElementById('monthly-report-container').innerHTML;
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html>
-<html>
-<head><title>Monthly Invoice List</title>
-<style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 20px; background: #fff; color: #000; }
-    .monthly-report { max-width: 1300px; margin: 0 auto; }
-    .report-header { text-align: center; padding-bottom: 16px; border-bottom: 3px solid #22c99a; margin-bottom: 20px; }
-    .report-header h2 { font-size: 24px; color: #22c99a; }
-    .report-header h3 { font-size: 18px; margin-top: 4px; }
-    .report-header p { font-size: 12px; color: #666; margin-top: 2px; }
-    .invoice-report-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
-    .invoice-report-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-    .invoice-report-title { font-size: 14px; font-weight: 700; }
-    .invoice-report-details { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
-    .invoice-report-details span { background: #fff; padding: 2px 10px; border-radius: 4px; border: 1px solid #ddd; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #22c99a; color: #fff; padding: 8px 10px; text-align: left; }
-    td { padding: 6px 10px; border-bottom: 1px solid #eee; }
-    .report-footer { text-align: center; font-size: 11px; color: #999; padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px; }
-    @media print { th { background: #22c99a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-</style></head>
-<body><div class="monthly-report">${content}</div>
-<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Monthly Invoice List</title><style>
+        body{font-family:Arial;font-size:12px;margin:20px;background:#fff;color:#000}.monthly-report{max-width:1300px;margin:0 auto}
+        .report-header{text-align:center;padding-bottom:16px;border-bottom:3px solid #22c99a;margin-bottom:20px}
+        .report-header h2{font-size:24px;color:#22c99a}.invoice-report-card{border:1px solid #ddd;border-radius:8px;margin-bottom:20px;overflow:hidden}
+        .invoice-report-header{background:#f5f5f5;padding:12px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+        table{width:100%;border-collapse:collapse;font-size:11px}th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
+        td{padding:6px 10px;border-bottom:1px solid #eee}
+        .report-footer{text-align:center;font-size:11px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
+        @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body><div class="monthly-report">${content}</div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
 }
 
 // ============================================================
