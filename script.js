@@ -904,6 +904,9 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
 // ============================================================
 // TAX INVOICE DISPLAY - COMPLETE FIXED
 // ============================================================
+// ============================================================
+// TAX INVOICE DISPLAY - COMPLETE FIXED
+// ============================================================
 function renderTaxInvoiceDisplay(data) {
     const container = document.getElementById('tax-invoice-container');
     taxInvoiceData = data;
@@ -918,53 +921,87 @@ function renderTaxInvoiceDisplay(data) {
         return;
     }
 
-    const categories = data.categories || [];
-    const discountPercent = parseFloat(data.discountPercent) || 0;
-    
+    // ✅ Category Display Names
+    const categoryLabels = {
+        'Foam': 'Abrasive Sheet',
+        'Steel': 'Stainless Steel',
+        'Fancy': 'Home Consumption',
+        'Micro': 'Micro Fiber',
+        'Razor': 'Classic Razor',
+        'Other': 'Other Items'
+    };
+
     // ✅ Get cash invoice values
     const cashInv = invoices.find(i => i.cashInvoiceTimestamp === data.cashInvoiceTimestamp);
-    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0; // After Discount = 82,065
-    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0; // Excluding Tax = 69,546.61
-    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0; // GST = 12,518.39
-    const totalDiscount = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0; // Discount = 27,355
-    
+    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
+    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
+    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
+    const totalDiscount = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0;
+    const discountPercent = parseFloat(data.discountPercent) || 0;
+
+    const categories = data.categories || [];
     let rows = '';
-    categories.forEach((cat, index) => {
-        const catName = cat.category || '';
-        const hsCode = cat.hsCode || '';
+    let invTotal = 0;
+    let invTotalExcl = 0;
+    let invTotalGst = 0;
+
+    // ✅ Order of categories
+    const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
+
+    order.forEach(key => {
+        const cat = categories.find(c => c.category === key);
+        if (!cat || cat.totalPcs === 0) return;
+
+        const catName = categoryLabels[key] || key;
         const qty = cat.totalPcs || 0;
+        const hsCode = cat.hsCode || '';
         const kg = cat.totalKg || 0;
         const sheet = cat.totalSheet || 0;
         const rate = cat.avgRatePerPcs || 0;
         const amount = cat.totalAmount || 0;
-        
-        // ✅ Calculate Excl Tax per category proportionally
+
+        // ✅ Calculate proportion
         const proportion = totalAmount > 0 ? amount / totalAmount : 0;
         const exclAmount = totalExcl * proportion;
-        const gstAmount = exclAmount * 0.18;
+        const gstAmount = totalGst * proportion;
+
+        invTotal += amount;
+        invTotalExcl += exclAmount;
+        invTotalGst += gstAmount;
 
         let greenSheetInfo = '';
-        if (cat.category === 'Foam' && cat.totalGram > 0) {
-            const pcsPerSheet = cat.totalSheet > 0 ? qty / cat.totalSheet : 0;
+        if (key === 'Foam' && cat.totalGram > 0) {
+            const pcsPerSheet = sheet > 0 ? qty / sheet : 0;
             greenSheetInfo = `
                 <span class="hidden-print" style="font-size:10px;color:var(--text-light);">
-                    (${cat.totalGram}g / 1400 = ${cat.totalSheet.toFixed(3)} sheets × ${pcsPerSheet.toFixed(1)} pcs/sheet)
+                    (${cat.totalGram}g / 1400 = ${sheet.toFixed(3)} sheets × ${pcsPerSheet.toFixed(1)} pcs/sheet)
                 </span>
             `;
         }
 
         rows += `
-            <tr data-index="${index}">
+            <tr>
                 <td>${qty}</td>
                 <td>${catName} ${greenSheetInfo}</td>
                 <td>${hsCode}</td>
-                <td>${cat.totalSheet > 0 ? cat.totalSheet.toFixed(3) : '-'}</td>
-                <td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
+                <td>${sheet > 0 ? sheet.toFixed(3) : '-'}</td>
+                <td>${kg > 0 ? kg.toFixed(3) : '-'}</td>
                 <td>${rate.toFixed(2)}</td>
-                <td>Rs. ${amount.toFixed(2)}</td>
+                <td style="font-weight:bold;">Rs. ${amount.toFixed(2)}</td>
             </tr>
         `;
     });
+
+    // ✅ If no rows found, show placeholder
+    if (!rows) {
+        container.innerHTML = `
+            <div class="tax-invoice-placeholder">
+                <i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i>
+                <p style="margin-top:12px;color:var(--text-light);">No categories found in this invoice.</p>
+            </div>
+        `;
+        return;
+    }
 
     container.innerHTML = `
         <div class="tax-invoice-display">
@@ -972,11 +1009,13 @@ function renderTaxInvoiceDisplay(data) {
                 <h2>KRT TRADERS</h2>
                 <p><strong>SALES TAX INVOICE</strong></p>
             </div>
+
             <div class="tax-info-grid">
                 <div class="tax-info-item"><span class="label">Invoice #:</span><strong>${data.invoiceNo || ''}</strong></div>
                 <div class="tax-info-item"><span class="label">Date:</span><strong>${data.date || ''}</strong></div>
                 <div class="tax-info-item"><span class="label">Discount:</span><strong>${discountPercent}%</strong></div>
             </div>
+
             <div class="tax-buyer-grid">
                 <div class="tax-buyer-box">
                     <strong>Supplier:</strong> KRT TRADERS
@@ -992,6 +1031,7 @@ function renderTaxInvoiceDisplay(data) {
                     <div>Address: ${data.address || '-'}</div>
                 </div>
             </div>
+
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -1005,9 +1045,16 @@ function renderTaxInvoiceDisplay(data) {
                             <th style="width:110px;">Amount</th>
                         </tr>
                     </thead>
-                    <tbody>${rows}</tbody>
+                    <tbody>
+                        ${rows}
+                        <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
+                            <td colspan="6" style="text-align:right;color:var(--primary);">TOTAL</td>
+                            <td style="text-align:right;color:var(--primary);">Rs. ${invTotal.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
+
             <div class="tax-totals">
                 <div class="tax-total-item">
                     <span class="label">Total Amount:</span>
@@ -1041,6 +1088,7 @@ function renderTaxInvoiceDisplay(data) {
                 </div>
                 `}
             </div>
+
             <div class="tax-actions no-print">
                 <button class="btn btn-primary" onclick="saveTaxInvoice()"><i class="fas fa-save"></i> Save</button>
                 <button class="btn btn-print" onclick="printTaxInvoice()"><i class="fas fa-print"></i> Print</button>
