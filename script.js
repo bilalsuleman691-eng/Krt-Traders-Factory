@@ -115,6 +115,11 @@ const ITEM_CATEGORIES = {
     'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 60 },
     'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223', weight: 104 },
     'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223', weight: 10 },
+    // ✅ FIX: Added missing Micro Fiber items
+    'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+    'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+    'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
+    'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.103', weight: 0 },
     'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -122,7 +127,6 @@ const ITEM_CATEGORIES = {
     'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.103', weight: 0 },
     'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9', weight: 0 }
 };
 
