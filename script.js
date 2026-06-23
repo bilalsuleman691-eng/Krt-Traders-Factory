@@ -131,6 +131,68 @@ function getItemCategory(itemName) {
 }
 
 // ============================================================
+// GREEN SHEET CALCULATION
+// ============================================================
+function calculateGreenSheet(items, discountPercent) {
+    let totalPcs = 0;
+    let totalWeight = 0;
+    let totalAmount = 0;
+    const foamItems = [];
+
+    items.forEach(item => {
+        const itemName = item.item || item.barcode;
+        const catInfo = getItemCategory(itemName);
+
+        if (catInfo.category === 'Foam' && catInfo.weight > 0) {
+            const qty = parseFloat(item.qty) || 0;
+            const rate = parseFloat(item.rate) || 0;
+            const weight = catInfo.weight;
+            
+            // Apply discount
+            const totalBeforeDiscount = qty * rate;
+            const discAmt = totalBeforeDiscount * (discountPercent / 100);
+            const amount = totalBeforeDiscount - discAmt;
+            const itemWeight = qty * weight;
+
+            totalPcs += qty;
+            totalWeight += itemWeight;
+            totalAmount += amount;
+
+            const pcsPerSheet = 1400 / weight;
+
+            foamItems.push({
+                name: itemName,
+                qty: qty,
+                rate: rate,
+                weight: weight,
+                totalWeight: itemWeight,
+                amount: amount,
+                sheets: itemWeight / 1400,
+                pcsPerSheet: pcsPerSheet,
+                pcsFromSheet: qty
+            });
+        }
+    });
+
+    const totalSheets = totalWeight / 1400;
+    const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
+    const avgRatePerSheet = totalSheets > 0 ? totalAmount / totalSheets : 0;
+    const avgPcsPerSheet = totalSheets > 0 ? totalPcs / totalSheets : 0;
+
+    return {
+        category: 'Foam',
+        totalPcs: totalPcs,
+        totalWeight: totalWeight,
+        totalSheets: totalSheets,
+        totalAmount: totalAmount,
+        avgRatePerPcs: avgRatePerPcs,
+        avgRatePerSheet: avgRatePerSheet,
+        avgPcsPerSheet: avgPcsPerSheet,
+        items: foamItems
+    };
+}
+
+// ============================================================
 // STATE
 // ============================================================
 let storeRates = [];
@@ -633,6 +695,7 @@ async function saveInvoiceNow() {
     const totalGst = totalExcludingTax * 0.18;
     const final = totalInclusive;
 
+    // ✅ Customer info (user input)
     const customerNtn = document.getElementById('inv-customer-ntn').value;
     const customerStrn = document.getElementById('inv-customer-strn').value;
     const customerAddress = document.getElementById('inv-customer-address').value;
@@ -728,7 +791,7 @@ async function saveInvoiceNow() {
         showNotification('Invoice saved!');
     }
 
-    // ✅ Generate Tax Invoice
+    // ✅ Generate Tax Invoice with discount
     await generateAndSaveTaxInvoice(ts);
 
     // ✅ SP Stock Out - FIXED: Check existing before insert
@@ -800,7 +863,7 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// TAX INVOICE GENERATION
+// TAX INVOICE GENERATION - FIXED: Discount applied
 // ============================================================
 async function generateAndSaveTaxInvoice(cashTimestamp) {
     const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
@@ -817,6 +880,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         const qty = parseFloat(item.qty) || 0;
         const rate = parseFloat(item.rate) || 0;
 
+        // ✅ Apply discount
         const totalBeforeDiscount = qty * rate;
         const discAmt = totalBeforeDiscount * (discountPercent / 100);
         const totalAfterDiscount = totalBeforeDiscount - discAmt;
@@ -853,6 +917,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         const cat = categories[key];
 
         if (key === 'Foam') {
+            // ✅ Use Green Sheet calculation
             const foamItems = [];
             let foamTotalPcs = 0;
             let foamTotalAmount = 0;
@@ -927,6 +992,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp) {
         }
     });
 
+    // ✅ Customer info from cash invoice
     const taxInvoiceData = {
         timestamp: Date.now(),
         invoiceNo: cashInv.invoiceNo + '-TAX',
@@ -1003,7 +1069,7 @@ function renderTaxInvoiceDisplay(data) {
             const pcsPerSheet = cat.totalSheet > 0 ? qty / cat.totalSheet : 0;
             greenSheetInfo = `
                 <span class="hidden-print" style="font-size:10px;color:var(--text-light);">
-                    (${cat.totalGram}g / 1400 = ${cat.totalSheet.toFixed(3)} sheets × ${pcsPerSheet.toFixed(1)} pcs/sheet = ${qty} pcs)
+                    (${cat.totalGram}g / 1400 = ${cat.totalSheet.toFixed(3)} sheets × ${pcsPerSheet.toFixed(1)} pcs/sheet)
                 </span>
             `;
         }
@@ -1503,7 +1569,7 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY
+// TAX HISTORY - FIXED
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from').value;
@@ -1520,24 +1586,31 @@ function renderTaxHistory() {
     );
 
     const tbody = document.getElementById('tax-history-body');
-    tbody.innerHTML = list.length === 0
-        ? '<tr class="no-data"><td colspan="9">No tax invoices found</td></tr>'
-        : list.map(i => `
-            <tr>
-                <td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td>
-                <td>${i.storeName || '-'}</td>
-                <td>${i.customerName || '-'}</td>
-                <td>${i.date}</td>
-                <td>${(i.categories || []).length} categories</td>
-                <td><strong>Rs. ${parseFloat(i.totalGross).toLocaleString()}</strong></td>
-                <td>${i.discountPercent || 0}%</td>
-                <td><strong style="color:var(--primary);">Rs. ${(parseFloat(i.totalGross) * (1 - (i.discountPercent || 0) / 100)).toLocaleString()}</strong></td>
-                <td class="action-cell" style="white-space:nowrap">
-                    <button class="btn btn-outline btn-sm" onclick="viewTaxInvoice(${i.timestamp})"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-print btn-sm" onclick="printTaxInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteTaxInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`).join('');
+    if (tbody) {
+        tbody.innerHTML = list.length === 0
+            ? '<tr class="no-data"><td colspan="9">No tax invoices found</td></tr>'
+            : list.map(i => {
+                const gross = parseFloat(i.totalGross) || 0;
+                const disc = parseFloat(i.discountPercent) || 0;
+                const net = gross - (gross * disc / 100);
+                return `
+                <tr>
+                    <td style="font-family:monospace;font-size:12px">${i.invoiceNo}</td>
+                    <td>${i.storeName || '-'}</td>
+                    <td>${i.customerName || '-'}</td>
+                    <td>${i.date}</td>
+                    <td>${(i.categories || []).length} categories</td>
+                    <td><strong>Rs. ${gross.toLocaleString()}</strong></td>
+                    <td>${disc}%</td>
+                    <td><strong style="color:var(--primary);">Rs. ${net.toLocaleString()}</strong></td>
+                    <td class="action-cell" style="white-space:nowrap">
+                        <button class="btn btn-outline btn-sm" onclick="viewTaxInvoice(${i.timestamp})"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-print btn-sm" onclick="printTaxInvoiceByTs(${i.timestamp})"><i class="fas fa-print"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTaxInvoice(${i.timestamp})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+    }
 }
 
 function clearTaxHistoryFilter() {
@@ -1558,7 +1631,7 @@ function exportTaxHistory() {
     list.forEach(i => {
         const gross = parseFloat(i.totalGross) || 0;
         const disc = parseFloat(i.discountPercent) || 0;
-        const net = gross * (1 - disc / 100);
+        const net = gross - (gross * disc / 100);
         text += `${i.invoiceNo},${i.storeName || ''},${i.customerName || ''},${i.date},${(i.categories || []).length},${gross.toFixed(2)},${disc}%,${net.toFixed(2)}\n`;
     });
     const blob = new Blob([text], { type: 'text/csv' });
