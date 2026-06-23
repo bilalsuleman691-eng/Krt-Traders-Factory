@@ -28,7 +28,7 @@ function showNotification(message, type = 'success') {
 }
 
 // ============================================================
-// SUPABASE CRUD OPERATIONS
+// SUPABASE CRUD
 // ============================================================
 async function sbSelect(table, order) {
     let q = sb.from(table).select('*');
@@ -63,7 +63,7 @@ async function sbDelete(table, idCol, idVal) {
 }
 
 // ============================================================
-// PRODUCT DATABASE
+// PRODUCTS
 // ============================================================
 const PRODUCTS = {
     "6957404902857": "SPONGE SCRUB 2 IN 1",
@@ -96,7 +96,7 @@ const PRODUCTS = {
 };
 
 // ============================================================
-// ITEM CATEGORIES WITH WEIGHTS
+// CATEGORIES
 // ============================================================
 const ITEM_CATEGORIES = {
     'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
@@ -106,7 +106,6 @@ const ITEM_CATEGORIES = {
     'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
     'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
     'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
-    'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
     'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
     'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
     'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
@@ -118,8 +117,6 @@ const ITEM_CATEGORIES = {
     'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
     'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'MICRO FIBER 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'SCRUB POWER MICRO FIBER 4X': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -149,7 +146,6 @@ let spInEntries = [];
 let spOutEntries = [];
 let editingRateId = null;
 let editingInvTs = null;
-let editingTaxInvTs = null;
 let editingStockInId = null;
 let editingStockOutId = null;
 let editingSPInId = null;
@@ -184,7 +180,7 @@ const map = {
 };
 
 // ============================================================
-// LOGIN / LOGOUT
+// LOGIN
 // ============================================================
 function login() {
     var pass = document.getElementById('pass').value;
@@ -200,17 +196,13 @@ function login() {
     }
 }
 
-function logout() {
-    location.reload();
-}
+function logout() { location.reload(); }
 
 document.addEventListener('DOMContentLoaded', function() {
     var passInput = document.getElementById('pass');
     if (passInput) {
         passInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
+            if (e.key === 'Enter') login();
         });
     }
 });
@@ -602,7 +594,7 @@ function cancelInvoiceEdit() {
 }
 
 // ============================================================
-// SAVE INVOICE - FIXED: Update Tax & SP on edit
+// SAVE INVOICE - FIXED: No duplicate Tax & SP
 // ============================================================
 async function saveInvoiceNow() {
     const customerName = document.getElementById('inv-customer').value.trim();
@@ -653,7 +645,7 @@ async function saveInvoiceNow() {
             invoiceNo = manualNo || getNextInvoiceNumber();
         }
 
-        // ✅ 1. UPDATE Cash Invoice
+        // ✅ UPDATE Cash Invoice
         const row = {
             store_name: storeName, customer_name: customerName,
             ntn: customerNtn, strn: customerStrn, address: customerAddress,
@@ -691,22 +683,20 @@ async function saveInvoiceNow() {
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('Invoice updated successfully!');
 
-        // ✅ 2. DELETE old Tax Invoice (if exists)
+        // ✅ DELETE old Tax Invoice (if exists) - FIX: No duplicate
         const oldTaxInv = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
         if (oldTaxInv) {
             await sbDelete('tax_invoices', 'timestamp', oldTaxInv.timestamp);
             taxInvoices = taxInvoices.filter(i => i.timestamp !== oldTaxInv.timestamp);
-            showNotification('Old Tax Invoice deleted!', 'info');
         }
 
-        // ✅ 3. DELETE old SP Stock Out (if exists)
+        // ✅ DELETE old SP Stock Out (if exists)
         const oldSpOuts = spOutEntries.filter(e => e.invoiceTimestamp === ts);
         if (oldSpOuts.length > 0) {
             for (const sp of oldSpOuts) {
                 await sbDelete('sp_stock_out', 'sr_no', sp.srNo);
             }
             spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== ts);
-            showNotification(`Old SP Stock Out (${oldSpOuts.length} entries) deleted!`, 'info');
         }
 
     } else {
@@ -752,10 +742,10 @@ async function saveInvoiceNow() {
         showNotification('Invoice saved!');
     }
 
-    // ✅ 4. Generate NEW Tax Invoice
+    // ✅ Generate NEW Tax Invoice
     await generateAndSaveTaxInvoice(ts);
 
-    // ✅ 5. Insert NEW SP Stock Out
+    // ✅ Insert NEW SP Stock Out
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -795,7 +785,7 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// TAX INVOICE GENERATION
+// GENERATE TAX INVOICE
 // ============================================================
 async function generateAndSaveTaxInvoice(cashTimestamp) {
     const cashInv = invoices.find(i => i.timestamp === cashTimestamp);
@@ -1092,9 +1082,6 @@ function renderTaxInvoiceDisplay(data) {
     `;
 }
 
-// ============================================================
-// TAX INVOICE ACTIONS
-// ============================================================
 function generateTaxInvoiceFromCash() {
     const lastInv = invoices.length > 0 ? invoices[invoices.length - 1] : null;
     if (!lastInv) {
@@ -1498,14 +1485,23 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY - FIXED
+// TAX HISTORY - FIXED (No duplicate)
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from').value;
     const to = document.getElementById('tax-hist-to').value;
     const search = (document.getElementById('tax-hist-search').value || '').toLowerCase();
 
-    let list = [...taxInvoices].reverse();
+    // ✅ Use Set to remove duplicates based on invoiceNo
+    const uniqueMap = new Map();
+    [...taxInvoices].reverse().forEach(i => {
+        const key = i.invoiceNo;
+        if (!uniqueMap.has(key)) {
+            uniqueMap.set(key, i);
+        }
+    });
+    let list = Array.from(uniqueMap.values());
+
     if (from) list = list.filter(i => i.date >= from);
     if (to) list = list.filter(i => i.date <= to);
     if (search) list = list.filter(i =>
@@ -1552,7 +1548,12 @@ function clearTaxHistoryFilter() {
 function exportTaxHistory() {
     const from = document.getElementById('tax-hist-from').value;
     const to = document.getElementById('tax-hist-to').value;
-    let list = [...taxInvoices].reverse();
+    const uniqueMap = new Map();
+    [...taxInvoices].reverse().forEach(i => {
+        const key = i.invoiceNo;
+        if (!uniqueMap.has(key)) uniqueMap.set(key, i);
+    });
+    let list = Array.from(uniqueMap.values());
     if (from) list = list.filter(i => i.date >= from);
     if (to) list = list.filter(i => i.date <= to);
 
@@ -1596,7 +1597,7 @@ async function deleteTaxInvoice(ts) {
 }
 
 // ============================================================
-// MONTHLY REPORT - FIXED
+// MONTHLY REPORT
 // ============================================================
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month').value;
