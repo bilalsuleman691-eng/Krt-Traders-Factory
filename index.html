@@ -171,7 +171,10 @@
             <p><i class="fas fa-file-invoice"></i> CASH INVOICE</p>
             <div class="company-details"><span><strong>NTN:</strong> 2995454-1</span><span><strong>STRN:</strong> 300299545411</span><span><strong>Address:</strong> Lahore, Pakistan</span></div>
           </div>
-          <div class="invoice-number"><label>Invoice #</label><div class="inv-number-display" id="invoice-number-display">INV-001</div></div>
+          <div class="invoice-number">
+            <label>Invoice #</label>
+            <input type="text" id="invoice-number-input" class="inv-number-input" value="INV-001" onchange="updateInvoiceNumberFromInput()">
+          </div>
         </div>
 
         <div class="invoice-details-grid">
