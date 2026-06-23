@@ -4,16 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KRT TRADERS - ERP System</title>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    
+
     <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js">
+    </script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -252,7 +253,6 @@
                             </div>
                         </div>
 
-                        <!-- Add Rate Form -->
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Store <span class="required">*</span></label>
@@ -284,7 +284,6 @@
                         </div>
                     </div>
 
-                    <!-- Rates List -->
                     <div class="card" id="rates-list-container" style="display:none;">
                         <div class="card-header">
                             <h2><i class="fas fa-list"></i> All Rates</h2>
@@ -319,8 +318,19 @@
                             </div>
                         </div>
 
-                        <!-- Customer Info -->
                         <div class="form-row">
+                            <div class="form-group">
+                                <label>Invoice Number</label>
+                                <input type="text" id="inv-number" placeholder="Enter custom invoice number" oninput="updateInvoiceNumberManual(this.value)" />
+                                <small style="color:var(--text-light);font-size:11px;">Leave empty for auto-generated</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Date <span class="required">*</span></label>
+                                <input type="date" id="inv-date" class="stock-date" />
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top:12px;">
                             <div class="form-group">
                                 <label>Customer Name <span class="required">*</span></label>
                                 <input type="text" id="inv-customer" placeholder="Customer name" />
@@ -341,24 +351,16 @@
                                 <input type="text" id="inv-customer-strn" placeholder="STRN number" />
                             </div>
                         </div>
-                        <div class="form-row" style="margin-top:12px;">
-                            <div class="form-group">
-                                <label>Address</label>
-                                <input type="text" id="inv-customer-address" placeholder="Customer address" />
-                            </div>
-                            <div class="form-group">
-                                <label>Date <span class="required">*</span></label>
-                                <input type="date" id="inv-date" class="stock-date" />
-                            </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>Address</label>
+                            <input type="text" id="inv-customer-address" placeholder="Customer address" />
                         </div>
 
-                        <!-- Store Rate Preview -->
                         <div id="inv-store-info" style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;color:var(--text-light);">
                             <i class="fas fa-store"></i> Enter store name to see rates
                         </div>
                         <div id="inv-store-rate-preview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--text-light);"></div>
 
-                        <!-- Items Table -->
                         <div style="margin-top:16px;">
                             <div class="table-wrap">
                                 <table>
@@ -371,7 +373,6 @@
                             </button>
                         </div>
 
-                        <!-- Discount & Totals -->
                         <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div class="form-group">
                                 <label>Discount (%)</label>
@@ -405,7 +406,6 @@
                             </div>
                         </div>
 
-                        <!-- Actions -->
                         <div class="btn-group" style="margin-top:20px;">
                             <button class="btn btn-primary" onclick="saveInvoiceNow()">
                                 <i class="fas fa-save"></i> Save Invoice
@@ -509,7 +509,7 @@
                         </div>
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Excl. Tax</th><th>GST</th><th>Gross</th><th>Actions</th></tr></thead>
+                                <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Gross</th><th>Discount</th><th>Net</th><th>Actions</th></tr></thead>
                                 <tbody id="tax-history-body">
                                     <tr class="no-data"><td colspan="9">No tax invoices found</td></tr>
                                 </tbody>
