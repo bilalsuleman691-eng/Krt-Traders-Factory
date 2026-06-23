@@ -1296,16 +1296,23 @@ async function deleteTaxInvoice(ts) {
 // ============================================================
 // MONTHLY REPORT - FIXED
 // ============================================================
+// ============================================================
+// MONTHLY REPORT - COMPLETE FIXED
+// ============================================================
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month').value;
-    if (!month) { showNotification('Please select a month!', 'error'); return; }
+    if (!month) {
+        showNotification('Please select a month!', 'error');
+        return;
+    }
     const [year, monthNum] = month.split('-');
     const filtered = invoices.filter(inv => {
         if (!inv.date) return false;
         const d = new Date(inv.date);
         return !isNaN(d.getTime()) && d.getFullYear() === parseInt(year) && (d.getMonth() + 1) === parseInt(monthNum);
     });
-    if (filtered.length === 0) { showNotification('No invoices found!', 'error');
+    if (filtered.length === 0) {
+        showNotification('No invoices found!', 'error');
         document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>No invoices found</p></div>`;
         return;
     }
@@ -1313,11 +1320,21 @@ function generateMonthlyReport() {
     let html = `<div class="monthly-report"><div class="report-header"><h2>KRT TRADERS</h2><h3>Monthly Invoice List</h3><p>Month: ${month}</p><p>Total Invoices: ${filtered.length}</p></div>`;
     let grandTotal = 0;
     const grouped = {};
-    filtered.forEach(inv => { if (!grouped[inv.invoiceNo]) grouped[inv.invoiceNo] = { ...inv }; });
+    filtered.forEach(inv => {
+        if (!grouped[inv.invoiceNo]) {
+            grouped[inv.invoiceNo] = { ...inv };
+        }
+    });
 
     Object.values(grouped).forEach(inv => {
         const catData = {};
         const disc = inv.discountPercent || 0;
+        
+        // ✅ Get GST from cash invoice
+        const cashInv = invoices.find(i => i.invoiceNo === inv.invoiceNo);
+        const invTotalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
+        const invFinalTotal = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
+        
         inv.items.forEach(item => {
             const name = item.item || item.barcode;
             const info = getItemCategory(name);
@@ -1325,43 +1342,129 @@ function generateMonthlyReport() {
             const qty = parseFloat(item.qty) || 0;
             const rate = parseFloat(item.rate) || 0;
             const amount = (qty * rate) * (1 - disc / 100);
-            if (!catData[cat]) catData[cat] = { category: cat, hsCode: info.hsCode, totalPcs: 0, totalSheet: 0, totalKg: 0, totalAmount: 0, weight: info.weight || 0 };
+            if (!catData[cat]) {
+                catData[cat] = {
+                    category: cat,
+                    hsCode: info.hsCode,
+                    totalPcs: 0,
+                    totalSheet: 0,
+                    totalKg: 0,
+                    totalAmount: 0,
+                    weight: info.weight || 0
+                };
+            }
             catData[cat].totalPcs += qty;
             catData[cat].totalAmount += amount;
-            if (cat === 'Foam' && info.weight > 0) catData[cat].totalSheet += (qty * info.weight) / 1400;
-            if (cat === 'Steel' && info.weight > 0) catData[cat].totalKg += (qty * info.weight) / 1000;
+            if (cat === 'Foam' && info.weight > 0) {
+                catData[cat].totalSheet += (qty * info.weight) / 1400;
+            }
+            if (cat === 'Steel' && info.weight > 0) {
+                catData[cat].totalKg += (qty * info.weight) / 1000;
+            }
         });
-        Object.values(catData).forEach(c => { if (c.totalPcs > 0) c.ratePerPcs = c.totalAmount / c.totalPcs; });
+        
+        Object.values(catData).forEach(c => {
+            if (c.totalPcs > 0) {
+                c.ratePerPcs = c.totalAmount / c.totalPcs;
+            }
+        });
 
         let rows = '';
         const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
-        const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+        const labels = {
+            'Foam': 'Abrasive Sheet',
+            'Steel': 'Stainless Steel',
+            'Fancy': 'Home Consumption',
+            'Micro': 'Micro Fiber',
+            'Razor': 'Classic Razor',
+            'Other': 'Other Items'
+        };
         let invTotal = 0;
+        
         order.forEach(key => {
             const c = catData[key];
             if (!c || c.totalPcs === 0) return;
             invTotal += c.totalAmount;
-            const sheet = key === 'Foam' && c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-';
-            const kg = key === 'Steel' && c.totalKg > 0 ? c.totalKg.toFixed(3) : '-';
-            const gst = c.totalAmount * 0.18;
-            const gross = c.totalAmount + gst;
-            rows += `<tr><td>${labels[key] || key}</td><td>${c.totalPcs.toFixed(0)}</td><td>${sheet}</td><td>${kg}</td><td>${(c.ratePerPcs || 0).toFixed(2)}</td><td>${c.totalAmount.toFixed(2)}</td><td>${gst.toFixed(2)}</td><td>${gross.toFixed(2)}</td><td>${c.hsCode}</td></tr>`;
+            const sheet = (key === 'Foam' && c.totalSheet > 0) ? c.totalSheet.toFixed(3) : '-';
+            const kg = (key === 'Steel' && c.totalKg > 0) ? c.totalKg.toFixed(3) : '-';
+            
+            // ✅ Calculate GST proportionally based on category amount
+            const proportion = invTotal > 0 ? c.totalAmount / invTotal : 0;
+            const gstAmount = invTotalGst * proportion;
+            const gross = c.totalAmount + gstAmount;
+            
+            rows += `<tr>
+                <td>${labels[key] || key}</td>
+                <td style="text-align:center;">${c.totalPcs.toFixed(0)}</td>
+                <td style="text-align:center;">${sheet}</td>
+                <td style="text-align:center;">${kg}</td>
+                <td style="text-align:right;">${(c.ratePerPcs || 0).toFixed(2)}</td>
+                <td style="text-align:right;">${c.totalAmount.toFixed(2)}</td>
+                <td style="text-align:right;">${gstAmount.toFixed(2)}</td>
+                <td style="text-align:right;">${gross.toFixed(2)}</td>
+                <td style="text-align:center;">${c.hsCode}</td>
+            </tr>`;
         });
-        const gstTotal = invTotal * 0.18;
+        
+        // ✅ Use GST from cash invoice
+        const gstTotal = invTotalGst;
         const grossTotal = invTotal + gstTotal;
         grandTotal += grossTotal;
 
-        html += `<div class="invoice-report-card"><div class="invoice-report-header"><div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
-            <div class="invoice-report-details"><span>Store: ${inv.storeName || inv.customerName || '-'}</span><span>NTN: ${inv.ntn || '-'}</span><span>STRN: ${inv.strn || '-'}</span><span>Date: ${inv.date || '-'}</span><span>Discount: ${disc}%</span><span>Total: Rs. ${parseFloat(inv.finalTotal).toFixed(2)}</span></div></div>
-            <div class="table-wrap"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Amount</th><th>GST 18%</th><th>Gross</th><th>HS Code</th></tr></thead>
-            <tbody>${rows}<tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
-                <td colspan="5" style="text-align:right;">TOTAL</td>
-                <td>${invTotal.toFixed(2)}</td><td>${gstTotal.toFixed(2)}</td><td>${grossTotal.toFixed(2)}</td><td></td></tr></tbody></table></div></div>`;
+        html += `
+            <div class="invoice-report-card">
+                <div class="invoice-report-header">
+                    <div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
+                    <div class="invoice-report-details">
+                        <span><strong>Store:</strong> ${inv.storeName || inv.customerName || '-'}</span>
+                        <span><strong>NTN:</strong> ${inv.ntn || '-'}</span>
+                        <span><strong>STRN:</strong> ${inv.strn || '-'}</span>
+                        <span><strong>Date:</strong> ${inv.date || '-'}</span>
+                        <span><strong>Discount:</strong> ${disc}%</span>
+                        <span><strong>Total:</strong> Rs. ${invFinalTotal.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="min-width:150px;">Category</th>
+                                <th style="width:60px;">PCS</th>
+                                <th style="width:70px;">Sheet</th>
+                                <th style="width:70px;">KG</th>
+                                <th style="width:90px;">Rate/PCS</th>
+                                <th style="width:110px;">Amount</th>
+                                <th style="width:90px;">GST 18%</th>
+                                <th style="width:110px;">Gross</th>
+                                <th style="width:100px;">HS Code</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                            <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
+                                <td colspan="5" style="text-align:right;color:var(--primary);">TOTAL</td>
+                                <td style="text-align:right;color:var(--primary);">${invTotal.toFixed(2)}</td>
+                                <td style="text-align:right;color:var(--primary);">${gstTotal.toFixed(2)}</td>
+                                <td style="text-align:right;color:var(--primary);">${grossTotal.toFixed(2)}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
     });
-    html += `<div class="report-footer"><p>Generated by KRT TRADERS ERP System</p><p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total (with GST): Rs. ${grandTotal.toFixed(2)}</p></div></div>`;
+    
+    html += `
+        <div class="report-footer">
+            <p>Generated by KRT TRADERS ERP System</p>
+            <p>Total Invoices: ${Object.keys(grouped).length}</p>
+            <p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total (with GST): Rs. ${grandTotal.toFixed(2)}</p>
+        </div>
+    </div>`;
+    
     document.getElementById('monthly-report-container').innerHTML = html;
 }
-
 function clearMonthlyReport() {
     document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>Select a month and click "Generate"</p></div>`;
 }
