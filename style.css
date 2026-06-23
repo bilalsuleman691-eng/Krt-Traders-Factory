@@ -591,6 +591,28 @@ body {
 }
 
 /* ============================================================
+   COMPANY INFO BOX
+   ============================================================ */
+.company-info-box {
+    background: var(--bg);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+}
+
+.company-info-box span {
+    background: var(--card-bg);
+    padding: 2px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+/* ============================================================
    FORM ELEMENTS
    ============================================================ */
 .form-group {
@@ -1242,7 +1264,7 @@ table tbody tr.no-data td {
 }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE - PHONE FIX
    ============================================================ */
 @media (max-width: 1024px) {
     .grid-4 {
@@ -1373,6 +1395,63 @@ table tbody tr.no-data td {
     .stat-value {
         font-size: 18px;
     }
+
+    /* Phone Fix - Company Info */
+    .company-info-box {
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+
+    .company-info-box span {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Table responsive */
+    .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        font-size: 12px;
+        min-width: 600px;
+    }
+
+    table th,
+    table td {
+        padding: 6px 8px;
+        white-space: nowrap;
+    }
+
+    /* Invoice totals on phone */
+    .card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* Discount and totals section */
+    #page-cash-invoice .card > div:last-child {
+        grid-template-columns: 1fr !important;
+    }
+
+    #page-cash-invoice .card > div:last-child > div:last-child {
+        text-align: left !important;
+        margin-top: 12px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1383,20 +1462,24 @@ table tbody tr.no-data td {
     .btn {
         font-size: 12px;
         padding: 8px 14px;
+        width: 100%;
+        justify-content: center;
     }
 
     .btn-sm {
         font-size: 10px;
         padding: 4px 8px;
+        width: auto;
     }
 
     table {
         font-size: 11px;
+        min-width: 500px;
     }
 
     table th,
     table td {
-        padding: 6px 8px;
+        padding: 4px 6px;
     }
 
     .card {
@@ -1409,5 +1492,21 @@ table tbody tr.no-data td {
 
     .login-box .logo {
         font-size: 28px;
+    }
+
+    .login-box {
+        padding: 24px 16px;
+    }
+
+    .company-info-box span {
+        font-size: 11px;
+    }
+
+    /* Make input fields full width on phone */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px;
+        /* Prevents iOS zoom */
     }
 }
