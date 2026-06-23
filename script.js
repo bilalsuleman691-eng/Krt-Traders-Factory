@@ -28,7 +28,7 @@ function showNotification(message, type = 'success') {
 }
 
 // ============================================================
-// SUPABASE CRUD
+// SUPABASE CRUD OPERATIONS
 // ============================================================
 async function sbSelect(table, order) {
     let q = sb.from(table).select('*');
@@ -602,7 +602,7 @@ function cancelInvoiceEdit() {
 }
 
 // ============================================================
-// SAVE INVOICE - FIXED: Tax & SP update on edit
+// SAVE INVOICE - COMPLETE FIXED
 // ============================================================
 async function saveInvoiceNow() {
     const customerName = document.getElementById('inv-customer').value.trim();
@@ -626,7 +626,6 @@ async function saveInvoiceNow() {
         return;
     }
 
-    // ✅ CALCULATE
     const sub = items.reduce((s, i) => s + parseFloat(i.total), 0);
     const disc = parseFloat(document.getElementById('inv-discount').value) || 0;
     const discAmt = sub * disc / 100;
@@ -642,13 +641,29 @@ async function saveInvoiceNow() {
     let ts, invoiceNo, isEdit = false;
     const manualNo = document.getElementById('inv-number')?.value?.trim() || '';
 
-    // ✅ Check if editing
+    // DELETE old records if editing
     if (editingInvTs !== null) {
         ts = editingInvTs;
         const existingInv = invoices.find(i => i.timestamp === ts);
         invoiceNo = existingInv ? existingInv.invoiceNo : (manualNo || getNextInvoiceNumber());
 
-        // ✅ UPDATE Cash Invoice
+        // Delete old Tax Invoice
+        const oldTax = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
+        if (oldTax) {
+            await sbDelete('tax_invoices', 'timestamp', oldTax.timestamp);
+            taxInvoices = taxInvoices.filter(i => i.timestamp !== oldTax.timestamp);
+        }
+
+        // Delete old SP Stock Out
+        const oldSP = spOutEntries.filter(e => e.invoiceTimestamp === ts);
+        if (oldSP.length > 0) {
+            for (const sp of oldSP) {
+                await sbDelete('sp_stock_out', 'sr_no', sp.srNo);
+            }
+            spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== ts);
+        }
+
+        // Update Cash Invoice
         const row = {
             store_name: storeName, customer_name: customerName,
             ntn: customerNtn, strn: customerStrn, address: customerAddress,
@@ -686,24 +701,8 @@ async function saveInvoiceNow() {
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('Invoice updated successfully!');
 
-        // ✅ DELETE old Tax Invoice
-        const oldTax = taxInvoices.find(i => i.cashInvoiceTimestamp === ts);
-        if (oldTax) {
-            await sbDelete('tax_invoices', 'timestamp', oldTax.timestamp);
-            taxInvoices = taxInvoices.filter(i => i.timestamp !== oldTax.timestamp);
-        }
-
-        // ✅ DELETE old SP Stock Out
-        const oldSP = spOutEntries.filter(e => e.invoiceTimestamp === ts);
-        if (oldSP.length > 0) {
-            for (const sp of oldSP) {
-                await sbDelete('sp_stock_out', 'sr_no', sp.srNo);
-            }
-            spOutEntries = spOutEntries.filter(e => e.invoiceTimestamp !== ts);
-        }
-
     } else {
-        // ✅ NEW Invoice
+        // NEW Invoice
         ts = Date.now();
         invoiceNo = manualNo || getNextInvoiceNumber();
         const row = {
@@ -740,10 +739,10 @@ async function saveInvoiceNow() {
         showNotification('Invoice saved!');
     }
 
-    // ✅ Generate NEW Tax Invoice (WITH DISCOUNT + GST)
-    await generateTaxInvoice(ts, disc, sub, discAmt, afterDisc, final, totalExcl, totalGst, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo);
+    // Generate NEW Tax Invoice
+    await generateAndSaveTaxInvoice(ts, disc, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, final);
 
-    // ✅ Insert NEW SP Stock Out
+    // Insert NEW SP Stock Out
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -783,13 +782,21 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// GENERATE TAX INVOICE - FIXED: DISCOUNT + GST SHOW
+// GENERATE TAX INVOICE - COMPLETE FIXED
 // ============================================================
-async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, final, totalExcl, totalGst, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo) {
-    const categories = {};
-    const discountPercent = disc || 0;
+async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, finalTotal) {
+    // Check if tax invoice already exists
+    const existingTax = taxInvoices.find(i => i.cashInvoiceTimestamp === cashTimestamp);
+    if (existingTax) {
+        // Delete old tax invoice if exists (avoid duplicate)
+        await sbDelete('tax_invoices', 'timestamp', existingTax.timestamp);
+        taxInvoices = taxInvoices.filter(i => i.timestamp !== existingTax.timestamp);
+    }
 
-    // ✅ Apply discount to each item
+    const categories = {};
+    const disc = discountPercent || 0;
+
+    // Group items by category with discount applied
     items.forEach(item => {
         const itemName = item.item || item.barcode;
         const catInfo = getItemCategory(itemName);
@@ -798,7 +805,7 @@ async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, 
         const rate = parseFloat(item.rate) || 0;
 
         const totalBeforeDiscount = qty * rate;
-        const discAmtItem = totalBeforeDiscount * (discountPercent / 100);
+        const discAmtItem = totalBeforeDiscount * (disc / 100);
         const totalAfterDiscount = totalBeforeDiscount - discAmtItem;
 
         if (!categories[key]) {
@@ -825,43 +832,30 @@ async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, 
         }
     });
 
-    const categoryList = [];
-
-    Object.keys(categories).forEach(key => {
+    // Convert to array with rates
+    const categoryList = Object.keys(categories).map(key => {
         const cat = categories[key];
         const totalAmount = cat.totalAmount || 0;
-        const avgRatePerPcs = cat.totalPcs > 0 ? totalAmount / cat.totalPcs : 0;
+        const totalPcs = cat.totalPcs || 0;
+        const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
 
-        categoryList.push({
+        return {
             category: key,
-            totalPcs: cat.totalPcs || 0,
+            totalPcs: totalPcs,
             totalGram: cat.totalGram || 0,
             totalKg: cat.totalKg || 0,
             totalSheet: cat.totalSheet || 0,
             totalAmount: totalAmount,
             avgRatePerPcs: avgRatePerPcs,
             hsCode: cat.hsCode || '0000'
-        });
-    });
-
-    // ✅ Calculate GST per category
-    const categoryListWithGST = categoryList.map(cat => {
-        const amount = cat.totalAmount || 0;
-        const gst = amount * 0.18;
-        const gross = amount + gst;
-        return {
-            ...cat,
-            gst: gst,
-            gross: gross
         };
     });
 
-    // ✅ Totals
-    const totalGross = categoryListWithGST.reduce((s, cat) => s + cat.gross, 0);
-    const totalGstAll = categoryListWithGST.reduce((s, cat) => s + cat.gst, 0);
-    const totalAmountAll = categoryListWithGST.reduce((s, cat) => s + cat.totalAmount, 0);
+    // Calculate totals
+    const totalAmountAll = categoryList.reduce((s, cat) => s + cat.totalAmount, 0);
+    const totalGstAll = totalAmountAll * 0.18;
+    const totalGrossAll = totalAmountAll + totalGstAll;
 
-    // ✅ Tax Invoice Data
     const taxInvoiceData = {
         timestamp: Date.now(),
         invoiceNo: invoiceNo + '-TAX',
@@ -871,11 +865,11 @@ async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, 
         strn: customerStrn,
         address: customerAddress,
         date: date,
-        categories: categoryListWithGST,
+        categories: categoryList,
         totalAmount: totalAmountAll.toFixed(2),
         totalGst: totalGstAll.toFixed(2),
-        totalGross: totalGross.toFixed(2),
-        discountPercent: discountPercent,
+        totalGross: totalGrossAll.toFixed(2),
+        discountPercent: disc,
         cashInvoiceTimestamp: cashTimestamp
     };
 
@@ -905,7 +899,7 @@ async function generateTaxInvoice(cashTimestamp, disc, sub, discAmt, afterDisc, 
 }
 
 // ============================================================
-// TAX INVOICE DISPLAY - WITH GST
+// TAX INVOICE DISPLAY
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
     const container = document.getElementById('tax-invoice-container');
@@ -938,8 +932,6 @@ function renderTaxInvoiceDisplay(data) {
         const sheet = cat.totalSheet || 0;
         const rate = cat.avgRatePerPcs || 0;
         const amount = cat.totalAmount || 0;
-        const gst = cat.gst || 0;
-        const gross = cat.gross || 0;
 
         let greenSheetInfo = '';
         if (cat.category === 'Foam' && cat.totalGram > 0) {
@@ -960,8 +952,6 @@ function renderTaxInvoiceDisplay(data) {
                 <td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
                 <td>${rate.toFixed(2)}</td>
                 <td class="tax-amount">Rs. ${amount.toFixed(2)}</td>
-                <td class="tax-gst">Rs. ${gst.toFixed(2)}</td>
-                <td class="tax-gross">Rs. ${gross.toFixed(2)}</td>
             </tr>
         `;
     });
@@ -984,7 +974,7 @@ function renderTaxInvoiceDisplay(data) {
             </div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Amount</th><th>GST 18%</th><th>Gross</th></tr></thead>
+                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Amount</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>
@@ -1012,15 +1002,9 @@ function generateTaxInvoiceFromCash() {
     const lastInv = invoices.length > 0 ? invoices[invoices.length - 1] : null;
     if (!lastInv) { showNotification('No cash invoice found!', 'error'); return; }
     const inv = lastInv;
-    generateTaxInvoice(
+    generateAndSaveTaxInvoice(
         inv.timestamp,
         inv.discountPercent || 0,
-        parseFloat(inv.subTotal) || 0,
-        parseFloat(inv.discountAmt) || 0,
-        parseFloat(inv.afterDiscount) || 0,
-        parseFloat(inv.finalTotal) || 0,
-        parseFloat(inv.totalExcludingTax) || 0,
-        parseFloat(inv.totalGst) || 0,
         inv.items || [],
         inv.storeName || '',
         inv.customerName || '',
@@ -1028,7 +1012,8 @@ function generateTaxInvoiceFromCash() {
         inv.strn || '',
         inv.address || '',
         inv.date || '',
-        inv.invoiceNo || ''
+        inv.invoiceNo || '',
+        parseFloat(inv.finalTotal) || 0
     );
 }
 
@@ -1254,14 +1239,14 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY - FIXED: WITH GST
+// TAX HISTORY - NO DUPLICATE
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from').value;
     const to = document.getElementById('tax-hist-to').value;
     const search = (document.getElementById('tax-hist-search').value || '').toLowerCase();
 
-    // ✅ Remove duplicates
+    // Remove duplicates by invoiceNo
     const uniqueMap = new Map();
     [...taxInvoices].reverse().forEach(i => {
         if (!uniqueMap.has(i.invoiceNo)) {
@@ -1309,7 +1294,7 @@ async function deleteTaxInvoice(ts) {
 }
 
 // ============================================================
-// MONTHLY REPORT - FIXED: WITH GST
+// MONTHLY REPORT - FIXED
 // ============================================================
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month').value;
