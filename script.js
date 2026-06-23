@@ -599,7 +599,7 @@ function cancelInvoiceEdit() {
 }
 
 // ============================================================
-// SAVE INVOICE
+// SAVE INVOICE - FIXED: No duplicate SP Stock Out
 // ============================================================
 async function saveInvoiceNow() {
     const customerName = document.getElementById('inv-customer').value.trim();
@@ -638,7 +638,6 @@ async function saveInvoiceNow() {
     const customerAddress = document.getElementById('inv-customer-address').value;
 
     let ts, invoiceNo, isEdit = false;
-
     const manualNo = document.getElementById('inv-number')?.value?.trim() || '';
 
     if (editingInvTs !== null) {
@@ -729,13 +728,18 @@ async function saveInvoiceNow() {
         showNotification('Invoice saved!');
     }
 
+    // ✅ Generate Tax Invoice
     await generateAndSaveTaxInvoice(ts);
 
+    // ✅ SP Stock Out - FIXED: Check existing before insert
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
-            const srNo = Date.now() + Math.floor(Math.random() * 1000);
-            const spRow = {
-                sr_no: srNo,
+            // Check if SP Stock Out already exists for this invoice + barcode
+            const existingSP = spOutEntries.find(e => 
+                e.invoiceTimestamp === ts && e.barcode === item.barcode
+            );
+
+            const spData = {
                 date: date,
                 store: storeName || customerName,
                 barcode: item.barcode,
@@ -745,21 +749,47 @@ async function saveInvoiceNow() {
                 total: item.qty * item.rate,
                 invoice_timestamp: ts
             };
-            const { error } = await sb.from('sp_stock_out').insert(spRow);
-            if (error) {
-                console.error('SP Insert Error:', error);
+
+            if (existingSP) {
+                // ✅ UPDATE existing SP Stock Out
+                const ok = await sbUpdate('sp_stock_out', 'sr_no', existingSP.srNo, spData);
+                if (ok) {
+                    const idx = spOutEntries.findIndex(e => e.srNo === existingSP.srNo);
+                    if (idx > -1) {
+                        spOutEntries[idx] = {
+                            ...spOutEntries[idx],
+                            date: spData.date,
+                            store: spData.store,
+                            itemName: spData.item_name,
+                            qty: spData.qty,
+                            price: spData.price,
+                            total: spData.total
+                        };
+                    }
+                }
             } else {
-                spOutEntries.push({
-                    srNo: srNo,
-                    date: date,
-                    store: spRow.store,
-                    barcode: spRow.barcode,
-                    itemName: spRow.item_name,
-                    qty: spRow.qty,
-                    price: spRow.price,
-                    total: spRow.total,
-                    invoiceTimestamp: ts
-                });
+                // ✅ INSERT new SP Stock Out
+                const srNo = Date.now() + Math.floor(Math.random() * 1000);
+                const spRow = {
+                    sr_no: srNo,
+                    ...spData
+                };
+                const { error } = await sb.from('sp_stock_out').insert(spRow);
+                if (error) {
+                    console.error('SP Insert Error:', error);
+                } else {
+                    spOutEntries.push({
+                        srNo: srNo,
+                        date: spData.date,
+                        store: spData.store,
+                        barcode: spData.barcode,
+                        itemName: spData.item_name,
+                        qty: spData.qty,
+                        price: spData.price,
+                        total: spData.total,
+                        invoiceTimestamp: ts
+                    });
+                }
             }
         }
     }
@@ -1334,7 +1364,7 @@ function printInvoice() {
 }
 
 // ============================================================
-// PRINT INVOICE
+// PRINT INVOICE - WITH COMPANY NTN & STRN
 // ============================================================
 function printInvoiceByTs(ts) {
     const inv = invoices.find(i => i.timestamp === ts);
@@ -1359,6 +1389,7 @@ function printInvoiceByTs(ts) {
     .invoice-wrapper { max-width: 780px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #22c99a; margin-bottom: 16px; flex-wrap: wrap; }
     .company h1 { font-size: 24px; color: #22c99a; }
+    .company p { font-size: 12px; color: #555; margin-top: 2px; }
     .company-details { font-size: 10px; color: #666; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; }
     .company-details span { background: #f5f5f5; padding: 2px 10px; border-radius: 4px; }
     .inv-number { text-align: right; background: #f8f9fa; padding: 8px 16px; border-radius: 8px; border: 1px solid #e0e0e0; min-width: 140px; }
@@ -1380,7 +1411,7 @@ function printInvoiceByTs(ts) {
     <div class="header">
         <div class="company">
             <h1>KRT TRADERS</h1>
-            <p style="font-size:12px;color:#555;">CASH INVOICE</p>
+            <p>CASH INVOICE</p>
             <div class="company-details">
                 <span><strong>NTN:</strong> 2995454-1</span>
                 <span><strong>STRN:</strong> 300299545411</span>
