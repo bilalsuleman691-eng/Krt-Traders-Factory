@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KRT TRADERS - ERP System</title>
+    <title>KRT TRADERS - Professional ERP System</title>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -26,8 +26,8 @@
     ============================================================ -->
     <div id="login-screen">
         <div class="login-box">
-            <div class="logo">KRT</div>
-            <div class="subtitle">Trading ERP System</div>
+            <div class="logo">KRT <span>TRADERS</span></div>
+            <div class="subtitle">Enterprise Resource Planning System</div>
             <input type="password" id="pass" placeholder="Enter Password" />
             <button class="btn-login" onclick="login()">
                 <i class="fas fa-lock"></i> Login
@@ -46,10 +46,10 @@
         ============================================================ -->
         <aside id="sidebar">
             <div class="sidebar-brand">
-                <i class="fas fa-store"></i>
+                <i class="fas fa-store-alt"></i>
                 <span>
                     KRT TRADERS
-                    <small>ERP System</small>
+                    <small>ERP System v2.0</small>
                 </span>
             </div>
 
@@ -86,7 +86,7 @@
                     <span class="sidebar-text">Monthly List</span>
                 </div>
 
-                <div class="nav-section-title">Stock</div>
+                <div class="nav-section-title">Inventory</div>
                 <div class="nav-item" onclick="showPage('stock-in', 'Stock In')">
                     <i class="fas fa-arrow-down"></i>
                     <span class="sidebar-text">Stock In</span>
@@ -116,15 +116,15 @@
 
                 <div class="nav-section-title">Accounts</div>
                 <div class="nav-item" onclick="showPage('gulzar', 'Gulzar Ledger')">
-                    <i class="fas fa-user"></i>
+                    <i class="fas fa-user-circle"></i>
                     <span class="sidebar-text">Gulzar Bhai</span>
                 </div>
                 <div class="nav-item" onclick="showPage('kashif', 'Kashif Ledger')">
-                    <i class="fas fa-user"></i>
+                    <i class="fas fa-user-circle"></i>
                     <span class="sidebar-text">Kashif Bhai</span>
                 </div>
 
-                <div class="nav-section-title">HR</div>
+                <div class="nav-section-title">Human Resource</div>
                 <div class="nav-item" onclick="showPage('salary-entry', 'Salary Entry')">
                     <i class="fas fa-user-plus"></i>
                     <span class="sidebar-text">Salary Entry</span>
@@ -136,7 +136,7 @@
             </nav>
 
             <div class="sidebar-footer">
-                <i class="fas fa-power-off"></i> v2.0
+                <i class="fas fa-power-off"></i> © 2026 KRT TRADERS
             </div>
         </aside>
 
@@ -171,8 +171,8 @@
                 DASHBOARD
                 ============================================================ -->
                 <section id="page-dashboard" class="page-section active">
-                    <div class="grid-4">
-                        <div class="card stat-card">
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
                             <div class="stat-icon" style="background:#e8f5f0;color:#22c99a;">
                                 <i class="fas fa-coins"></i>
                             </div>
@@ -182,7 +182,7 @@
                                 <span class="stat-sub" id="dash-sale-count">0 invoices</span>
                             </div>
                         </div>
-                        <div class="card stat-card">
+                        <div class="stat-card">
                             <div class="stat-icon" style="background:#fef3e2;color:#f6ad55;">
                                 <i class="fas fa-shopping-cart"></i>
                             </div>
@@ -192,7 +192,7 @@
                                 <span class="stat-sub" id="dash-purchase-count">0 items</span>
                             </div>
                         </div>
-                        <div class="card stat-card">
+                        <div class="stat-card">
                             <div class="stat-icon" style="background:#e8f0fe;color:#4299e1;">
                                 <i class="fas fa-boxes"></i>
                             </div>
@@ -202,7 +202,7 @@
                                 <span class="stat-sub">Items in stock</span>
                             </div>
                         </div>
-                        <div class="card stat-card">
+                        <div class="stat-card">
                             <div class="stat-icon" style="background:#fce4e4;color:#ff5c5c;">
                                 <i class="fas fa-hand-holding-usd"></i>
                             </div>
@@ -214,15 +214,13 @@
                         </div>
                     </div>
 
-                    <div class="grid-2">
+                    <div class="dashboard-grid">
                         <div class="card">
                             <div class="card-header">
                                 <h2><i class="fas fa-store"></i> Store Rates</h2>
                                 <span class="badge badge-primary" id="dash-rates">0</span>
                             </div>
-                            <div style="font-size:13px;color:var(--text-light);">
-                                Total rates configured in system
-                            </div>
+                            <p style="color:var(--text-light);font-size:13px;">Total rates configured in system</p>
                         </div>
                         <div class="card">
                             <div class="card-header">
@@ -247,11 +245,9 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-tags"></i> Store Rates</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-outline btn-sm" onclick="toggleRatesVisibility()">
-                                    <i class="fas fa-eye"></i> <span id="rates-toggle-text">Show</span>
-                                </button>
-                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="toggleRatesVisibility()">
+                                <i class="fas fa-eye"></i> <span id="rates-toggle-text">Show</span>
+                            </button>
                         </div>
 
                         <div class="form-row">
@@ -288,9 +284,9 @@
                     <div class="card" id="rates-list-container" style="display:none;">
                         <div class="card-header">
                             <h2><i class="fas fa-list"></i> All Rates</h2>
-                            <div class="form-group" style="flex-direction:row;gap:8px;align-items:center;">
-                                <input type="text" placeholder="Search..." oninput="filterRatesTable(this.value)" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:200px;" />
-                                <select id="sr-filter-store" onchange="filterRatesTable(document.querySelector('#sr-table-body').parentElement.parentElement.querySelector('input').value)" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <input type="text" placeholder="Search..." oninput="filterRatesTable(this.value)" class="search-input" />
+                                <select id="sr-filter-store" onchange="filterRatesTable(document.querySelector('.search-input').value)" class="filter-select">
                                     <option value="">All Stores</option>
                                 </select>
                             </div>
@@ -313,15 +309,15 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-file-invoice"></i> Cash Invoice</h2>
-                            <div>
+                            <div class="invoice-number-display">
                                 <span style="font-size:13px;color:var(--text-light);">Invoice #: </span>
                                 <strong id="invoice-number-display">INV-001</strong>
                             </div>
                         </div>
 
-                        <!-- COMPANY INFO - FIXED -->
+                        <!-- Company Info -->
                         <div class="company-info-box">
-                            <span><strong>KRT TRADERS</strong></span>
+                            <span><i class="fas fa-building"></i> <strong>KRT TRADERS</strong></span>
                             <span><strong>NTN:</strong> 2995454-1</span>
                             <span><strong>STRN:</strong> 300299545411</span>
                             <span><strong>Address:</strong> Lahore, Pakistan</span>
@@ -339,7 +335,6 @@
                             </div>
                         </div>
 
-                        <!-- CUSTOMER INFO -->
                         <div class="form-row" style="margin-top:12px;">
                             <div class="form-group">
                                 <label>Customer Name <span class="required">*</span></label>
@@ -366,12 +361,12 @@
                             <input type="text" id="inv-customer-address" placeholder="Customer address" />
                         </div>
 
-                        <div id="inv-store-info" style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;color:var(--text-light);">
+                        <div id="inv-store-info" class="store-info-box">
                             <i class="fas fa-store"></i> Enter store name to see rates
                         </div>
-                        <div id="inv-store-rate-preview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--text-light);"></div>
+                        <div id="inv-store-rate-preview" class="store-rate-preview"></div>
 
-                        <!-- ITEMS TABLE -->
+                        <!-- Items Table -->
                         <div style="margin-top:16px;">
                             <div class="table-wrap">
                                 <table>
@@ -384,8 +379,8 @@
                             </button>
                         </div>
 
-                        <!-- DISCOUNT & TOTALS -->
-                        <div class="invoice-totals-section">
+                        <!-- Discount & Totals -->
+                        <div class="invoice-totals">
                             <div class="discount-section">
                                 <div class="form-group">
                                     <label>Discount (%)</label>
@@ -420,7 +415,7 @@
                             </div>
                         </div>
 
-                        <!-- ACTIONS -->
+                        <!-- Actions -->
                         <div class="btn-group" style="margin-top:20px;flex-wrap:wrap;">
                             <button class="btn btn-primary" onclick="saveInvoiceNow()">
                                 <i class="fas fa-save"></i> Save Invoice
@@ -468,11 +463,9 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-history"></i> Invoice History</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-print btn-sm" onclick="exportInvoiceHistory()">
-                                    <i class="fas fa-file-export"></i> Export
-                                </button>
-                            </div>
+                            <button class="btn btn-print btn-sm" onclick="exportInvoiceHistory()">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
                         </div>
                         <div class="form-row" style="margin-bottom:16px;">
                             <div class="form-group">
@@ -502,11 +495,9 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-file-alt"></i> Tax Invoice History</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-print btn-sm" onclick="exportTaxHistory()">
-                                    <i class="fas fa-file-export"></i> Export
-                                </button>
-                            </div>
+                            <button class="btn btn-print btn-sm" onclick="exportTaxHistory()">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
                         </div>
                         <div class="form-row" style="margin-bottom:16px;">
                             <div class="form-group">
@@ -524,9 +515,9 @@
                         </div>
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Gross</th><th>Discount</th><th>Net</th><th>Actions</th></tr></thead>
+                                <thead><tr><th>Invoice #</th><th>Store</th><th>Customer</th><th>Date</th><th>Categories</th><th>Amount</th><th>GST</th><th>Gross</th><th>Discount</th><th>Actions</th></tr></thead>
                                 <tbody id="tax-history-body">
-                                    <tr class="no-data"><td colspan="9">No tax invoices found</td></tr>
+                                    <tr class="no-data"><td colspan="10">No tax invoices found</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -905,7 +896,7 @@
                 <section id="page-gulzar" class="page-section">
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-user"></i> Gulzar Bhai - Ledger</h2>
+                            <h2><i class="fas fa-user-circle"></i> Gulzar Bhai - Ledger</h2>
                             <button class="btn btn-print btn-sm" onclick="printLedger('gulzar')">
                                 <i class="fas fa-print"></i> Print
                             </button>
@@ -935,7 +926,7 @@
                                 <i class="fas fa-save"></i> Save Entry
                             </button>
                         </div>
-                        <div style="margin-top:16px;display:flex;gap:20px;padding:12px 16px;background:var(--bg);border-radius:var(--radius-sm);">
+                        <div class="ledger-summary">
                             <span><strong>Total Credit:</strong> <span id="gulzar-total-credit">Rs. 0</span></span>
                             <span><strong>Total Debit:</strong> <span id="gulzar-total-debit">Rs. 0</span></span>
                             <span><strong>Balance:</strong> <span id="gulzar-balance" style="color:var(--primary);">Rs. 0</span></span>
@@ -959,11 +950,9 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-history"></i> History</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('gulzar')">
-                                    <i class="fas fa-times"></i> Clear
-                                </button>
-                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('gulzar')">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
                         </div>
                         <div class="form-row" style="margin-bottom:12px;">
                             <div class="form-group">
@@ -992,7 +981,7 @@
                 <section id="page-kashif" class="page-section">
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-user"></i> Kashif Bhai - Ledger</h2>
+                            <h2><i class="fas fa-user-circle"></i> Kashif Bhai - Ledger</h2>
                             <button class="btn btn-print btn-sm" onclick="printLedger('kashif')">
                                 <i class="fas fa-print"></i> Print
                             </button>
@@ -1022,7 +1011,7 @@
                                 <i class="fas fa-save"></i> Save Entry
                             </button>
                         </div>
-                        <div style="margin-top:16px;display:flex;gap:20px;padding:12px 16px;background:var(--bg);border-radius:var(--radius-sm);">
+                        <div class="ledger-summary">
                             <span><strong>Total Credit:</strong> <span id="kashif-total-credit">Rs. 0</span></span>
                             <span><strong>Total Debit:</strong> <span id="kashif-total-debit">Rs. 0</span></span>
                             <span><strong>Balance:</strong> <span id="kashif-balance" style="color:var(--primary);">Rs. 0</span></span>
@@ -1046,11 +1035,9 @@
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-history"></i> History</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('kashif')">
-                                    <i class="fas fa-times"></i> Clear
-                                </button>
-                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('kashif')">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
                         </div>
                         <div class="form-row" style="margin-bottom:12px;">
                             <div class="form-group">
@@ -1103,7 +1090,7 @@
                                 <i class="fas fa-plus"></i> Add Employee
                             </button>
                         </div>
-                        <div style="margin-top:16px;display:flex;gap:20px;padding:12px 16px;background:var(--bg);border-radius:var(--radius-sm);">
+                        <div class="salary-summary">
                             <span><strong>Total Salary:</strong> <span id="sal-total-salary">Rs. 0</span></span>
                             <span><strong>Total Advance:</strong> <span id="sal-total-advance">Rs. 0</span></span>
                         </div>
@@ -1138,7 +1125,7 @@
                                 </table>
                             </div>
                         </div>
-                        <div style="margin-top:16px;display:flex;gap:20px;padding:12px 16px;background:var(--bg);border-radius:var(--radius-sm);">
+                        <div class="salary-summary">
                             <span><strong>Total Salary:</strong> <span id="sheet-total-salary">Rs. 0</span></span>
                             <span><strong>Total Advance:</strong> <span id="sheet-total-advance">Rs. 0</span></span>
                             <span><strong>Net Payable:</strong> <span id="sheet-total-net" style="color:var(--primary);">Rs. 0</span></span>
@@ -1181,7 +1168,7 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 
 </body>
 </html>
