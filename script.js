@@ -1721,32 +1721,482 @@ function clearMonthlyReport() {
     document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>Select a month and click "Generate"</p></div>`;
 }
 
+// ============================================================
+// PRINT MONTHLY REPORT - PROFESSIONAL
+// ============================================================
 function printMonthlyReport() {
     const content = document.getElementById('monthly-report-container').innerHTML;
+    
+    // Extract data for print header
+    const monthInput = document.getElementById('monthly-month').value;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const [year, monthNum] = monthInput ? monthInput.split('-') : ['', ''];
+    const monthName = monthNum ? monthNames[parseInt(monthNum) - 1] : '';
+    
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html>
 <html>
-<head><title>Monthly Invoice List</title>
-<style>
-    body{font-family:Arial;font-size:12px;margin:20px;background:#fff;color:#000}
-    .monthly-report{max-width:1300px;margin:0 auto}
-    .report-header{text-align:center;padding-bottom:16px;border-bottom:3px solid #22c99a;margin-bottom:20px}
-    .report-header h2{font-size:24px;color:#22c99a}
-    .invoice-report-card{border:1px solid #ddd;border-radius:8px;margin-bottom:20px;overflow:hidden}
-    .invoice-report-header{background:#f5f5f5;padding:12px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    table{width:100%;border-collapse:collapse;font-size:11px}
-    th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
-    td{padding:6px 10px;border-bottom:1px solid #eee}
-    .report-footer{text-align:center;font-size:11px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
-    @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style>
+<head>
+    <title>KRT TRADERS - Monthly Report ${monthName} ${year}</title>
+    <style>
+        /* ============================================================
+           PRINT STYLES - MONTHLY REPORT
+           ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-size: 11px;
+            background: #fff;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .print-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 30px;
+            background: #fff;
+        }
+        
+        /* Report Header */
+        .print-header {
+            background: #0a3d2a;
+            padding: 20px 30px;
+            border-bottom: 4px solid #22c99a;
+            margin-bottom: 20px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .print-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .print-brand i {
+            font-size: 32px;
+            color: #22c99a;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 12px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-brand h1 {
+            font-size: 22px;
+            color: #fff;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .print-brand span {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            display: block;
+        }
+        
+        .print-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .print-meta-item {
+            background: rgba(255,255,255,0.08);
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-align: right;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-meta-item .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.5);
+            display: block;
+        }
+        
+        .print-meta-item .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+        
+        /* Invoice Cards */
+        .print-invoice {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+        
+        .print-invoice-header {
+            background: #f5f5f5;
+            padding: 10px 16px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-invoice-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .print-invoice-number {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0a3d2a;
+            background: #e8f5f0;
+            padding: 3px 12px;
+            border-radius: 6px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-invoice-date {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .print-discount-badge {
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            background: #f59e0b;
+            padding: 2px 10px;
+            border-radius: 20px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-party-details {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: #666;
+            flex-wrap: wrap;
+        }
+        
+        .print-party-details i {
+            color: #0a3d2a;
+            width: 14px;
+        }
+        
+        /* Table */
+        .print-table-wrap {
+            overflow-x: auto;
+            padding: 0;
+        }
+        
+        .print-table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        
+        .print-table-wrap table thead {
+            background: #0a3d2a;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-table-wrap table thead th {
+            background: #0a3d2a;
+            color: #fff;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-table-wrap table tbody td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+            color: #000;
+        }
+        
+        .print-category-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .print-category-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-category-name {
+            font-weight: 500;
+        }
+        
+        .print-badge {
+            background: #f0f0f0;
+            padding: 1px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 11px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-hs-code {
+            font-family: monospace;
+            font-size: 10px;
+            background: #f0f0f0;
+            padding: 1px 6px;
+            border-radius: 4px;
+            color: #333;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-amount-bold {
+            font-weight: 700;
+            color: #0a3d2a;
+        }
+        
+        .print-gst {
+            color: #b45309;
+            font-weight: 600;
+        }
+        
+        .print-total-row {
+            background: #e8f5f0;
+            border-top: 2px solid #0a3d2a;
+            font-weight: 700;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-total-row td {
+            padding: 8px 10px;
+        }
+        
+        .print-total-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #0a3d2a;
+        }
+        
+        .print-total-excl {
+            color: #000;
+        }
+        
+        .print-total-gst {
+            color: #b45309;
+        }
+        
+        .print-total-amount {
+            color: #0a3d2a;
+        }
+        
+        /* Invoice Footer */
+        .print-invoice-footer {
+            background: #f8f8f8;
+            padding: 8px 16px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-footer-left {
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .print-footer-left i {
+            color: #0a3d2a;
+        }
+        
+        .print-final-total {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .print-final-total strong {
+            color: #0a3d2a;
+            font-size: 15px;
+        }
+        
+        /* Report Footer */
+        .print-report-footer {
+            background: #1a2332;
+            padding: 16px 30px;
+            border-top: 3px solid #22c99a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .print-footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+        }
+        
+        .print-footer-brand i {
+            color: #22c99a;
+            font-size: 18px;
+        }
+        
+        .print-footer-stats {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .print-footer-stats .stat-item {
+            text-align: center;
+        }
+        
+        .print-footer-stats .stat-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.4);
+            display: block;
+        }
+        
+        .print-footer-stats .stat-number {
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff;
+            display: block;
+        }
+        
+        .print-footer-stats .stat-number.grand {
+            color: #22c99a;
+        }
+        
+        .print-footer-copy {
+            font-size: 9px;
+            color: rgba(255,255,255,0.3);
+        }
+        
+        /* Page break */
+        .print-invoice {
+            page-break-inside: avoid;
+        }
+        
+        /* Hide buttons */
+        .no-print {
+            display: none !important;
+        }
+        
+        /* Responsive table */
+        @media print {
+            .print-container {
+                padding: 10px 15px;
+            }
+            
+            .print-header {
+                padding: 15px 20px;
+            }
+            
+            .print-table-wrap table {
+                font-size: 9px;
+            }
+            
+            .print-table-wrap table thead th,
+            .print-table-wrap table tbody td {
+                padding: 4px 6px;
+            }
+            
+            .print-invoice-header {
+                padding: 6px 12px;
+            }
+            
+            .print-invoice-number {
+                font-size: 12px;
+            }
+            
+            .print-party-details {
+                font-size: 9px;
+                gap: 6px;
+            }
+            
+            .print-report-footer {
+                padding: 12px 20px;
+            }
+            
+            .print-footer-stats .stat-number {
+                font-size: 14px;
+            }
+        }
+        
+        @page {
+            margin: 12mm 8mm;
+            size: A4 portrait;
+        }
+    </style>
 </head>
-<body><div class="monthly-report">${content}</div>
-<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+<body>
+    <div class="print-container">
+        ${content}
+    </div>
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    <\/script>
 </body>
 </html>`);
 }
-
 // ============================================================
 // STOCK IN
 // ============================================================
