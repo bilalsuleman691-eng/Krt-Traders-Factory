@@ -1464,7 +1464,7 @@ async function deleteTaxInvoice(ts) {
 }
 
 // ============================================================
-// MONTHLY REPORT - COMPLETE FIXED
+// MONTHLY REPORT - PROFESSIONAL HEAVY DESIGN
 // ============================================================
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month').value;
@@ -1480,16 +1480,55 @@ function generateMonthlyReport() {
     });
     if (filtered.length === 0) {
         showNotification('No invoices found!', 'error');
-        document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>No invoices found</p></div>`;
+        document.getElementById('monthly-report-container').innerHTML = `
+            <div class="monthly-report-empty">
+                <i class="fas fa-calendar-alt" style="font-size:48px;color:#cbd5e1;"></i>
+                <h3>No Invoices Found</h3>
+                <p>No invoices found for ${month}</p>
+            </div>
+        `;
         return;
     }
 
-    let html = `<div class="monthly-report"><div class="report-header"><h2>KRT TRADERS</h2><h3>Monthly Invoice List</h3><p>Month: ${month}</p><p>Total Invoices: ${filtered.length}</p></div>`;
+    // Month name
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[parseInt(monthNum) - 1];
+
+    let html = `
+        <div class="monthly-report-wrapper">
+            <!-- Report Header -->
+            <div class="report-header-modern">
+                <div class="report-header-top">
+                    <div class="report-brand">
+                        <i class="fas fa-store-alt"></i>
+                        <div>
+                            <h2>KRT TRADERS</h2>
+                            <span>Monthly Invoice Report</span>
+                        </div>
+                    </div>
+                    <div class="report-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Month</span>
+                            <span class="meta-value">${monthName} ${year}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Generated</span>
+                            <span class="meta-value">${new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Total Invoices</span>
+                            <span class="meta-value">${filtered.length}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    `;
+
     let grandTotal = 0;
     const grouped = {};
     filtered.forEach(inv => { if (!grouped[inv.invoiceNo]) grouped[inv.invoiceNo] = { ...inv }; });
 
-    Object.values(grouped).forEach(inv => {
+    Object.values(grouped).forEach((inv, idx) => {
         const catData = {};
         const disc = inv.discountPercent || 0;
         const cashInv = invoices.find(i => i.invoiceNo === inv.invoiceNo);
@@ -1525,7 +1564,31 @@ function generateMonthlyReport() {
 
         let rows = '';
         const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
-        const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+        const labels = { 
+            'Foam': 'Abrasive Sheet', 
+            'Steel': 'Stainless Steel', 
+            'Fancy': 'Home Consumption', 
+            'Micro': 'Micro Fiber', 
+            'Razor': 'Classic Razor',
+            'Other': 'Other Items' 
+        };
+        const icons = {
+            'Foam': 'fa-layer-group',
+            'Steel': 'fa-cogs',
+            'Fancy': 'fa-gem',
+            'Micro': 'fa-microscope',
+            'Razor': 'fa-cut',
+            'Other': 'fa-box'
+        };
+        const colors = {
+            'Foam': '#22c99a',
+            'Steel': '#3b82f6',
+            'Fancy': '#8b5cf6',
+            'Micro': '#f59e0b',
+            'Razor': '#ef4444',
+            'Other': '#64748b'
+        };
+
         let invTotal = 0;
         let invTotalExclAmount = 0;
 
@@ -1535,86 +1598,125 @@ function generateMonthlyReport() {
             invTotal += c.totalAmount;
             const sheet = key === 'Foam' && c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-';
             const kg = key === 'Steel' && c.totalKg > 0 ? c.totalKg.toFixed(3) : '-';
-
-            // Calculate Excl and GST for this category
+            
             const proportion = invTotal > 0 ? c.totalAmount / invTotal : 0;
             const exclAmount = invTotalExcl * proportion;
             const gstAmount = exclAmount * 0.18;
-
             invTotalExclAmount += exclAmount;
 
-            rows += `<tr>
-                <td>${labels[key] || key}</td>
-                <td style="text-align:center;">${c.totalPcs.toFixed(0)}</td>
-                <td style="text-align:center;">${sheet}</td>
-                <td style="text-align:center;">${kg}</td>
-                <td style="text-align:right;">${(c.ratePerPcs || 0).toFixed(2)}</td>
-                <td style="text-align:right;">${exclAmount.toFixed(2)}</td>
-                <td style="text-align:right;">${gstAmount.toFixed(2)}</td>
-                <td style="text-align:right;font-weight:bold;">${c.totalAmount.toFixed(2)}</td>
-                <td style="text-align:center;">${c.hsCode}</td>
-            </tr>`;
+            rows += `
+                <tr>
+                    <td>
+                        <div class="category-cell">
+                            <span class="category-icon" style="background:${colors[key]}20;color:${colors[key]};">
+                                <i class="fas ${icons[key] || 'fa-tag'}"></i>
+                            </span>
+                            <span class="category-name">${labels[key] || key}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge-count">${c.totalPcs.toFixed(0)}</span></td>
+                    <td>${sheet}</td>
+                    <td>${kg}</td>
+                    <td><strong>${(c.ratePerPcs || 0).toFixed(2)}</strong></td>
+                    <td class="amount-cell">Rs. ${exclAmount.toFixed(2)}</td>
+                    <td class="gst-cell">Rs. ${gstAmount.toFixed(2)}</td>
+                    <td class="amount-cell-bold">Rs. ${c.totalAmount.toFixed(2)}</td>
+                    <td><span class="hs-code">${c.hsCode}</span></td>
+                </tr>
+            `;
         });
 
         const gstTotal = invTotalGst;
         const grossTotal = invTotal;
         grandTotal += grossTotal;
 
+        // Invoice Summary Card
         html += `
-            <div class="invoice-report-card">
-                <div class="invoice-report-header">
-                    <div class="invoice-report-title"><strong>Invoice #: ${inv.invoiceNo}</strong></div>
-                    <div class="invoice-report-details">
-                        <span><strong>Store:</strong> ${inv.storeName || inv.customerName || '-'}</span>
-                        <span><strong>NTN:</strong> ${inv.ntn || '-'}</span>
-                        <span><strong>STRN:</strong> ${inv.strn || '-'}</span>
-                        <span><strong>Date:</strong> ${inv.date || '-'}</span>
-                        <span><strong>Discount:</strong> ${disc}%</span>
-                        <span><strong>Total:</strong> Rs. ${invFinalTotal.toFixed(2)}</span>
+            <div class="invoice-card-modern">
+                <div class="invoice-card-header">
+                    <div class="invoice-title-section">
+                        <span class="invoice-number-badge">#${inv.invoiceNo}</span>
+                        <span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date || '-'}</span>
+                        ${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}
+                    </div>
+                    <div class="invoice-party-section">
+                        <span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span>
+                        <span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span>
+                        <span><i class="fas fa-id-card"></i> STRN: ${inv.strn || '-'}</span>
                     </div>
                 </div>
-                <div class="table-wrap">
+
+                <div class="table-wrap-modern">
                     <table>
                         <thead>
                             <tr>
-                                <th style="min-width:150px;">Category</th>
+                                <th style="min-width:160px;">Category</th>
                                 <th style="width:60px;">PCS</th>
                                 <th style="width:70px;">Sheet</th>
                                 <th style="width:70px;">KG</th>
                                 <th style="width:90px;">Rate/PCS</th>
-                                <th style="width:110px;">Excl. Tax</th>
-                                <th style="width:90px;">GST 18%</th>
-                                <th style="width:110px;">Amount</th>
+                                <th style="width:120px;">Excl. Tax</th>
+                                <th style="width:100px;">GST 18%</th>
+                                <th style="width:120px;">Amount</th>
                                 <th style="width:100px;">HS Code</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${rows}
-                            <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
-                                <td colspan="5" style="text-align:right;color:var(--primary);">TOTAL</td>
-                                <td style="text-align:right;color:var(--primary);">${invTotalExclAmount.toFixed(2)}</td>
-                                <td style="text-align:right;color:var(--primary);">${gstTotal.toFixed(2)}</td>
-                                <td style="text-align:right;color:var(--primary);">${grossTotal.toFixed(2)}</td>
+                            <tr class="total-row-modern">
+                                <td colspan="5">
+                                    <div class="total-label">
+                                        <i class="fas fa-calculator"></i> TOTAL
+                                    </div>
+                                </td>
+                                <td class="total-excl">Rs. ${invTotalExclAmount.toFixed(2)}</td>
+                                <td class="total-gst">Rs. ${gstTotal.toFixed(2)}</td>
+                                <td class="total-amount">Rs. ${grossTotal.toFixed(2)}</td>
                                 <td></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <div class="invoice-card-footer">
+                    <div class="footer-left">
+                        <span><i class="fas fa-file-invoice"></i> Total Items: ${inv.items.length}</span>
+                        <span><i class="fas fa-tag"></i> Discount: ${disc}%</span>
+                    </div>
+                    <div class="footer-right">
+                        <span class="final-total">Final Total: <strong>Rs. ${invFinalTotal.toFixed(2)}</strong></span>
+                    </div>
+                </div>
             </div>
         `;
     });
 
+    // Report Footer
     html += `
-        <div class="report-footer">
-            <p>Generated by KRT TRADERS ERP System</p>
-            <p>Total Invoices: ${Object.keys(grouped).length}</p>
-            <p style="font-size:16px;font-weight:bold;color:var(--primary);">Grand Total: Rs. ${grandTotal.toFixed(2)}</p>
+            <div class="report-footer-modern">
+                <div class="footer-brand">
+                    <i class="fas fa-store-alt"></i>
+                    <span>KRT TRADERS ERP System</span>
+                </div>
+                <div class="footer-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Invoices</span>
+                        <span class="stat-number">${Object.keys(grouped).length}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Grand Total</span>
+                        <span class="stat-number grand">Rs. ${grandTotal.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="footer-copy">
+                    <i class="far fa-copyright"></i> ${new Date().getFullYear()} KRT TRADERS. All rights reserved.
+                </div>
+            </div>
         </div>
-    </div>`;
+    `;
 
     document.getElementById('monthly-report-container').innerHTML = html;
 }
-
 function clearMonthlyReport() {
     document.getElementById('monthly-report-container').innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p>Select a month and click "Generate"</p></div>`;
 }
