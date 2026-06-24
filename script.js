@@ -899,7 +899,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
 }
 
 // ============================================================
-// TAX INVOICE DISPLAY - COMPLETE FIXED
+// TAX INVOICE DISPLAY - FULL PAGE WITH SIGNATURE
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
     const container = document.getElementById('tax-invoice-container');
@@ -927,7 +927,10 @@ function renderTaxInvoiceDisplay(data) {
 
     const cashInv = invoices.find(i => i.cashInvoiceTimestamp === data.cashInvoiceTimestamp);
     const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
+    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
+    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
     const discountPercent = parseFloat(data.discountPercent) || 0;
+    const discountAmt = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0;
 
     const categories = data.categories || [];
     let rows = '';
@@ -949,7 +952,6 @@ function renderTaxInvoiceDisplay(data) {
         const rate = cat.avgRatePerPcs || 0;
         const amount = cat.totalAmount || 0;
 
-        // ✅ Calculate Excl Tax and GST
         const exclAmount = amount / 1.18;
         const gstAmount = exclAmount * 0.18;
 
@@ -957,19 +959,16 @@ function renderTaxInvoiceDisplay(data) {
         grandTotalExcl += exclAmount;
         grandTotalGst += gstAmount;
 
-        // ✅ Sheet: ONLY Foam shows, others hide
         let sheetDisplay = '-';
         if (key === 'Foam' && sheet > 0) {
             sheetDisplay = sheet.toFixed(3);
         }
 
-        // ✅ KG: ONLY Steel shows, others hide
         let kgDisplay = '-';
         if (key === 'Steel' && kg > 0) {
             kgDisplay = kg.toFixed(3);
         }
 
-        // ✅ Green Sheet Info (hidden in print)
         let greenSheetInfo = '';
         if (key === 'Foam' && cat.totalGram > 0) {
             const pcsPerSheet = sheet > 0 ? qty / sheet : 0;
@@ -1005,68 +1004,130 @@ function renderTaxInvoiceDisplay(data) {
         return;
     }
 
-    // ✅ Table Headers
-    const tableHeaders = `
-        <thead>
-            <tr>
-                <th style="width:50px;">Qty</th>
-                <th style="min-width:150px;">Category</th>
-                <th style="width:90px;">HS Code</th>
-                <th style="width:60px;">Sheet</th>
-                <th style="width:60px;">KG</th>
-                <th style="width:80px;">Rate/Pcs</th>
-                <th style="width:100px;color:#22c99a;">Excl. Tax</th>
-                <th style="width:100px;color:#f6ad55;">GST 18%</th>
-                <th style="width:100px;">Amount</th>
-            </tr>
-        </thead>
-    `;
-
+    // ✅ Full Page Professional Layout with Signature
     container.innerHTML = `
-        <div class="tax-invoice-display">
-            <div class="header">
-                <h2>KRT TRADERS</h2>
-                <p><strong>SALES TAX INVOICE</strong></p>
+        <div class="tax-invoice-display" style="max-width:1100px;margin:0 auto;padding:30px;background:#fff;border:1px solid #ddd;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align:center;border-bottom:3px solid #22c99a;padding-bottom:16px;margin-bottom:20px;">
+                <h1 style="font-size:32px;color:#22c99a;margin:0;font-weight:800;">KRT TRADERS</h1>
+                <p style="font-size:14px;color:#666;margin:4px 0;">Deals in all kinds of cleaning item and general products</p>
+                <p style="font-size:16px;font-weight:700;color:#333;margin:4px 0;">SALES TAX INVOICE</p>
+                <p style="font-size:12px;color:#999;margin:2px 0;">Original — Duplicate</p>
             </div>
 
-            <div class="tax-info-grid">
-                <div class="tax-info-item"><span class="label">Invoice #:</span><strong>${data.invoiceNo || ''}</strong></div>
-                <div class="tax-info-item"><span class="label">Date:</span><strong>${data.date || ''}</strong></div>
-                <div class="tax-info-item"><span class="label">Discount:</span><strong>${discountPercent}%</strong></div>
+            <!-- Invoice Info -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #ddd;margin-bottom:16px;">
+                <div><span style="font-weight:600;color:#666;">Invoice #:</span> <strong>${data.invoiceNo || ''}</strong></div>
+                <div><span style="font-weight:600;color:#666;">Date:</span> <strong>${data.date || ''}</strong></div>
+                <div><span style="font-weight:600;color:#666;">Discount:</span> <strong>${discountPercent}%</strong></div>
             </div>
 
-            <div class="tax-buyer-grid">
-                <div class="tax-buyer-box">
-                    <strong>Supplier:</strong> KRT TRADERS
-                    <div>NTN: 2995454-1</div>
-                    <div>STRN: 300299545411</div>
-                    <div>Address: Lahore, Pakistan</div>
+            <!-- Supplier & Buyer -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-bottom:1px solid #ddd;margin-bottom:16px;">
+                <div style="background:#f8f9fa;padding:14px 18px;border-radius:8px;">
+                    <strong style="font-size:14px;color:#22c99a;">Supplier:</strong>
+                    <div style="font-weight:600;font-size:15px;margin-top:2px;">KRT TRADERS</div>
+                    <div style="font-size:12px;color:#666;">NTN: 2995454-1</div>
+                    <div style="font-size:12px;color:#666;">STRN: 300299545411</div>
+                    <div style="font-size:12px;color:#666;">Address: Lahore, Pakistan</div>
                 </div>
-                <div class="tax-buyer-box">
-                    <strong>Buyer:</strong>
-                    <div><strong>${data.customerName || data.storeName || ''}</strong></div>
-                    <div>NTN: ${data.ntn || '-'}</div>
-                    <div>STRN: ${data.strn || '-'}</div>
-                    <div>Address: ${data.address || '-'}</div>
+                <div style="background:#f8f9fa;padding:14px 18px;border-radius:8px;">
+                    <strong style="font-size:14px;color:#22c99a;">Buyer:</strong>
+                    <div style="font-weight:600;font-size:15px;margin-top:2px;">${data.customerName || data.storeName || ''}</div>
+                    <div style="font-size:12px;color:#666;">NTN: ${data.ntn || '-'}</div>
+                    <div style="font-size:12px;color:#666;">STRN: ${data.strn || '-'}</div>
+                    <div style="font-size:12px;color:#666;">Address: ${data.address || '-'}</div>
                 </div>
             </div>
 
-            <div class="table-wrap">
-                <table>
-                    ${tableHeaders}
+            <!-- Table -->
+            <div style="overflow-x:auto;border:1px solid #ddd;border-radius:8px;margin-bottom:16px;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">
+                    <thead>
+                        <tr style="background:#22c99a;color:#fff;">
+                            <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;">Qty</th>
+                            <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;min-width:150px;">Category</th>
+                            <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;">HS Code</th>
+                            <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;">Sheet</th>
+                            <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;">KG</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;">Rate/Pcs</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#e8f5f0;">Excl. Tax</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#fef3e2;">GST 18%</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;">Amount</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         ${rows}
-                        <tr style="font-weight:bold;border-top:2px solid #22c99a;background:#e8f5f0;">
-                            <td colspan="6" style="text-align:right;color:#22c99a;font-size:14px;">TOTAL</td>
-                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotalExcl.toFixed(2)}</td>
-                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotalGst.toFixed(2)}</td>
-                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotal.toFixed(2)}</td>
+                        <tr style="font-weight:bold;border-top:3px solid #22c99a;background:#e8f5f0;">
+                            <td colspan="6" style="text-align:right;padding:12px;font-size:15px;color:#22c99a;">TOTAL</td>
+                            <td style="text-align:right;padding:12px;font-size:15px;color:#22c99a;">Rs. ${grandTotalExcl.toFixed(2)}</td>
+                            <td style="text-align:right;padding:12px;font-size:15px;color:#f6ad55;">Rs. ${grandTotalGst.toFixed(2)}</td>
+                            <td style="text-align:right;padding:12px;font-size:15px;color:#22c99a;">Rs. ${grandTotal.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="tax-actions no-print">
+            <!-- Totals Section -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:16px 0;border-top:2px solid #ddd;margin-top:8px;">
+                <div>
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+                        <span style="color:#666;">Total Amount (After Discount):</span>
+                        <strong>Rs. ${totalAmount.toFixed(2)}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+                        <span style="color:#666;">Excluding Tax:</span>
+                        <strong>Rs. ${totalExcl.toFixed(2)}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+                        <span style="color:#666;">GST @ 18%:</span>
+                        <strong style="color:#f6ad55;">Rs. ${totalGst.toFixed(2)}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:800;border-top:2px solid #22c99a;margin-top:4px;">
+                        <span style="color:#22c99a;">Gross Amount:</span>
+                        <span style="color:#22c99a;">Rs. ${totalAmount.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div style="text-align:right;border-left:2px solid #ddd;padding-left:20px;">
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid #f0f0f0;">
+                        <span style="color:#666;">Discount (${discountPercent}%):</span>
+                        <strong style="color:#ff5c5c;">- Rs. ${discountAmt.toFixed(2)}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:20px;font-weight:800;border-top:2px solid #22c99a;margin-top:4px;">
+                        <span style="color:#22c99a;">💰 Net Amount:</span>
+                        <span style="color:#22c99a;">Rs. ${(totalAmount - discountAmt).toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:20px;border-top:2px solid #ddd;margin-top:12px;">
+                <div style="text-align:center;">
+                    <div style="border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto;">
+                        <span style="font-size:11px;color:#666;">Receiver's Signature</span>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto;">
+                        <span style="font-size:11px;color:#666;">Authorized Signature</span>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto;">
+                        <span style="font-size:11px;color:#666;">Company Stamp</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align:center;font-size:10px;color:#999;padding-top:16px;border-top:1px solid #eee;margin-top:16px;">
+                <p style="margin:2px 0;">Generated by KRT TRADERS ERP System</p>
+                <p style="margin:2px 0;">Thank you for your business! — Goods once sold cannot be returned.</p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="tax-actions no-print" style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center;">
                 <button class="btn btn-primary" onclick="saveTaxInvoice()"><i class="fas fa-save"></i> Save</button>
                 <button class="btn btn-print" onclick="printTaxInvoice()"><i class="fas fa-print"></i> Print</button>
                 <button class="btn btn-outline" onclick="clearTaxInvoice()"><i class="fas fa-trash"></i> Clear</button>
