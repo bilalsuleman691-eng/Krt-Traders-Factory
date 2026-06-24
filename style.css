@@ -1934,3 +1934,525 @@ table tbody tr.no-data td {
         min-width: 100%;
     }
 }
+
+
+
+/* ============================================================
+   MONTHLY REPORT - PROFESSIONAL HEAVY DESIGN
+   ============================================================ */
+
+/* Empty State */
+.monthly-report-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: var(--radius);
+    border: 2px dashed var(--border);
+}
+
+.monthly-report-empty i {
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.monthly-report-empty h3 {
+    font-size: 20px;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.monthly-report-empty p {
+    color: var(--text-light);
+}
+
+/* Report Wrapper */
+.monthly-report-wrapper {
+    max-width: 1300px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+/* Report Header */
+.report-header-modern {
+    background: linear-gradient(135deg, #0a3d2a, #1a7a54);
+    padding: 32px 40px;
+    border-bottom: 4px solid #22c99a;
+}
+
+.report-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.report-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.report-brand i {
+    font-size: 36px;
+    color: #22c99a;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 14px;
+}
+
+.report-brand h2 {
+    font-size: 24px;
+    color: #fff;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.report-brand span {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    display: block;
+}
+
+.report-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    text-align: right;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px 16px;
+    border-radius: 10px;
+    min-width: 100px;
+}
+
+.meta-item .meta-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.5);
+    display: block;
+}
+
+.meta-item .meta-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    display: block;
+}
+
+/* Invoice Card */
+.invoice-card-modern {
+    margin: 20px 24px;
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    transition: var(--transition);
+}
+
+.invoice-card-modern:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.invoice-card-header {
+    background: #f8fafc;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.invoice-title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.invoice-number-badge {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+    background: var(--success-light);
+    padding: 4px 14px;
+    border-radius: 8px;
+}
+
+.invoice-date-badge {
+    font-size: 13px;
+    color: var(--text-light);
+    background: #f1f5f9;
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+.discount-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    padding: 3px 12px;
+    border-radius: 20px;
+}
+
+.invoice-party-section {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.invoice-party-section i {
+    color: var(--primary);
+    width: 16px;
+}
+
+/* Table Wrapper */
+.table-wrap-modern {
+    overflow-x: auto;
+    padding: 0;
+}
+
+.table-wrap-modern table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 800px;
+}
+
+.table-wrap-modern table thead {
+    background: #f1f5f9;
+}
+
+.table-wrap-modern table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+}
+
+/* Category Cell */
+.category-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.category-name {
+    font-weight: 500;
+}
+
+/* Badges */
+.badge-count {
+    display: inline-block;
+    background: var(--bg);
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.hs-code {
+    font-family: monospace;
+    font-size: 12px;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-light);
+}
+
+/* Amount Cells */
+.amount-cell {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.amount-cell-bold {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.gst-cell {
+    font-weight: 600;
+    color: #f59e0b;
+}
+
+/* Total Row */
+.total-row-modern {
+    background: linear-gradient(135deg, #e8f5f0, #d1fae5);
+    border-top: 2px solid var(--primary);
+}
+
+.total-row-modern td {
+    padding: 14px 16px;
+    font-weight: 700;
+}
+
+.total-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--primary);
+}
+
+.total-label i {
+    font-size: 16px;
+}
+
+.total-excl {
+    color: var(--text);
+    font-size: 15px;
+}
+
+.total-gst {
+    color: #f59e0b;
+    font-size: 15px;
+}
+
+.total-amount {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+/* Invoice Card Footer */
+.invoice-card-footer {
+    background: #fafbfc;
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.footer-left {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.footer-left i {
+    color: var(--primary);
+}
+
+.footer-right .final-total {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.footer-right .final-total strong {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+/* Report Footer */
+.report-footer-modern {
+    background: #1a2332;
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-top: 3px solid #22c99a;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+}
+
+.footer-brand i {
+    font-size: 20px;
+    color: #22c99a;
+}
+
+.footer-stats {
+    display: flex;
+    gap: 32px;
+}
+
+.footer-stats .stat-item {
+    text-align: center;
+}
+
+.footer-stats .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.4);
+    display: block;
+}
+
+.footer-stats .stat-number {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    display: block;
+}
+
+.footer-stats .stat-number.grand {
+    color: #22c99a;
+}
+
+.footer-copy {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .report-header-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .report-meta {
+        justify-content: flex-start;
+    }
+    
+    .meta-item {
+        text-align: left;
+        min-width: 80px;
+    }
+    
+    .invoice-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .invoice-party-section {
+        font-size: 12px;
+        gap: 8px;
+    }
+    
+    .report-footer-modern {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .footer-stats {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .report-header-modern {
+        padding: 20px;
+    }
+    
+    .invoice-card-modern {
+        margin: 12px 12px;
+    }
+    
+    .invoice-card-header {
+        padding: 12px 16px;
+    }
+    
+    .invoice-title-section {
+        gap: 8px;
+    }
+    
+    .invoice-number-badge {
+        font-size: 14px;
+    }
+    
+    .table-wrap-modern table {
+        font-size: 12px;
+        min-width: 600px;
+    }
+    
+    .table-wrap-modern table thead th,
+    .table-wrap-modern table tbody td {
+        padding: 8px 10px;
+    }
+    
+    .invoice-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .footer-left {
+        justify-content: center;
+    }
+    
+    .report-footer-modern {
+        padding: 16px 20px;
+    }
+    
+    .footer-stats .stat-number {
+        font-size: 16px;
+    }
+    
+    .report-brand h2 {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .report-header-modern {
+        padding: 16px;
+    }
+    
+    .invoice-card-modern {
+        margin: 8px 8px;
+    }
+    
+    .invoice-party-section {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .meta-item {
+        min-width: 60px;
+        padding: 4px 10px;
+    }
+    
+    .meta-item .meta-value {
+        font-size: 13px;
+    }
+    
+    .footer-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
