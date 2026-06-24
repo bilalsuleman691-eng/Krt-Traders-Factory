@@ -899,8 +899,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
 }
 
 // ============================================================
-// TAX INVOICE DISPLAY
-// ============================================================
 // TAX INVOICE DISPLAY - COMPLETE FIXED
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
@@ -927,18 +925,14 @@ function renderTaxInvoiceDisplay(data) {
         'Other': 'Other Items'
     };
 
-    // ✅ Get cash invoice values
     const cashInv = invoices.find(i => i.cashInvoiceTimestamp === data.cashInvoiceTimestamp);
-    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0; // 82,065
-    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0; // 69,546.61
-    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0; // 12,518.39
-    const totalDiscount = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0; // 27,355
+    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
+    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
+    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
     const discountPercent = parseFloat(data.discountPercent) || 0;
 
     const categories = data.categories || [];
     let rows = '';
-
-    // ✅ Order of categories
     const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
 
     let grandTotal = 0;
@@ -955,9 +949,9 @@ function renderTaxInvoiceDisplay(data) {
         const kg = cat.totalKg || 0;
         const sheet = cat.totalSheet || 0;
         const rate = cat.avgRatePerPcs || 0;
-        const amount = cat.totalAmount || 0; // After Discount amount for this category
+        const amount = cat.totalAmount || 0;
 
-        // ✅ Calculate Excluding Tax and GST for this category
+        // ✅ Calculate Excl Tax and GST
         const exclAmount = amount / 1.18;
         const gstAmount = exclAmount * 0.18;
 
@@ -970,7 +964,7 @@ function renderTaxInvoiceDisplay(data) {
             const pcsPerSheet = sheet > 0 ? qty / sheet : 0;
             greenSheetInfo = `
                 <span class="hidden-print" style="font-size:10px;color:var(--text-light);">
-                    (${cat.totalGram}g / 1400 = ${sheet.toFixed(3)} sheets × ${pcsPerSheet.toFixed(1)} pcs/sheet)
+                    (${cat.totalGram}g / 1400 = ${sheet.toFixed(3)} sheets)
                 </span>
             `;
         }
@@ -983,14 +977,13 @@ function renderTaxInvoiceDisplay(data) {
                 <td>${sheet > 0 ? sheet.toFixed(3) : '-'}</td>
                 <td>${kg > 0 ? kg.toFixed(3) : '-'}</td>
                 <td>${rate.toFixed(2)}</td>
-                <td style="font-weight:bold;">Rs. ${amount.toFixed(2)}</td>
                 <td style="font-weight:bold;color:#22c99a;">Rs. ${exclAmount.toFixed(2)}</td>
                 <td style="font-weight:bold;color:#f6ad55;">Rs. ${gstAmount.toFixed(2)}</td>
+                <td style="font-weight:bold;">Rs. ${amount.toFixed(2)}</td>
             </tr>
         `;
     });
 
-    // ✅ If no rows found, show placeholder
     if (!rows) {
         container.innerHTML = `
             <div class="tax-invoice-placeholder">
@@ -1040,55 +1033,21 @@ function renderTaxInvoiceDisplay(data) {
                             <th style="width:60px;">Sheet</th>
                             <th style="width:60px;">KG</th>
                             <th style="width:80px;">Rate/Pcs</th>
+                            <th style="width:100px;color:#22c99a;">Excl. Tax</th>
+                            <th style="width:100px;color:#f6ad55;">GST 18%</th>
                             <th style="width:100px;">Amount</th>
-                            <th style="width:100px;">Excl. Tax</th>
-                            <th style="width:100px;">GST 18%</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rows}
                         <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
                             <td colspan="6" style="text-align:right;color:var(--primary);">TOTAL</td>
-                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotal.toFixed(2)}</td>
                             <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalExcl.toFixed(2)}</td>
                             <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalGst.toFixed(2)}</td>
+                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotal.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
-
-            <div class="tax-totals">
-                <div class="tax-total-item">
-                    <span class="label">Total Amount (After Discount):</span>
-                    <span class="value green" style="font-size:20px;">Rs. ${totalAmount.toFixed(2)}</span>
-                </div>
-                <div class="tax-total-item">
-                    <span class="label">Excluding Tax:</span>
-                    <span class="value">Rs. ${totalExcl.toFixed(2)}</span>
-                </div>
-                <div class="tax-total-item">
-                    <span class="label">GST @ 18%:</span>
-                    <span class="value gold" style="font-size:20px;">Rs. ${totalGst.toFixed(2)}</span>
-                </div>
-                <div class="tax-total-item">
-                    <span class="label">💰 Gross Amount:</span>
-                    <span class="value green" style="font-size:24px;">Rs. ${totalAmount.toFixed(2)}</span>
-                </div>
-                ${discountPercent > 0 ? `
-                <div class="tax-total-item">
-                    <span class="label">Discount (${discountPercent}%):</span>
-                    <span class="value" style="color:var(--danger);">- Rs. ${totalDiscount.toFixed(2)}</span>
-                </div>
-                <div class="tax-total-item">
-                    <span class="label">💰 Net Amount:</span>
-                    <span class="value green" style="font-size:24px;">Rs. ${(totalAmount - totalDiscount).toFixed(2)}</span>
-                </div>
-                ` : `
-                <div class="tax-total-item">
-                    <span class="label">💰 Net Amount:</span>
-                    <span class="value green" style="font-size:24px;">Rs. ${totalAmount.toFixed(2)}</span>
-                </div>
-                `}
             </div>
 
             <div class="tax-actions no-print">
