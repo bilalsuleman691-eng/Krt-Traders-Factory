@@ -927,8 +927,6 @@ function renderTaxInvoiceDisplay(data) {
 
     const cashInv = invoices.find(i => i.cashInvoiceTimestamp === data.cashInvoiceTimestamp);
     const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
-    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
-    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
     const discountPercent = parseFloat(data.discountPercent) || 0;
 
     const categories = data.categories || [];
@@ -959,6 +957,19 @@ function renderTaxInvoiceDisplay(data) {
         grandTotalExcl += exclAmount;
         grandTotalGst += gstAmount;
 
+        // ✅ Sheet: ONLY Foam shows, others hide
+        let sheetDisplay = '-';
+        if (key === 'Foam' && sheet > 0) {
+            sheetDisplay = sheet.toFixed(3);
+        }
+
+        // ✅ KG: ONLY Steel shows, others hide
+        let kgDisplay = '-';
+        if (key === 'Steel' && kg > 0) {
+            kgDisplay = kg.toFixed(3);
+        }
+
+        // ✅ Green Sheet Info (hidden in print)
         let greenSheetInfo = '';
         if (key === 'Foam' && cat.totalGram > 0) {
             const pcsPerSheet = sheet > 0 ? qty / sheet : 0;
@@ -974,8 +985,8 @@ function renderTaxInvoiceDisplay(data) {
                 <td>${qty}</td>
                 <td>${catName} ${greenSheetInfo}</td>
                 <td>${hsCode}</td>
-                <td>${sheet > 0 ? sheet.toFixed(3) : '-'}</td>
-                <td>${kg > 0 ? kg.toFixed(3) : '-'}</td>
+                <td>${sheetDisplay}</td>
+                <td>${kgDisplay}</td>
                 <td>${rate.toFixed(2)}</td>
                 <td style="font-weight:bold;color:#22c99a;">Rs. ${exclAmount.toFixed(2)}</td>
                 <td style="font-weight:bold;color:#f6ad55;">Rs. ${gstAmount.toFixed(2)}</td>
@@ -993,6 +1004,23 @@ function renderTaxInvoiceDisplay(data) {
         `;
         return;
     }
+
+    // ✅ Table Headers
+    const tableHeaders = `
+        <thead>
+            <tr>
+                <th style="width:50px;">Qty</th>
+                <th style="min-width:150px;">Category</th>
+                <th style="width:90px;">HS Code</th>
+                <th style="width:60px;">Sheet</th>
+                <th style="width:60px;">KG</th>
+                <th style="width:80px;">Rate/Pcs</th>
+                <th style="width:100px;color:#22c99a;">Excl. Tax</th>
+                <th style="width:100px;color:#f6ad55;">GST 18%</th>
+                <th style="width:100px;">Amount</th>
+            </tr>
+        </thead>
+    `;
 
     container.innerHTML = `
         <div class="tax-invoice-display">
@@ -1025,26 +1053,14 @@ function renderTaxInvoiceDisplay(data) {
 
             <div class="table-wrap">
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width:50px;">Qty</th>
-                            <th style="min-width:150px;">Category</th>
-                            <th style="width:90px;">HS Code</th>
-                            <th style="width:60px;">Sheet</th>
-                            <th style="width:60px;">KG</th>
-                            <th style="width:80px;">Rate/Pcs</th>
-                            <th style="width:100px;color:#22c99a;">Excl. Tax</th>
-                            <th style="width:100px;color:#f6ad55;">GST 18%</th>
-                            <th style="width:100px;">Amount</th>
-                        </tr>
-                    </thead>
+                    ${tableHeaders}
                     <tbody>
                         ${rows}
-                        <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
-                            <td colspan="6" style="text-align:right;color:var(--primary);">TOTAL</td>
-                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalExcl.toFixed(2)}</td>
-                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalGst.toFixed(2)}</td>
-                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotal.toFixed(2)}</td>
+                        <tr style="font-weight:bold;border-top:2px solid #22c99a;background:#e8f5f0;">
+                            <td colspan="6" style="text-align:right;color:#22c99a;font-size:14px;">TOTAL</td>
+                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotalExcl.toFixed(2)}</td>
+                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotalGst.toFixed(2)}</td>
+                            <td style="text-align:right;color:#22c99a;font-size:14px;">Rs. ${grandTotal.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
