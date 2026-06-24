@@ -901,10 +901,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
 // ============================================================
 // TAX INVOICE DISPLAY
 // ============================================================
-// ============================================================
-// TAX INVOICE DISPLAY - COMPLETE FIXED
-// ============================================================
-// ============================================================
 // TAX INVOICE DISPLAY - COMPLETE FIXED
 // ============================================================
 function renderTaxInvoiceDisplay(data) {
@@ -933,20 +929,21 @@ function renderTaxInvoiceDisplay(data) {
 
     // ✅ Get cash invoice values
     const cashInv = invoices.find(i => i.cashInvoiceTimestamp === data.cashInvoiceTimestamp);
-    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0;
-    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0;
-    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0;
-    const totalDiscount = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0;
+    const totalAmount = cashInv ? parseFloat(cashInv.finalTotal) || 0 : 0; // 82,065
+    const totalExcl = cashInv ? parseFloat(cashInv.totalExcludingTax) || 0 : 0; // 69,546.61
+    const totalGst = cashInv ? parseFloat(cashInv.totalGst) || 0 : 0; // 12,518.39
+    const totalDiscount = cashInv ? parseFloat(cashInv.discountAmt) || 0 : 0; // 27,355
     const discountPercent = parseFloat(data.discountPercent) || 0;
 
     const categories = data.categories || [];
     let rows = '';
-    let invTotal = 0;
-    let invTotalExcl = 0;
-    let invTotalGst = 0;
 
     // ✅ Order of categories
     const order = ['Foam', 'Steel', 'Fancy', 'Micro', 'Razor', 'Other'];
+
+    let grandTotal = 0;
+    let grandTotalExcl = 0;
+    let grandTotalGst = 0;
 
     order.forEach(key => {
         const cat = categories.find(c => c.category === key);
@@ -958,16 +955,15 @@ function renderTaxInvoiceDisplay(data) {
         const kg = cat.totalKg || 0;
         const sheet = cat.totalSheet || 0;
         const rate = cat.avgRatePerPcs || 0;
-        const amount = cat.totalAmount || 0;
+        const amount = cat.totalAmount || 0; // After Discount amount for this category
 
-        // ✅ Calculate proportion
-        const proportion = totalAmount > 0 ? amount / totalAmount : 0;
-        const exclAmount = totalExcl * proportion;
-        const gstAmount = totalGst * proportion;
+        // ✅ Calculate Excluding Tax and GST for this category
+        const exclAmount = amount / 1.18;
+        const gstAmount = exclAmount * 0.18;
 
-        invTotal += amount;
-        invTotalExcl += exclAmount;
-        invTotalGst += gstAmount;
+        grandTotal += amount;
+        grandTotalExcl += exclAmount;
+        grandTotalGst += gstAmount;
 
         let greenSheetInfo = '';
         if (key === 'Foam' && cat.totalGram > 0) {
@@ -988,6 +984,8 @@ function renderTaxInvoiceDisplay(data) {
                 <td>${kg > 0 ? kg.toFixed(3) : '-'}</td>
                 <td>${rate.toFixed(2)}</td>
                 <td style="font-weight:bold;">Rs. ${amount.toFixed(2)}</td>
+                <td style="font-weight:bold;color:#22c99a;">Rs. ${exclAmount.toFixed(2)}</td>
+                <td style="font-weight:bold;color:#f6ad55;">Rs. ${gstAmount.toFixed(2)}</td>
             </tr>
         `;
     });
@@ -1036,20 +1034,24 @@ function renderTaxInvoiceDisplay(data) {
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:60px;">Qty</th>
-                            <th style="min-width:180px;">Category</th>
-                            <th style="width:100px;">HS Code</th>
-                            <th style="width:70px;">Sheet</th>
-                            <th style="width:70px;">KG</th>
-                            <th style="width:90px;">Rate/Pcs</th>
-                            <th style="width:110px;">Amount</th>
+                            <th style="width:50px;">Qty</th>
+                            <th style="min-width:150px;">Category</th>
+                            <th style="width:90px;">HS Code</th>
+                            <th style="width:60px;">Sheet</th>
+                            <th style="width:60px;">KG</th>
+                            <th style="width:80px;">Rate/Pcs</th>
+                            <th style="width:100px;">Amount</th>
+                            <th style="width:100px;">Excl. Tax</th>
+                            <th style="width:100px;">GST 18%</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rows}
                         <tr style="font-weight:bold;border-top:2px solid var(--primary);background:#e8f5f0;">
                             <td colspan="6" style="text-align:right;color:var(--primary);">TOTAL</td>
-                            <td style="text-align:right;color:var(--primary);">Rs. ${invTotal.toFixed(2)}</td>
+                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotal.toFixed(2)}</td>
+                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalExcl.toFixed(2)}</td>
+                            <td style="text-align:right;color:var(--primary);">Rs. ${grandTotalGst.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1057,8 +1059,8 @@ function renderTaxInvoiceDisplay(data) {
 
             <div class="tax-totals">
                 <div class="tax-total-item">
-                    <span class="label">Total Amount:</span>
-                    <span class="value">Rs. ${totalAmount.toFixed(2)}</span>
+                    <span class="label">Total Amount (After Discount):</span>
+                    <span class="value green" style="font-size:20px;">Rs. ${totalAmount.toFixed(2)}</span>
                 </div>
                 <div class="tax-total-item">
                     <span class="label">Excluding Tax:</span>
@@ -1066,11 +1068,11 @@ function renderTaxInvoiceDisplay(data) {
                 </div>
                 <div class="tax-total-item">
                     <span class="label">GST @ 18%:</span>
-                    <span class="value gold">Rs. ${totalGst.toFixed(2)}</span>
+                    <span class="value gold" style="font-size:20px;">Rs. ${totalGst.toFixed(2)}</span>
                 </div>
                 <div class="tax-total-item">
                     <span class="label">💰 Gross Amount:</span>
-                    <span class="value green">Rs. ${totalAmount.toFixed(2)}</span>
+                    <span class="value green" style="font-size:24px;">Rs. ${totalAmount.toFixed(2)}</span>
                 </div>
                 ${discountPercent > 0 ? `
                 <div class="tax-total-item">
@@ -1079,12 +1081,12 @@ function renderTaxInvoiceDisplay(data) {
                 </div>
                 <div class="tax-total-item">
                     <span class="label">💰 Net Amount:</span>
-                    <span class="value green" style="font-size:22px;">Rs. ${(totalAmount - totalDiscount).toFixed(2)}</span>
+                    <span class="value green" style="font-size:24px;">Rs. ${(totalAmount - totalDiscount).toFixed(2)}</span>
                 </div>
                 ` : `
                 <div class="tax-total-item">
                     <span class="label">💰 Net Amount:</span>
-                    <span class="value green" style="font-size:22px;">Rs. ${totalAmount.toFixed(2)}</span>
+                    <span class="value green" style="font-size:24px;">Rs. ${totalAmount.toFixed(2)}</span>
                 </div>
                 `}
             </div>
