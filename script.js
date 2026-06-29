@@ -1361,7 +1361,77 @@ function renderTaxHistory() {
 }
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
-function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
+function printTaxInvoiceById(id) {
+    const inv = taxInvoices.find(i => i.id === id);
+    if (!inv) { 
+        showNotification('Tax invoice not found!', 'error'); 
+        return; 
+    }
+    
+    // Tax invoice ka HTML banayein
+    const printContent = document.getElementById('tax-invoice-container')?.innerHTML;
+    if (!printContent) {
+        showNotification('No content to print!', 'error');
+        return;
+    }
+    
+    // Naya window open karein sirf tax invoice ke liye
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(`<!DOCTYPE html>
+    <html>
+    <head>
+        <title>${inv.invoice_no}</title>
+        <style>
+            * { margin:0; padding:0; box-sizing:border-box; }
+            body { font-family:Arial; padding:20px; background:#fff; }
+            .tax-invoice-display { max-width:1100px; margin:0 auto; }
+            .header { text-align:center; border-bottom:3px solid #22c99a; padding-bottom:14px; margin-bottom:16px; }
+            .header h1 { color:#22c99a; font-size:24px; }
+            .header .sub-title { color:#666; font-size:13px; margin-top:4px; }
+            .header .invoice-title { font-size:18px; font-weight:700; color:#1a3c6e; margin:8px 0; }
+            .header .copy-type { color:#666; font-size:11px; font-style:italic; }
+            .info-grid { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:10px 0; border-bottom:1px solid #ddd; margin-bottom:12px; }
+            .buyer-grid { display:flex; gap:20px; margin:12px 0; flex-wrap:wrap; }
+            .buyer-box { flex:1; min-width:200px; padding:10px 14px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; }
+            .buyer-box .box-title { font-size:9px; text-transform:uppercase; color:#64748b; font-weight:600; }
+            .buyer-box .box-name { font-size:15px; font-weight:700; color:#1a3c6e; margin:4px 0; }
+            .buyer-box .box-detail { font-size:10px; color:#555; }
+            .table-wrap { overflow-x:auto; margin:12px 0; }
+            table { width:100%; border-collapse:collapse; font-size:10px; }
+            th { background:#1a3c6e; color:#fff; padding:6px 8px; text-align:left; border:1px solid #1a3c6e; }
+            th.center { text-align:center; }
+            th.right { text-align:right; }
+            td { padding:5px 8px; border:1px solid #ddd; }
+            td.center { text-align:center; }
+            td.right { text-align:right; }
+            .total-row { background:#e8f5f0; font-weight:700; }
+            .total-row td { font-weight:700; border-top:2px solid #0a3d2a; }
+            .totals-grid { display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px; margin-top:15px; padding-top:15px; border-top:2px solid #ddd; }
+            .totals-grid .right-section { text-align:right; border-left:2px solid #ddd; padding-left:20px; }
+            .signature-section { display:flex; justify-content:space-between; margin-top:25px; padding-top:20px; border-top:2px solid #ddd; }
+            .sig-box { text-align:center; width:30%; }
+            .sig-line { border-top:2px solid #333; width:80%; margin:0 auto; padding-top:4px; }
+            .sig-label { font-size:9px; color:#666; display:block; margin-top:4px; }
+            .footer-note { text-align:center; margin-top:20px; border-top:1px solid #ddd; padding-top:10px; font-size:9px; color:#999; }
+            .badge-discount { background:#fef3c7; color:#d4a017; padding:2px 10px; border-radius:20px; font-size:10px; font-weight:600; }
+            @media print { 
+                th { background:#1a3c6e !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+                .buyer-box { background:#f8fafc !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+                .total-row { background:#e8f5f0 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            }
+        </style>
+    </head>
+    <body>
+        ${printContent}
+        <script>
+            window.onload = function() {
+                setTimeout(function() { window.print(); }, 500);
+            };
+        <\/script>
+    </body>
+    </html>`);
+    w.document.close();
+}
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
     const { error } = await sb.from('tax_invoices').delete().eq('timestamp', id);
