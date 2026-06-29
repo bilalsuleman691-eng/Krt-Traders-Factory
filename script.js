@@ -1377,19 +1377,8 @@ function renderTaxHistory() {
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
 function printTaxInvoiceById(id) {
-    const inv = taxInvoices.find(i => i.id === id);
-    if (!inv) { 
-        showNotification('Tax invoice not found!', 'error'); 
-        return; 
-    }
-    
-    // Tax invoice ko render karein aur print karein
-    renderTaxInvoice(inv);
-    
-    // Thoda delay de kar print karein
-    setTimeout(function() {
-        window.print();
-    }, 500);
+    // Direct window print karein
+    window.print();
 }
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
