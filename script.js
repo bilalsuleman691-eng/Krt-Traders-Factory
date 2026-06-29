@@ -1076,7 +1076,7 @@ function renderTaxInvoice(data) {
 }
 
 // ============================================================
-// PRINT CASH INVOICE - FIXED WITH ALL TOTALS
+// PRINT CASH INVOICE - FIXED TOTAL (CALCULATES FROM ITEMS)
 // ============================================================
 function printInvoice() {
     const last = invoices.length > 0 ? invoices[invoices.length - 1] : null;
@@ -1087,6 +1087,21 @@ function printInvoice() {
 function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
+    
+    // ============================================================
+    // FIX: CALCULATE TOTALS DIRECTLY FROM ITEMS
+    // ============================================================
+    let subtotal = 0;
+    const items = inv.items || [];
+    items.forEach(item => {
+        const qty = parseFloat(item.qty) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        subtotal += qty * rate;
+    });
+    
+    const discountPercent = parseFloat(inv.discountPercent) || 0;
+    const discountAmt = (subtotal * discountPercent) / 100;
+    const finalTotal = subtotal - discountAmt;
     
     const w = window.open('', '_blank', 'width=800,height=600');
     w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title>
@@ -1114,6 +1129,8 @@ function printInvoiceById(id) {
         .sig-line{border-top:2px solid #333;width:80%;margin:0 auto;padding-top:4px}
         .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
         .invoice-title{text-align:center;font-size:18px;font-weight:700;color:#1a3c6e;margin:10px 0}
+        .item-row td{vertical-align:top;font-size:11px}
+        .barcode-cell{font-size:10px;font-family:monospace}
         @media print{
             th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
             .no-print{display:none !important}
@@ -1141,17 +1158,17 @@ function printInvoiceById(id) {
         
         <table>
             <thead>
-                <tr><th>#</th><th>Barcode</th><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Total</th></tr>
+                <tr><th style="width:30px;">#</th><th style="width:120px;">Barcode</th><th>Item</th><th style="text-align:center;width:50px;">Qty</th><th style="text-align:right;width:80px;">Rate</th><th style="text-align:right;width:100px;">Total</th></tr>
             </thead>
             <tbody>
-                ${(inv.items || []).map((item, i) => `
-                    <tr>
+                ${items.map((item, i) => `
+                    <tr class="item-row">
                         <td>${i+1}</td>
-                        <td>${item.barcode || '-'}</td>
+                        <td class="barcode-cell">${item.barcode || '-'}</td>
                         <td>${item.item || '-'}</td>
-                        <td style="text-align:center;">${item.qty}</td>
-                        <td style="text-align:right;">Rs. ${item.rate.toFixed(2)}</td>
-                        <td style="text-align:right;">Rs. ${(item.qty * item.rate).toFixed(2)}</td>
+                        <td style="text-align:center;">${parseFloat(item.qty || 0)}</td>
+                        <td style="text-align:right;">Rs. ${parseFloat(item.rate || 0).toFixed(2)}</td>
+                        <td style="text-align:right;">Rs. ${(parseFloat(item.qty || 0) * parseFloat(item.rate || 0)).toFixed(2)}</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -1160,17 +1177,17 @@ function printInvoiceById(id) {
         <div class="totals">
             <div class="total-line">
                 <span class="label">Sub Total:</span>
-                <span class="value">Rs. ${(inv.subtotal || 0).toFixed(2)}</span>
+                <span class="value">Rs. ${subtotal.toFixed(2)}</span>
             </div>
-            ${(inv.discountPercent || 0) > 0 ? `
+            ${discountPercent > 0 ? `
                 <div class="total-line discount">
-                    <span class="label">Discount (${inv.discountPercent}%):</span>
-                    <span class="value">- Rs. ${(inv.discountAmt || 0).toFixed(2)}</span>
+                    <span class="label">Discount (${discountPercent}%):</span>
+                    <span class="value">- Rs. ${discountAmt.toFixed(2)}</span>
                 </div>
             ` : ''}
             <div class="total-line final">
                 <span class="label" style="font-size:16px;"><strong>FINAL TOTAL:</strong></span>
-                <span class="value" style="font-size:20px;"><strong>Rs. ${(inv.grossAmount || 0).toFixed(2)}</strong></span>
+                <span class="value" style="font-size:20px;"><strong>Rs. ${finalTotal.toFixed(2)}</strong></span>
             </div>
         </div>
         
@@ -1195,7 +1212,7 @@ function printInvoiceById(id) {
 }
 
 // ============================================================
-// PRINT TAX INVOICE
+// PRINT TAX INVOICE - FIXED
 // ============================================================
 function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container')?.innerHTML;
@@ -1208,16 +1225,23 @@ function printTaxInvoice() {
         .tax-invoice-display{max-width:1100px;margin:0 auto}
         .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}
         .header h1{font-size:28px;color:#22c99a}
+        .header .sub-title{color:#666;font-size:14px;margin-top:4px}
+        .invoice-title{text-align:center;font-size:18px;font-weight:700;color:#1a3c6e;margin:10px 0}
+        .copy-type{text-align:center;font-size:12px;color:#666;margin-top:-8px;margin-bottom:10px}
         .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
         .buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
         .buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}
-        .buyer-box .box-title{font-weight:700;color:#22c99a;display:block}
+        .buyer-box .box-title{font-weight:700;color:#22c99a;display:block;font-size:11px;text-transform:uppercase}
         .buyer-box .box-name{font-weight:600;font-size:15px}
+        .buyer-box .box-detail{font-size:11px;color:#555;margin-top:2px}
         table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
         th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
         td{padding:6px 10px;border-bottom:1px solid #eee}
         .total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}
         .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}
+        .totals-grid .totals-left{font-size:13px;line-height:1.8}
+        .totals-grid .totals-right{text-align:right;border-left:2px solid #ddd;padding-left:20px}
+        .totals-grid .totals-right .net-amount{font-size:24px;font-weight:800;color:#22c99a;margin-top:8px;border-top:2px solid #22c99a;padding-top:8px}
         .signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}
         .signature-section .sig-box{text-align:center}
         .signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}
@@ -1234,7 +1258,6 @@ function printTaxInvoice() {
 }
 
 function printModal() { const id = window._modalInvId; if (id) printInvoiceById(id); }
-
 // ============================================================
 // INVOICE HISTORY - WITH TOTALS
 // ============================================================
