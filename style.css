@@ -68,17 +68,9 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 10px;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
 
 /* ============================================================
    LOGIN SCREEN
@@ -345,7 +337,6 @@ body {
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     max-width: 440px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    font-family: inherit;
     display: flex;
     align-items: center;
     gap: 10px;
