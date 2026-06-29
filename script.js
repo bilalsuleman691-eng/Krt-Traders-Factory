@@ -1361,7 +1361,29 @@ function renderTaxHistory() {
 }
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
-function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
+// 2. Print current tax invoice (jo screen par show ho rahi hai)
+function printTaxInvoice() {
+    const content = document.getElementById('tax-invoice-container')?.innerHTML;
+    if (!content || content.includes('No Tax Invoice generated yet')) { 
+        showNotification('No tax invoice to print!', 'error'); 
+        return; 
+    }
+    
+    // Agar taxInvoiceData available hai
+    if (taxInvoiceData) {
+        // ID ya timestamp use karein
+        const id = taxInvoiceData.id || taxInvoiceData.timestamp || Date.now();
+        printTaxInvoiceById(id);
+    } else {
+        // Fallback: taxInvoices array se last wali print karein
+        if (taxInvoices.length > 0) {
+            const last = taxInvoices[taxInvoices.length - 1];
+            printTaxInvoiceById(last.id);
+        } else {
+            showNotification('No tax invoice found!', 'error');
+        }
+    }
+}
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
     const { error } = await sb.from('tax_invoices').delete().eq('timestamp', id);
