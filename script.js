@@ -1087,6 +1087,21 @@ function printInvoice() {
 function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
+    const container = document.getElementById('tax-invoice-container');
+    if (!container) {
+        showNotification('No tax invoice found!', 'error');
+        return;
+    }
+    
+    // Check if tax invoice is visible
+    const content = container.innerHTML;
+    if (!content || content.includes('No Tax Invoice generated yet')) {
+        showNotification('No tax invoice to print!', 'error');
+        return;
+    }
+    
+    // Direct print karein
+    window.print();
     
     // ============================================================
     // CRITICAL FIX: CALCULATE TOTALS DIRECTLY FROM ITEMS
@@ -1361,7 +1376,21 @@ function renderTaxHistory() {
 }
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
-function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
+function printTaxInvoiceById(id) {
+    const inv = taxInvoices.find(i => i.id === id);
+    if (!inv) { 
+        showNotification('Tax invoice not found!', 'error'); 
+        return; 
+    }
+    
+    // Tax invoice ko render karein aur print karein
+    renderTaxInvoice(inv);
+    
+    // Thoda delay de kar print karein
+    setTimeout(function() {
+        window.print();
+    }, 500);
+}
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
     const { error } = await sb.from('tax_invoices').delete().eq('timestamp', id);
