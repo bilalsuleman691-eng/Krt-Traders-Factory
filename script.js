@@ -1,6 +1,6 @@
 // ============================================================
-// KRT TRADERS ERP SYSTEM - COMPLETE JavaScript
-// Version: 4.0
+// KRT TRADERS ERP - COMPLETE SCRIPT (LocalStorage Mode)
+// Version: 4.0 - Local Storage Only
 // ============================================================
 
 // ============================================================
@@ -83,20 +83,20 @@ function getItemCategory(itemName) {
 }
 
 // ============================================================
-// STATE
+// STATE - Local Storage Only
 // ============================================================
-let storeRates = JSON.parse(localStorage.getItem('storeRates')) || [];
-let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-let taxInvoices = JSON.parse(localStorage.getItem('taxInvoices')) || [];
-let stockIn = JSON.parse(localStorage.getItem('stockIn')) || [];
-let stockOut = JSON.parse(localStorage.getItem('stockOut')) || [];
-let spStockIn = JSON.parse(localStorage.getItem('spStockIn')) || [];
-let spStockOut = JSON.parse(localStorage.getItem('spStockOut')) || [];
-let gulzarLedger = JSON.parse(localStorage.getItem('gulzarLedger')) || [];
-let kashifLedger = JSON.parse(localStorage.getItem('kashifLedger')) || [];
-let salaryData = JSON.parse(localStorage.getItem('salaryData')) || {};
+let storeRates = [];
+let invoices = [];
+let taxInvoices = [];
+let stockIn = [];
+let stockOut = [];
+let spStockIn = [];
+let spStockOut = [];
+let gulzarLedger = [];
+let kashifLedger = [];
+let salaryData = {};
 
-let invoiceCounter = invoices.length;
+let invoiceCounter = 0;
 let editingRateId = null;
 let editingInvoiceTs = null;
 let editingStockInId = null;
@@ -108,6 +108,60 @@ let manualInvoiceNumber = '';
 let currentPage = 'dashboard';
 let chartInstance = null;
 let taxInvoiceData = null;
+
+// ============================================================
+// LOAD DATA FROM LOCAL STORAGE
+// ============================================================
+function loadAllData() {
+    try {
+        storeRates = JSON.parse(localStorage.getItem('storeRates')) || [];
+        invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+        taxInvoices = JSON.parse(localStorage.getItem('taxInvoices')) || [];
+        stockIn = JSON.parse(localStorage.getItem('stockIn')) || [];
+        stockOut = JSON.parse(localStorage.getItem('stockOut')) || [];
+        spStockIn = JSON.parse(localStorage.getItem('spStockIn')) || [];
+        spStockOut = JSON.parse(localStorage.getItem('spStockOut')) || [];
+        gulzarLedger = JSON.parse(localStorage.getItem('gulzarLedger')) || [];
+        kashifLedger = JSON.parse(localStorage.getItem('kashifLedger')) || [];
+        salaryData = JSON.parse(localStorage.getItem('salaryData')) || {};
+        invoiceCounter = invoices.length;
+        console.log('✅ Data loaded from LocalStorage');
+        console.log('📊 Invoices:', invoices.length);
+        console.log('📊 Store Rates:', storeRates.length);
+        console.log('📊 Stock In:', stockIn.length);
+        console.log('📊 Gulzar Entries:', gulzarLedger.length);
+        console.log('📊 Kashif Entries:', kashifLedger.length);
+    } catch(e) {
+        console.error('❌ Load error:', e);
+        showNotification('Error loading data', 'error');
+    }
+}
+
+// ============================================================
+// SAVE DATA TO LOCAL STORAGE
+// ============================================================
+function saveAllData() {
+    try {
+        localStorage.setItem('storeRates', JSON.stringify(storeRates));
+        localStorage.setItem('invoices', JSON.stringify(invoices));
+        localStorage.setItem('taxInvoices', JSON.stringify(taxInvoices));
+        localStorage.setItem('stockIn', JSON.stringify(stockIn));
+        localStorage.setItem('stockOut', JSON.stringify(stockOut));
+        localStorage.setItem('spStockIn', JSON.stringify(spStockIn));
+        localStorage.setItem('spStockOut', JSON.stringify(spStockOut));
+        localStorage.setItem('gulzarLedger', JSON.stringify(gulzarLedger));
+        localStorage.setItem('kashifLedger', JSON.stringify(kashifLedger));
+        localStorage.setItem('salaryData', JSON.stringify(salaryData));
+        document.getElementById('sync-dot')?.classList.remove('offline');
+        document.getElementById('sync-text')?.textContent = 'Synced ✔';
+        console.log('✅ Data saved to LocalStorage');
+    } catch(e) {
+        console.error('❌ Save error:', e);
+        document.getElementById('sync-dot')?.classList.add('offline');
+        document.getElementById('sync-text')?.textContent = 'Sync Error';
+        showNotification('Error saving data', 'error');
+    }
+}
 
 // ============================================================
 // LOGIN / LOGOUT
@@ -136,32 +190,24 @@ function logout() {
 // ============================================================
 function showNotification(message, type = 'success') {
     const el = document.getElementById('notification');
+    if (!el) return;
     el.textContent = message;
     el.className = type + ' show';
     clearTimeout(el._timeout);
     el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
-    
-    if (document.getElementById('sound-toggle')?.checked) {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.frequency.value = type === 'error' ? 200 : 800;
-            osc.type = 'sine';
-            gain.gain.value = 0.1;
-            osc.start();
-            osc.stop(ctx.currentTime + 0.1);
-        } catch(e) {}
-    }
 }
 
 // ============================================================
 // LOADING
 // ============================================================
-function showLoading() { document.getElementById('loading-overlay').style.display = 'flex'; }
-function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
+function showLoading() { 
+    const el = document.getElementById('loading-overlay');
+    if (el) el.style.display = 'flex';
+}
+function hideLoading() { 
+    const el = document.getElementById('loading-overlay');
+    if (el) el.style.display = 'none';
+}
 
 // ============================================================
 // SIDEBAR
@@ -253,32 +299,10 @@ function toggleTheme() {
 }
 
 // ============================================================
-// SAVE DATA
-// ============================================================
-function saveAllData() {
-    try {
-        localStorage.setItem('storeRates', JSON.stringify(storeRates));
-        localStorage.setItem('invoices', JSON.stringify(invoices));
-        localStorage.setItem('taxInvoices', JSON.stringify(taxInvoices));
-        localStorage.setItem('stockIn', JSON.stringify(stockIn));
-        localStorage.setItem('stockOut', JSON.stringify(stockOut));
-        localStorage.setItem('spStockIn', JSON.stringify(spStockIn));
-        localStorage.setItem('spStockOut', JSON.stringify(spStockOut));
-        localStorage.setItem('gulzarLedger', JSON.stringify(gulzarLedger));
-        localStorage.setItem('kashifLedger', JSON.stringify(kashifLedger));
-        localStorage.setItem('salaryData', JSON.stringify(salaryData));
-        document.getElementById('sync-dot').classList.remove('offline');
-        document.getElementById('sync-text').textContent = 'Synced ✔';
-    } catch(e) {
-        document.getElementById('sync-dot').classList.add('offline');
-        document.getElementById('sync-text').textContent = 'Sync Error';
-    }
-}
-
-// ============================================================
 // INIT APP
 // ============================================================
 function initApp() {
+    // Load theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     if (savedTheme === 'dark') {
@@ -287,9 +311,11 @@ function initApp() {
         document.getElementById('theme-text').textContent = 'Light Mode';
     }
     
+    // Set dates
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('.stock-date').forEach(el => { if (!el.value) el.value = today; });
     
+    // Set month
     const monthInput = document.getElementById('monthly-month');
     if (monthInput) {
         const now = new Date();
@@ -307,17 +333,20 @@ function initApp() {
         sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     }
     
+    // Load data
+    loadAllData();
     loadDashboard();
     renderRates();
     initInvoice();
     updateBadges();
     updateClock();
     setInterval(updateClock, 1000);
-    showNotification('System Ready!', 'success');
+    showNotification('System Ready! Data loaded from LocalStorage', 'success');
 }
 
 function updateClock() {
-    document.getElementById('header-time').textContent = new Date().toLocaleTimeString();
+    const el = document.getElementById('header-time');
+    if (el) el.textContent = new Date().toLocaleTimeString();
 }
 
 // ============================================================
@@ -378,7 +407,8 @@ function updateDashboardChart() {
         data.push(dailyTotal);
     }
     
-    const ctx = document.getElementById('salesChart').getContext('2d');
+    const ctx = document.getElementById('salesChart')?.getContext('2d');
+    if (!ctx) return;
     if (chartInstance) chartInstance.destroy();
     
     chartInstance = new Chart(ctx, {
@@ -451,6 +481,7 @@ function saveStoreRate() {
 
 function renderRates() {
     const tbody = document.getElementById('sr-table-body');
+    if (!tbody) return;
     if (storeRates.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="5">No rates added yet</td></tr>';
     } else {
@@ -473,9 +504,11 @@ function renderRates() {
     document.getElementById('inv-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
     
     const filter = document.getElementById('sr-filter-store');
-    const currentVal = filter.value;
-    filter.innerHTML = '<option value="">All Stores</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
-    filter.value = currentVal;
+    if (filter) {
+        const currentVal = filter.value;
+        filter.innerHTML = '<option value="">All Stores</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+        filter.value = currentVal;
+    }
 }
 
 function editRate(id) {
@@ -508,12 +541,16 @@ function deleteRate(id) {
 }
 
 function clearRateForm() {
-    ['sr-store', 'sr-barcode', 'sr-item', 'sr-rate'].forEach(id => document.getElementById(id).value = '');
+    ['sr-store', 'sr-barcode', 'sr-item', 'sr-rate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 }
 
 function toggleRatesVisibility() {
     const container = document.getElementById('rates-list-container');
     const text = document.getElementById('rates-toggle-text');
+    if (!container) return;
     if (container.style.display === 'none') {
         container.style.display = 'block';
         text.textContent = 'Hide';
@@ -524,7 +561,7 @@ function toggleRatesVisibility() {
 }
 
 function filterRatesTable(search) {
-    const filterStore = document.getElementById('sr-filter-store').value;
+    const filterStore = document.getElementById('sr-filter-store')?.value || '';
     const searchLower = search.toLowerCase();
     document.querySelectorAll('#sr-table-body tr[data-search]').forEach(row => {
         const matchSearch = row.dataset.search.includes(searchLower);
@@ -553,23 +590,25 @@ let invoiceItems = [];
 
 function initInvoice() {
     invoiceItems = [];
-    document.getElementById('inv-body').innerHTML = '';
+    const body = document.getElementById('inv-body');
+    if (body) body.innerHTML = '';
     document.getElementById('inv-discount').value = 0;
     document.getElementById('inv-tax-rate').value = 18;
     calcInvoice();
     updateInvoiceNumber();
     
     const dateInput = document.getElementById('inv-date');
-    if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+    if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
     
     editingInvoiceTs = null;
-    document.getElementById('inv-cancel-btn').style.display = 'none';
+    const cancelBtn = document.getElementById('inv-cancel-btn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
     addInvoiceRow();
 }
 
 function updateInvoiceNumber() {
     const display = document.getElementById('invoice-number-display');
-    const custom = document.getElementById('inv-number').value.trim();
+    const custom = document.getElementById('inv-number')?.value?.trim() || '';
     if (custom) { display.textContent = custom; return; }
     const nextNum = invoices.length + 1;
     display.textContent = 'INV-' + String(nextNum).padStart(3, '0');
@@ -582,6 +621,7 @@ function updateInvoiceNumberManual(value) {
 
 function addInvoiceRow() {
     const tbody = document.getElementById('inv-body');
+    if (!tbody) return;
     const n = tbody.children.length + 1;
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -599,7 +639,8 @@ function addInvoiceRow() {
 
 function removeInvoiceRow(btn) {
     const row = btn.closest('tr');
-    if (document.getElementById('inv-body').children.length <= 1) {
+    const tbody = document.getElementById('inv-body');
+    if (tbody.children.length <= 1) {
         showNotification('At least one item is required', 'warning');
         return;
     }
@@ -612,7 +653,7 @@ function onInvBarcode(input) {
     const bc = input.value.trim();
     const row = input.closest('tr');
     if (PRODUCTS[bc]) row.querySelector('.inv-item').value = PRODUCTS[bc];
-    const storeName = document.getElementById('inv-store').value.trim();
+    const storeName = document.getElementById('inv-store')?.value?.trim() || '';
     const rate = storeRates.find(r => r.store === storeName && r.barcode === bc);
     if (rate) row.querySelector('.inv-rate').value = rate.rate;
     calcInvoice();
@@ -621,6 +662,7 @@ function onInvBarcode(input) {
 function onInvStoreChange(value) {
     const preview = document.getElementById('inv-store-rate-preview');
     const info = document.getElementById('inv-store-info');
+    if (!preview || !info) return;
     if (value) {
         const rates = storeRates.filter(r => r.store === value);
         if (rates.length > 0) {
@@ -650,7 +692,7 @@ function calcInvoice() {
     
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
-    const currency = document.getElementById('inv-currency').value;
+    const currency = document.getElementById('inv-currency')?.value || 'PKR';
     const symbol = currency === 'PKR' ? 'Rs.' : currency === 'USD' ? '$' : '€';
     
     const discountAmt = (subtotal * discount) / 100;
@@ -669,14 +711,19 @@ function calcInvoice() {
 }
 
 function clearInvoiceForm() {
-    ['inv-customer', 'inv-store', 'inv-customer-ntn', 'inv-customer-strn', 'inv-customer-address'].forEach(id => document.getElementById(id).value = '');
+    ['inv-customer', 'inv-store', 'inv-customer-ntn', 'inv-customer-strn', 'inv-customer-address'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     document.getElementById('inv-discount').value = 0;
     document.getElementById('inv-tax-rate').value = 18;
-    document.getElementById('inv-body').innerHTML = '';
+    const body = document.getElementById('inv-body');
+    if (body) body.innerHTML = '';
     document.getElementById('inv-number').value = '';
     manualInvoiceNumber = '';
     editingInvoiceTs = null;
-    document.getElementById('inv-cancel-btn').style.display = 'none';
+    const cancelBtn = document.getElementById('inv-cancel-btn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
     calcInvoice();
     addInvoiceRow();
     updateInvoiceNumber();
@@ -860,6 +907,7 @@ function generateTaxInvoiceFromCash() {
 
 function renderTaxInvoice(data) {
     const container = document.getElementById('tax-invoice-container');
+    if (!container) return;
     if (!data || !data.categories || data.categories.length === 0) {
         container.innerHTML = `
             <div class="tax-invoice-placeholder">
@@ -1018,7 +1066,8 @@ function printInvoiceById(id) {
 }
 
 function printTaxInvoice() {
-    const content = document.getElementById('tax-invoice-container').innerHTML;
+    const content = document.getElementById('tax-invoice-container')?.innerHTML;
+    if (!content) { showNotification('No tax invoice to print!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1000,height=800');
     w.document.write(`
         <!DOCTYPE html><html>
@@ -1063,9 +1112,9 @@ function printModal() {
 // INVOICE HISTORY
 // ============================================================
 function renderInvoiceHistory() {
-    const from = document.getElementById('inv-hist-from').value;
-    const to = document.getElementById('inv-hist-to').value;
-    const search = (document.getElementById('inv-hist-search').value || '').toLowerCase();
+    const from = document.getElementById('inv-hist-from')?.value || '';
+    const to = document.getElementById('inv-hist-to')?.value || '';
+    const search = (document.getElementById('inv-hist-search')?.value || '').toLowerCase();
     
     let filtered = [...invoices].reverse();
     if (from) filtered = filtered.filter(inv => inv.date >= from);
@@ -1079,6 +1128,7 @@ function renderInvoiceHistory() {
     }
     
     const tbody = document.getElementById('inv-history-body');
+    if (!tbody) return;
     if (filtered.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="7">No invoices found</td></tr>';
     } else {
@@ -1106,6 +1156,7 @@ function viewInvoice(id) {
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     
     const body = document.getElementById('inv-modal-body');
+    if (!body) return;
     body.innerHTML = `
         <div style="padding:10px 0;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
@@ -1225,9 +1276,9 @@ function exportInvoiceHistory() {
 // TAX HISTORY
 // ============================================================
 function renderTaxHistory() {
-    const from = document.getElementById('tax-hist-from').value;
-    const to = document.getElementById('tax-hist-to').value;
-    const search = (document.getElementById('tax-hist-search').value || '').toLowerCase();
+    const from = document.getElementById('tax-hist-from')?.value || '';
+    const to = document.getElementById('tax-hist-to')?.value || '';
+    const search = (document.getElementById('tax-hist-search')?.value || '').toLowerCase();
     
     let filtered = [...taxInvoices].reverse();
     if (from) filtered = filtered.filter(inv => inv.date >= from);
@@ -1240,6 +1291,7 @@ function renderTaxHistory() {
     }
     
     const tbody = document.getElementById('tax-history-body');
+    if (!tbody) return;
     if (filtered.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>';
     } else {
@@ -1319,7 +1371,7 @@ function exportTaxHistory() {
 // MONTHLY REPORT
 // ============================================================
 function generateMonthlyReport() {
-    const month = document.getElementById('monthly-month').value;
+    const month = document.getElementById('monthly-month')?.value;
     if (!month) { showNotification('Select a month!', 'error'); return; }
     
     const [year, monthNum] = month.split('-').map(Number);
@@ -1332,6 +1384,7 @@ function generateMonthlyReport() {
     });
     
     const container = document.getElementById('monthly-report-container');
+    if (!container) return;
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="monthly-report-empty">
@@ -1481,7 +1534,9 @@ function generateMonthlyReport() {
 }
 
 function clearMonthlyReport() {
-    document.getElementById('monthly-report-container').innerHTML = `
+    const container = document.getElementById('monthly-report-container');
+    if (!container) return;
+    container.innerHTML = `
         <div class="tax-invoice-placeholder">
             <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i>
             <p style="margin-top:12px;color:var(--text-light);">Select a month and click "Generate"</p>
@@ -1491,8 +1546,8 @@ function clearMonthlyReport() {
 }
 
 function printMonthlyReport() {
-    const content = document.getElementById('monthly-report-container').innerHTML;
-    if (content.includes('Select a month')) {
+    const content = document.getElementById('monthly-report-container')?.innerHTML;
+    if (!content || content.includes('Select a month')) {
         showNotification('Generate a report first!', 'error');
         return;
     }
@@ -1612,6 +1667,7 @@ function saveStockIn() {
 
 function renderStockIn() {
     const tbody = document.getElementById('stock-in-table');
+    if (!tbody) return;
     if (stockIn.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>';
     } else {
@@ -1659,7 +1715,10 @@ function deleteStockIn(id) {
 }
 
 function clearStockInForm() {
-    ['in-vendor', 'in-barcode', 'in-item', 'in-qty', 'in-price'].forEach(id => document.getElementById(id).value = '');
+    ['in-vendor', 'in-barcode', 'in-item', 'in-qty', 'in-price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     showNotification('Form cleared', 'info');
 }
 
@@ -1687,6 +1746,7 @@ function exportStockIn() {
 // ============================================================
 function updateStockOutDropdown() {
     const select = document.getElementById('out-item-select');
+    if (!select) return;
     const uniqueItems = [...new Set(stockIn.map(s => s.item))];
     select.innerHTML = '<option value="">-- Select Item --</option>' +
         uniqueItems.map(item => `<option value="${item}">${item}</option>`).join('');
@@ -1719,6 +1779,7 @@ function onOutCustomItem() {
 function updateOutBalanceInfo() {
     const item = document.getElementById('out-item').value.trim();
     const info = document.getElementById('out-balance-info');
+    if (!info) return;
     if (!item) { info.innerHTML = ''; return; }
     const totalIn = stockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
     const totalOut = stockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
@@ -1777,6 +1838,7 @@ function saveStockOut() {
 
 function renderStockOut() {
     const tbody = document.getElementById('stock-out-table');
+    if (!tbody) return;
     if (stockOut.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>';
     } else {
@@ -1826,7 +1888,10 @@ function deleteStockOut(id) {
 }
 
 function clearStockOutForm() {
-    ['out-customer', 'out-item', 'out-barcode', 'out-qty', 'out-price'].forEach(id => document.getElementById(id).value = '');
+    ['out-customer', 'out-item', 'out-barcode', 'out-qty', 'out-price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     document.getElementById('out-item-select').value = '';
     document.getElementById('out-balance-info').innerHTML = '';
     showNotification('Form cleared', 'info');
@@ -1857,6 +1922,7 @@ function exportStockOut() {
 function calcBalance() {
     const items = [...new Set([...stockIn.map(s => s.item), ...stockOut.map(s => s.item)])];
     const tbody = document.getElementById('balance-table');
+    if (!tbody) return;
     if (items.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="5">No stock found</td></tr>';
         return;
@@ -1896,7 +1962,8 @@ function updateSPInPreview() {
     const pcsPerCtn = parseFloat(document.getElementById('spin-pcsperctn').value) || 0;
     const extra = parseFloat(document.getElementById('spin-extra').value) || 0;
     const total = (ctn * pcsPerCtn) + extra;
-    document.getElementById('spin-total-preview').textContent = 'Total Pcs: ' + total;
+    const el = document.getElementById('spin-total-preview');
+    if (el) el.textContent = 'Total Pcs: ' + total;
 }
 
 function saveSPStockIn() {
@@ -1946,6 +2013,7 @@ function saveSPStockIn() {
 
 function renderSPIn() {
     const tbody = document.getElementById('sp-in-table');
+    if (!tbody) return;
     if (spStockIn.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="12">No entries found</td></tr>';
     } else {
@@ -1999,7 +2067,10 @@ function deleteSPIn(id) {
 }
 
 function clearSPInForm() {
-    ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => document.getElementById(id).value = '');
+    ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     updateSPInPreview();
     showNotification('Form cleared', 'info');
 }
@@ -2009,7 +2080,8 @@ function clearSPInForm() {
 // ============================================================
 function updateSPStoreList() {
     const stores = [...new Set(spStockOut.map(s => s.store))];
-    document.getElementById('spout-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
+    const list = document.getElementById('spout-store-list');
+    if (list) list.innerHTML = stores.map(s => `<option value="${s}">`).join('');
 }
 
 function getSPBalance(barcode) {
@@ -2021,6 +2093,7 @@ function getSPBalance(barcode) {
 function spoutBarcodeInput() {
     const bc = document.getElementById('spout-barcode').value.trim();
     const info = document.getElementById('spout-balance-info');
+    if (!info) return;
     if (bc) {
         const entry = spStockIn.find(s => s.barcode === bc);
         if (entry) {
@@ -2091,8 +2164,8 @@ function saveSPStockOut() {
 }
 
 function renderSPOut() {
-    const from = document.getElementById('spout-from')?.value;
-    const to = document.getElementById('spout-to')?.value;
+    const from = document.getElementById('spout-from')?.value || '';
+    const to = document.getElementById('spout-to')?.value || '';
     const search = (document.getElementById('spout-search')?.value || '').toLowerCase();
     
     let list = [...spStockOut].reverse();
@@ -2101,6 +2174,7 @@ function renderSPOut() {
     if (search) list = list.filter(s => (s.store + s.item + s.barcode).toLowerCase().includes(search));
     
     const tbody = document.getElementById('sp-out-table');
+    if (!tbody) return;
     if (list.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="9">No entries found</td></tr>';
     } else {
@@ -2148,12 +2222,18 @@ function deleteSPOut(id) {
 }
 
 function clearSPOutFilter() {
-    ['spout-from', 'spout-to', 'spout-search'].forEach(id => document.getElementById(id).value = '');
+    ['spout-from', 'spout-to', 'spout-search'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     renderSPOut();
 }
 
 function clearSPOutForm() {
-    ['spout-store', 'spout-barcode', 'spout-item', 'spout-qty', 'spout-price'].forEach(id => document.getElementById(id).value = '');
+    ['spout-store', 'spout-barcode', 'spout-item', 'spout-qty', 'spout-price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     document.getElementById('spout-balance-info').innerHTML = '';
     showNotification('Form cleared', 'info');
 }
@@ -2168,6 +2248,7 @@ function printSPOutTable() {
 function calcSPBalance() {
     const items = [...new Set([...spStockIn.map(s => s.item), ...spStockOut.map(s => s.item)])];
     const tbody = document.getElementById('sp-balance-table');
+    if (!tbody) return;
     if (items.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="6">No stock found</td></tr>';
         return;
@@ -2205,7 +2286,7 @@ function printSPBalance() {
 }
 
 // ============================================================
-// LEDGER (Gulzar & Kashif) - HIGHLIGHTED TOTALS
+// LEDGER (Gulzar & Kashif)
 // ============================================================
 function addLedgerEntry(person) {
     const date = document.getElementById(person + '-date').value;
@@ -2254,12 +2335,12 @@ function loadLedger(person) {
     document.getElementById(person + '-balance').textContent = 'Rs. ' + balance.toFixed(2);
     document.getElementById(person + '-total-entries').textContent = ledger.length;
     
-    // Today's entries
     const today = new Date().toISOString().split('T')[0];
     const todayEntries = ledger.filter(e => e.date === today);
     const todayBody = document.getElementById(person + '-today-table');
     document.getElementById(person + '-today-count').textContent = todayEntries.length;
     
+    if (!todayBody) return;
     if (todayEntries.length === 0) {
         todayBody.innerHTML = '<tr class="no-data"><td colspan="6">No entries today</td></tr>';
     } else {
@@ -2287,8 +2368,8 @@ function loadLedger(person) {
 
 function renderLedgerHistory(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
-    const from = document.getElementById(person + '-from').value;
-    const to = document.getElementById(person + '-to').value;
+    const from = document.getElementById(person + '-from')?.value || '';
+    const to = document.getElementById(person + '-to')?.value || '';
     
     let filtered = [...ledger];
     if (from) filtered = filtered.filter(e => e.date >= from);
@@ -2296,6 +2377,7 @@ function renderLedgerHistory(person) {
     filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     const body = document.getElementById(person + '-history-table');
+    if (!body) return;
     if (filtered.length === 0) {
         body.innerHTML = '<tr class="no-data"><td colspan="6">No entries found</td></tr>';
     } else {
@@ -2430,7 +2512,7 @@ function printLedger(person) {
 // SALARY
 // ============================================================
 function loadSalaryMonth() {
-    const month = document.getElementById('sal-month').value;
+    const month = document.getElementById('sal-month')?.value;
     if (!month) return;
     if (!salaryData[month]) salaryData[month] = [];
     renderSalaryTable(month);
@@ -2438,6 +2520,7 @@ function loadSalaryMonth() {
 
 function renderSalaryTable(month) {
     const tbody = document.getElementById('sal-body');
+    if (!tbody) return;
     const rows = salaryData[month] || [];
     if (rows.length === 0) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="7">No employees — click "Add Employee"</td></tr>';
@@ -2461,7 +2544,7 @@ function renderSalaryTable(month) {
 }
 
 function addSalaryEmployeeRow() {
-    const month = document.getElementById('sal-month').value;
+    const month = document.getElementById('sal-month')?.value;
     if (!month) { showNotification('Select month first!', 'error'); return; }
     if (!salaryData[month]) salaryData[month] = [];
     salaryData[month].push({ name: '', salary: 0, advance: 0, note: '' });
@@ -2474,7 +2557,7 @@ function updateSalRow(month, idx, field, value) {
     if (field === 'salary' || field === 'advance') row[field] = parseFloat(value) || 0;
     else row[field] = value;
     const balance = (row.salary - row.advance).toFixed(2);
-    const tr = document.getElementById('sal-body').rows[idx];
+    const tr = document.getElementById('sal-body')?.rows[idx];
     if (tr) {
         tr.cells[4].innerText = 'Rs. ' + balance;
         tr.cells[4].style.color = balance >= 0 ? '#22c99a' : '#ef4444';
@@ -2497,15 +2580,16 @@ function updateSalaryTotals(month) {
 }
 
 function saveSalaryMonth() {
-    const month = document.getElementById('sal-month').value;
+    const month = document.getElementById('sal-month')?.value;
     if (!month) { showNotification('Select month first!', 'error'); return; }
     saveAllData();
     showNotification('Salary month saved!', 'success');
 }
 
 function renderSalarySheet() {
-    const month = document.getElementById('sheet-month').value;
+    const month = document.getElementById('sheet-month')?.value;
     const tbody = document.getElementById('sheet-body');
+    if (!tbody) return;
     if (!month) {
         tbody.innerHTML = '<tr class="no-data"><td colspan="6">Select month</td></tr>';
         document.getElementById('sheet-month-label').textContent = 'Select month';
@@ -2642,10 +2726,10 @@ function emailInvoice() {
 function scanBarcode() {
     if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
         showNotification('Camera scanner coming soon! Use barcode input field.', 'info');
-        document.querySelector('.inv-barcode').focus();
+        document.querySelector('.inv-barcode')?.focus();
     } else {
         showNotification('Camera not supported. Please enter barcode manually.', 'warning');
-        document.querySelector('.inv-barcode').focus();
+        document.querySelector('.inv-barcode')?.focus();
     }
 }
 
@@ -2697,4 +2781,5 @@ document.addEventListener('keydown', function(e) {
 // ============================================================
 console.log('🏪 KRT TRADERS ERP System v4.0 Loaded!');
 console.log('🔑 Password: admin123');
-console.log('📌 Features: Dashboard, Invoicing, Inventory, SP, HR, Accounts, Reports');
+console.log('📦 Data Mode: LocalStorage ONLY');
+console.log('📊 Data loaded from browser LocalStorage');
