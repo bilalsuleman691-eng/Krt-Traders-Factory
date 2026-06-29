@@ -1,6 +1,6 @@
 // ============================================================
 // KRT TRADERS ERP - COMPLETE JAVASCRIPT
-// Version: 4.0 - ALL FIXED
+// Version: 4.0 - FINAL PERFECT
 // ============================================================
 
 // ============================================================
@@ -51,7 +51,7 @@ const PRODUCTS = {
 };
 
 // ============================================================
-// ITEM CATEGORIES - FIXED (No "Other")
+// ITEM CATEGORIES
 // ============================================================
 const ITEM_CATEGORIES = {
     'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
@@ -63,7 +63,6 @@ const ITEM_CATEGORIES = {
     'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
     'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
     'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-    'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
     'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
     'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
     'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
@@ -154,8 +153,20 @@ async function loadAllData() {
             sb.from('salary_data').select('*').order('month')
         ]);
         storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
-        invoices = (invRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [], discountPercent: Number(r.discount_percent) || 0, discountAmt: parseFloat(r.discount_amt) || 0, subtotal: parseFloat(r.sub_total) || 0, afterDiscount: parseFloat(r.after_discount) || 0, gstRate: Number(r.gst_rate) || 18, gstAmt: parseFloat(r.gst_amt) || 0, finalTotal: parseFloat(r.final_total) || 0 }));
-        taxInvoices = (taxInvRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [], totalAmount: parseFloat(r.total_amount) || 0, totalGst: parseFloat(r.total_gst) || 0, totalGross: parseFloat(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0, cashInvoiceId: r.cash_invoice_timestamp }));
+        invoices = (invRes.data || []).map(r => ({ 
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [],
+            discountPercent: Number(r.discount_percent) || 0, discountAmt: parseFloat(r.discount_amt) || 0,
+            subtotal: parseFloat(r.sub_total) || 0, grossAmount: parseFloat(r.gross_amount) || 0,
+            finalTotal: parseFloat(r.final_total) || 0
+        }));
+        taxInvoices = (taxInvRes.data || []).map(r => ({
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [],
+            grossAmount: parseFloat(r.gross_amount) || 0, excludingTax: parseFloat(r.excluding_tax) || 0,
+            gstAmount: parseFloat(r.gst_amount) || 0, netAmount: parseFloat(r.net_amount) || 0,
+            discountPercent: Number(r.discount_percent) || 0, cashInvoiceId: r.cash_invoice_timestamp
+        }));
         stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
@@ -293,7 +304,7 @@ function updateClock() { const el = document.getElementById('header-time'); if (
 function loadDashboard() {
     const today = new Date().toISOString().split('T')[0];
     const todayInvs = invoices.filter(i => i.date === today);
-    const todaySales = todayInvs.reduce((s, i) => s + (i.finalTotal || 0), 0);
+    const todaySales = todayInvs.reduce((s, i) => s + (i.grossAmount || 0), 0);
     document.getElementById('dash-today-sales').textContent = 'Rs. ' + todaySales.toFixed(2);
     document.getElementById('dash-sale-count').textContent = todayInvs.length + ' invoices';
     const todayStockIn = stockIn.filter(s => s.date === today);
@@ -309,7 +320,7 @@ function loadDashboard() {
     const recent = [...invoices].reverse().slice(0, 5);
     const tbody = document.getElementById('dash-recent-inv');
     if (recent.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="4">No invoices found</td></tr>'; } else {
-        tbody.innerHTML = recent.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>Rs. ${(inv.finalTotal || 0).toFixed(2)}</td></tr>`).join('');
+        tbody.innerHTML = recent.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>Rs. ${(inv.grossAmount || 0).toFixed(2)}</td></tr>`).join('');
     }
     document.getElementById('dash-recent-count').textContent = recent.length;
     updateDashboardChart();
@@ -323,7 +334,7 @@ function updateDashboardChart() {
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         labels.push(dateStr.slice(5));
-        const dailyTotal = invoices.filter(inv => inv.date === dateStr).reduce((s, inv) => s + (inv.finalTotal || 0), 0);
+        const dailyTotal = invoices.filter(inv => inv.date === dateStr).reduce((s, inv) => s + (inv.grossAmount || 0), 0);
         data.push(dailyTotal);
     }
     const ctx = document.getElementById('salesChart')?.getContext('2d');
@@ -519,6 +530,9 @@ function onInvStoreChange(value) {
     calcInvoice();
 }
 
+// ============================================================
+// CALC INVOICE - CASH INVOICE (NO GST)
+// ============================================================
 function calcInvoice() {
     const rows = document.querySelectorAll('#inv-body tr');
     let subtotal = 0;
@@ -530,21 +544,21 @@ function calcInvoice() {
         subtotal += total;
     });
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
-    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
     const currency = document.getElementById('inv-currency')?.value || 'PKR';
     const symbol = currency === 'PKR' ? 'Rs.' : currency === 'USD' ? '$' : '€';
     const discountAmt = (subtotal * discount) / 100;
-    const afterDiscount = subtotal - discountAmt;
-    const taxAmt = (afterDiscount * taxRate) / 100;
-    const finalTotal = afterDiscount + taxAmt;
+    const grossAmount = subtotal - discountAmt;
+    
+    // CASH INVOICE - NO GST SHOWN
     document.getElementById('inv-subtotal').textContent = symbol + ' ' + subtotal.toFixed(2);
     document.getElementById('inv-disc-label').textContent = 'Discount (' + discount + '%):';
     document.getElementById('inv-disc-amt').textContent = '- ' + symbol + ' ' + discountAmt.toFixed(2);
-    document.getElementById('inv-after-disc').textContent = symbol + ' ' + afterDiscount.toFixed(2);
-    document.getElementById('inv-excl-tax').textContent = symbol + ' ' + afterDiscount.toFixed(2);
-    document.getElementById('inv-gst').textContent = symbol + ' ' + taxAmt.toFixed(2);
-    document.getElementById('inv-tax-label').textContent = taxRate;
-    document.getElementById('inv-final').textContent = symbol + ' ' + finalTotal.toFixed(2);
+    document.getElementById('inv-after-disc').textContent = symbol + ' ' + grossAmount.toFixed(2);
+    document.getElementById('inv-final').textContent = symbol + ' ' + grossAmount.toFixed(2);
+    
+    // Hide GST from Cash Invoice
+    document.getElementById('inv-excl-tax').textContent = '-';
+    document.getElementById('inv-gst').textContent = '-';
 }
 
 function clearInvoiceForm() {
@@ -567,7 +581,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - COMPLETE FIXED
+// SAVE INVOICE - COMPLETE
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -613,12 +627,9 @@ async function saveInvoiceNow() {
     }
     
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
-    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
-    const afterDiscount = subtotal - discountAmt;
-    const taxAmt = (afterDiscount * taxRate) / 100;
-    const finalTotal = afterDiscount + taxAmt;
+    const grossAmount = subtotal - discountAmt;
     
     let invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     
@@ -645,10 +656,8 @@ async function saveInvoiceNow() {
         discount_percent: discount, 
         discount_amt: discountAmt.toFixed(2), 
         sub_total: subtotal.toFixed(2), 
-        after_discount: afterDiscount.toFixed(2), 
-        gst_rate: taxRate, 
-        gst_amt: taxAmt.toFixed(2), 
-        final_total: finalTotal.toFixed(2) 
+        gross_amount: grossAmount.toFixed(2),
+        final_total: grossAmount.toFixed(2)
     };
     
     if (editingInvoiceTs !== null) {
@@ -686,6 +695,7 @@ async function saveInvoiceNow() {
         showNotification('✅ Invoice saved!', 'success');
     }
     
+    // SP STOCK OUT
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -717,9 +727,10 @@ async function saveInvoiceNow() {
         }
     }
     
+    // GENERATE TAX INVOICE
     await generateAndSaveTaxInvoice(
         ts, discount, items, store, customer, ntn, strn, address,
-        date, invoiceNo, finalTotal, taxRate, taxAmt, subtotal, discountAmt
+        date, invoiceNo, grossAmount
     );
     
     renderInvoiceHistory();
@@ -733,9 +744,9 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// GENERATE TAX INVOICE - FIXED
+// GENERATE TAX INVOICE - CORRECT CALCULATION
 // ============================================================
-async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, finalTotal, taxRate, taxAmt, subTotal, discountAmt) {
+async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, grossAmount) {
     
     const existingTax = taxInvoices.find(i => i.cashInvoiceId === cashTimestamp);
     if (existingTax) {
@@ -752,17 +763,11 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         let key = catInfo.category;
         
         if (key === 'Other') {
-            if (itemName.includes('HANDLE') || itemName.includes('FANCY') || itemName.includes('BATH') || itemName.includes('SCRUBBER')) {
-                key = 'Fancy';
-            } else if (itemName.includes('FOAM') || itemName.includes('PAD') || itemName.includes('LAMINATE') || itemName.includes('NAIL')) {
-                key = 'Foam';
-            } else if (itemName.includes('SPIRAL') || itemName.includes('SCRUB')) {
-                key = 'Steel';
-            } else if (itemName.includes('MICRO') || itemName.includes('FIBER')) {
-                key = 'Micro';
-            } else {
-                key = 'Fancy';
-            }
+            if (itemName.includes('HANDLE') || itemName.includes('FANCY') || itemName.includes('BATH')) key = 'Fancy';
+            else if (itemName.includes('FOAM') || itemName.includes('PAD') || itemName.includes('LAMINATE') || itemName.includes('NAIL')) key = 'Foam';
+            else if (itemName.includes('SPIRAL') || itemName.includes('SCRUB')) key = 'Steel';
+            else if (itemName.includes('MICRO') || itemName.includes('FIBER')) key = 'Micro';
+            else key = 'Fancy';
         }
         
         const qty = parseFloat(item.qty) || 0;
@@ -810,9 +815,14 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         };
     });
     
-    const grossAmount = subTotal - discountAmt;
-    const gstAmount = grossAmount * (taxRate / 100);
-    const netAmount = grossAmount + gstAmount;
+    // TAX INVOICE - CORRECT CALCULATION
+    // Gross = 288,000
+    // Excluding Tax = Gross / 1.18 = 244,068
+    // GST = Gross - Excluding = 43,932
+    // Net = Excluding + GST = 288,000
+    const excludingTax = grossAmount / 1.18;
+    const gstAmount = grossAmount - excludingTax;
+    const netAmount = excludingTax + gstAmount;
     
     const taxInvoiceData = { 
         timestamp: Date.now(), 
@@ -824,9 +834,10 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         address: customerAddress || '', 
         date: date, 
         categories: categoryList, 
-        total_amount: netAmount.toFixed(2), 
-        total_gst: gstAmount.toFixed(2), 
-        total_gross: grossAmount.toFixed(2), 
+        gross_amount: grossAmount.toFixed(2),
+        excluding_tax: excludingTax.toFixed(2),
+        gst_amount: gstAmount.toFixed(2),
+        net_amount: netAmount.toFixed(2),
         discount_percent: disc, 
         cash_invoice_timestamp: cashTimestamp 
     };
@@ -841,9 +852,10 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         address: taxInvoiceData.address,
         date: taxInvoiceData.date,
         categories: taxInvoiceData.categories,
-        total_amount: taxInvoiceData.total_amount,
-        total_gst: taxInvoiceData.total_gst,
-        total_gross: taxInvoiceData.total_gross,
+        gross_amount: taxInvoiceData.gross_amount,
+        excluding_tax: taxInvoiceData.excluding_tax,
+        gst_amount: taxInvoiceData.gst_amount,
+        net_amount: taxInvoiceData.net_amount,
         discount_percent: taxInvoiceData.discount_percent,
         cash_invoice_timestamp: taxInvoiceData.cash_invoice_timestamp
     };
@@ -855,9 +867,13 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         console.log('✅ Tax Invoice generated:', invoiceNo + '-TAX');
     } else {
         console.error('Tax Invoice Insert Error:', error);
+        showNotification('Error generating tax invoice: ' + error.message, 'error');
     }
 }
 
+// ============================================================
+// GENERATE TAX INVOICE FROM CASH
+// ============================================================
 async function generateTaxInvoiceFromCash() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
@@ -886,18 +902,15 @@ async function generateTaxInvoiceFromCash() {
     }
     
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
-    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
-    const afterDiscount = subtotal - discountAmt;
-    const taxAmt = (afterDiscount * taxRate) / 100;
-    const finalTotal = afterDiscount + taxAmt;
+    const grossAmount = subtotal - discountAmt;
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     const ts = editingInvoiceTs || Date.now();
     
     await generateAndSaveTaxInvoice(
         ts, discount, items, store, customer, ntn, strn, address,
-        date, invoiceNo, finalTotal, taxRate, taxAmt, subtotal, discountAmt
+        date, invoiceNo, grossAmount
     );
     
     showNotification('Tax Invoice generated!', 'success');
@@ -905,6 +918,9 @@ async function generateTaxInvoiceFromCash() {
     showPage('tax-invoice');
 }
 
+// ============================================================
+// RENDER TAX INVOICE
+// ============================================================
 function renderTaxInvoice(data) {
     const container = document.getElementById('tax-invoice-container');
     if (!container) return;
@@ -925,9 +941,10 @@ function renderTaxInvoice(data) {
         rows += `<tr><td>${cat.totalPcs}</td><td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td><td>${cat.hsCode}</td><td>${cat.totalSheet > 0 ? cat.totalSheet.toFixed(3) : '-'}</td><td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td><td>${cat.avgRatePerPcs.toFixed(2)}</td><td>Rs. ${exclTax.toFixed(2)}</td><td>Rs. ${gst.toFixed(2)}</td><td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td></tr>`;
     });
     
-    const gross = parseFloat(data.total_gross) || 0;
-    const gstAmt = parseFloat(data.total_gst) || 0;
-    const net = parseFloat(data.total_amount) || 0;
+    const gross = parseFloat(data.gross_amount) || 0;
+    const excludingTax = parseFloat(data.excluding_tax) || 0;
+    const gst = parseFloat(data.gst_amount) || 0;
+    const net = parseFloat(data.net_amount) || 0;
     
     container.innerHTML = `
         <div class="tax-invoice-display">
@@ -961,19 +978,31 @@ function renderTaxInvoice(data) {
             <div class="table-wrap">
                 <table>
                     <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead>
-                    <tbody>${rows}<tr class="total-row"><td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td><td>Rs. ${(gross / 1.18).toFixed(2)}</td><td>Rs. ${gstAmt.toFixed(2)}</td><td><strong>Rs. ${gross.toFixed(2)}</strong></td></tr></tbody>
+                    <tbody>
+                        ${rows}
+                        <tr class="total-row">
+                            <td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td>
+                            <td>Rs. ${excludingTax.toFixed(2)}</td>
+                            <td>Rs. ${gst.toFixed(2)}</td>
+                            <td><strong>Rs. ${gross.toFixed(2)}</strong></td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
             <div class="totals-grid">
                 <div>
-                    <div><strong>Total Amount (After Discount):</strong> Rs. ${gross.toFixed(2)}</div>
-                    <div><strong>Excluding Tax:</strong> Rs. ${(gross / 1.18).toFixed(2)}</div>
-                    <div><strong>GST @ 18%:</strong> Rs. ${gstAmt.toFixed(2)}</div>
                     <div><strong>Gross Amount:</strong> Rs. ${gross.toFixed(2)}</div>
+                    <div><strong>Excluding Tax:</strong> Rs. ${excludingTax.toFixed(2)}</div>
+                    <div><strong>GST @ 18%:</strong> Rs. ${gst.toFixed(2)}</div>
                 </div>
-                <div style="text-align:right;">
+                <div style="text-align:right;border-left:2px solid #ddd;padding-left:20px;">
                     <div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(gross * data.discount_percent / 100).toFixed(2)}</div>
-                    <div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${net.toFixed(2)}</div>
+                    <div style="font-size:24px;font-weight:800;color:#22c99a;margin-top:8px;border-top:2px solid #22c99a;padding-top:8px;">
+                        <strong>Net Amount:</strong> Rs. ${net.toFixed(2)}
+                    </div>
+                    <div style="font-size:12px;color:#666;margin-top:4px;">
+                        (Excl. Tax + GST = ${excludingTax.toFixed(2)} + ${gst.toFixed(2)} = ${net.toFixed(2)})
+                    </div>
                 </div>
             </div>
             <div class="signature-section">
@@ -990,7 +1019,7 @@ function renderTaxInvoice(data) {
 }
 
 // ============================================================
-// PRINT FUNCTIONS
+// PRINT CASH INVOICE
 // ============================================================
 function printInvoice() {
     const last = invoices.length > 0 ? invoices[invoices.length - 1] : null;
@@ -1003,41 +1032,76 @@ function printInvoiceById(id) {
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const w = window.open('', '_blank', 'width=800,height=600');
     w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title>
-    <style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
-    </head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
-    <div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div>
-    <div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div>
-    <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
-    ${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}
-    </tbody></table>
-    <div class="total"><p><strong>Sub Total:</strong> Rs. ${(inv.subtotal || 0).toFixed(2)}</p>
-    <p><strong>Discount (${inv.discountPercent || 0}%):</strong> - Rs. ${(inv.discountAmt || 0).toFixed(2)}</p>
-    <p><strong>GST (${inv.gstRate || 18}%):</strong> Rs. ${(inv.gstAmt || 0).toFixed(2)}</p>
-    <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</p></div>
-    <div class="footer"><p>Thank you for your business!</p></div>
-    <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    <style>
+        body{font-family:Arial;font-size:12px;margin:20px;background:#fff;padding:20px}
+        .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}
+        .header h1{color:#22c99a;font-size:24px}
+        .company-info{display:flex;justify-content:space-between;margin:10px 0;flex-wrap:wrap}
+        table{width:100%;border-collapse:collapse;margin:10px 0}
+        th{background:#22c99a;color:#fff;padding:8px;text-align:left;font-size:11px}
+        td{padding:6px 8px;border-bottom:1px solid #ddd}
+        .totals{text-align:right;margin-top:10px;font-size:14px;border-top:2px solid #ddd;padding-top:10px}
+        .final{font-size:18px;font-weight:800;color:#22c99a}
+        .discount{color:#ef4444}
+        .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
+        .signature{display:flex;justify-content:space-between;margin-top:20px;padding-top:20px;border-top:2px solid #ddd}
+        .sig-box{text-align:center;width:30%}
+        .sig-line{border-top:2px solid #333;width:80%;margin:0 auto;padding-top:4px}
+        .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
+        @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style>
+    </head><body>
+        <div class="header"><h1>KRT TRADERS</h1><p>NTN: 2995454-1 | STRN: 300299545411 | Lahore, Pakistan</p><h2>CASH INVOICE</h2></div>
+        <div class="company-info"><div><strong>Invoice:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div></div>
+        <div class="company-info"><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div><div><strong>Address:</strong> ${inv.address || '-'}</div></div>
+        <table><thead><tr><th>#</th><th>Barcode</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
+        ${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.barcode || '-'}</td><td>${item.item || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="totals"><p><strong>Sub Total:</strong> Rs. ${(inv.subtotal || 0).toFixed(2)}</p><p class="discount"><strong>Discount (${inv.discountPercent || 0}%):</strong> - Rs. ${(inv.discountAmt || 0).toFixed(2)}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${(inv.grossAmount || 0).toFixed(2)}</p></div>
+        <div class="signature"><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div></div>
+        <div class="footer"><p>Thank you for your business! — Goods once sold cannot be returned.</p></div>
+        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
+    </body></html>`);
     w.document.close();
 }
 
+// ============================================================
+// PRINT TAX INVOICE
+// ============================================================
 function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container')?.innerHTML;
     if (!content || content.includes('No Tax Invoice')) { showNotification('No tax invoice to print!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1000,height=800');
     w.document.write(`<!DOCTYPE html><html><head><title>Tax Invoice</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-    .tax-invoice-display{max-width:1100px;margin:0 auto}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}
-    .header h1{font-size:28px;color:#22c99a}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
-    .buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
-    .buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}.buyer-box .box-title{font-weight:700;color:#22c99a;display:block}
-    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
-    td{padding:6px 10px;border-bottom:1px solid #eee}.total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}
-    .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}
-    .signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}
-    .signature-section .sig-box{text-align:center}.signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}
-    .signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
-    .footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
-    .no-print{display:none !important}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-    </style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
+        .tax-invoice-display{max-width:1100px;margin:0 auto}
+        .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}
+        .header h1{font-size:28px;color:#22c99a}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
+        .buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
+        .buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}
+        .buyer-box .box-title{font-weight:700;color:#22c99a;display:block}
+        .buyer-box .box-name{font-weight:600;font-size:15px}
+        table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
+        th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
+        td{padding:6px 10px;border-bottom:1px solid #eee}
+        .total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}
+        .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}
+        .totals-grid .net{font-size:24px;font-weight:800;color:#22c99a}
+        .signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}
+        .signature-section .sig-box{text-align:center}
+        .signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}
+        .signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
+        .footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
+        .no-print{display:none !important}
+        @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style>
+    </head><body>
+        <div class="tax-invoice-display">${content}</div>
+        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
+    </body></html>`);
     w.document.close();
 }
 
@@ -1057,7 +1121,7 @@ function renderInvoiceHistory() {
     const tbody = document.getElementById('inv-history-body');
     if (!tbody) return;
     if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="7">No invoices found</td></tr>'; } else {
-        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.items?.length || 0}</td><td>Rs. ${(inv.finalTotal || 0).toFixed(2)}</td><td><button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.items?.length || 0}</td><td>Rs. ${(inv.grossAmount || 0).toFixed(2)}</td><td><button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('inv-hist-badge').textContent = filtered.length;
 }
@@ -1067,7 +1131,7 @@ function viewInvoice(id) {
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const body = document.getElementById('inv-modal-body');
     if (!body) return;
-    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent || 0}%</span><span><strong>GST:</strong> ${inv.gstRate || 18}%</span><span><strong>Final:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
+    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div><div><strong>Discount:</strong> ${inv.discountPercent || 0}%</div><div><strong>Gross Amount:</strong> Rs. ${(inv.grossAmount || 0).toFixed(2)}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${(inv.grossAmount || 0).toFixed(2)}</td></tr></tbody></table></div>`;
     document.getElementById('modal-del-btn').onclick = () => deleteInvoice(id);
     document.getElementById('inv-modal').classList.add('open');
     window._modalInvId = id;
@@ -1088,7 +1152,6 @@ function loadInvoiceToForm(id) {
     document.getElementById('inv-customer-address').value = inv.address || '';
     document.getElementById('inv-date').value = inv.date || '';
     document.getElementById('inv-discount').value = inv.discountPercent || 0;
-    document.getElementById('inv-tax-rate').value = inv.gstRate || 18;
     document.getElementById('inv-number').value = inv.invoiceNo || '';
     manualInvoiceNumber = inv.invoiceNo || '';
     onInvStoreChange(inv.storeName || '');
@@ -1107,14 +1170,9 @@ async function deleteInvoice(id) {
     invoices = invoices.filter(inv => inv.id !== id);
     taxInvoices = taxInvoices.filter(inv => inv.cashInvoiceId !== id);
     const spToDelete = spStockOut.filter(e => e.invoiceTimestamp === id);
-    for (const sp of spToDelete) {
-        await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
-    }
+    for (const sp of spToDelete) { await sb.from('sp_stock_out').delete().eq('sr_no', sp.id); }
     spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== id);
-    renderInvoiceHistory();
-    loadDashboard();
-    updateBadges();
-    closeInvModal();
+    renderInvoiceHistory(); loadDashboard(); updateBadges(); closeInvModal();
     showNotification('Invoice deleted!', 'success');
 }
 
@@ -1124,13 +1182,9 @@ function clearInvoiceHistoryFilter() { document.getElementById('inv-hist-from').
 function exportInvoiceHistory() {
     if (invoices.length === 0) { showNotification('No invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Items,Total\n';
-    invoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${(inv.finalTotal || 0).toFixed(2)}\n`; });
+    invoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${(inv.grossAmount || 0).toFixed(2)}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'invoice_history.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'invoice_history.csv'; a.click(); URL.revokeObjectURL(a.href);
     showNotification('Export successful!', 'success');
 }
 
@@ -1148,38 +1202,28 @@ function renderTaxHistory() {
     const tbody = document.getElementById('tax-history-body');
     if (!tbody) return;
     if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>'; } else {
-        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.categories?.length || 0} categories</td><td>Rs. ${(inv.totalAmount / 1.18).toFixed(2)}</td><td>Rs. ${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)}</td><td><strong>Rs. ${(inv.totalAmount || 0).toFixed(2)}</strong></td><td>${inv.discountPercent || 0}%</td><td><button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.categories?.length || 0} categories</td><td>Rs. ${(inv.grossAmount || 0).toFixed(2)}</td><td>Rs. ${(inv.gstAmount || 0).toFixed(2)}</td><td><strong>Rs. ${(inv.netAmount || 0).toFixed(2)}</strong></td><td>${inv.discountPercent || 0}%</td><td><button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('tax-hist-badge').textContent = filtered.length;
 }
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
-
 function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
-
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
     const { error } = await sb.from('tax_invoices').delete().eq('timestamp', id);
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     taxInvoices = taxInvoices.filter(inv => inv.id !== id);
-    renderTaxHistory();
-    updateBadges();
-    showNotification('Tax invoice deleted!', 'success');
+    renderTaxHistory(); updateBadges(); showNotification('Tax invoice deleted!', 'success');
 }
-
 function refreshTaxHistory() { renderTaxHistory(); showNotification('Refreshed!', 'info'); }
 function clearTaxHistoryFilter() { document.getElementById('tax-hist-from').value = ''; document.getElementById('tax-hist-to').value = ''; document.getElementById('tax-hist-search').value = ''; renderTaxHistory(); }
-
 function exportTaxHistory() {
     if (taxInvoices.length === 0) { showNotification('No tax invoices to export', 'warning'); return; }
-    let csv = 'Invoice #,Customer,Store,Date,Categories,Amount,GST,Gross,Discount\n';
-    taxInvoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount || 0).toFixed(2)},${inv.discountPercent || 0}%\n`; });
+    let csv = 'Invoice #,Customer,Store,Date,Categories,Gross,GST,Net,Discount\n';
+    taxInvoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.grossAmount || 0).toFixed(2)},${(inv.gstAmount || 0).toFixed(2)},${(inv.netAmount || 0).toFixed(2)},${inv.discountPercent || 0}%\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'tax_invoice_history.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tax_invoice_history.csv'; a.click(); URL.revokeObjectURL(a.href);
     showNotification('Export successful!', 'success');
 }
 
@@ -1196,7 +1240,7 @@ function generateMonthlyReport() {
     const container = document.getElementById('monthly-report-container');
     if (!container) return;
     if (filtered.length === 0) { container.innerHTML = `<div class="monthly-report-empty"><i class="fas fa-calendar-times" style="font-size:48px;color:#cbd5e1;"></i><h3>No Invoices Found</h3><p>No invoices found for ${monthName} ${year}</p></div>`; return; }
-    const totalSales = filtered.reduce((s, inv) => s + (inv.finalTotal || 0), 0);
+    const totalSales = filtered.reduce((s, inv) => s + (inv.grossAmount || 0), 0);
     const totalItems = filtered.reduce((s, inv) => s + (inv.items?.length || 0), 0);
     let html = `<div class="monthly-report-wrapper"><div class="report-header-modern"><div class="report-header-top"><div class="report-brand"><span style="font-size:32px;">🏪</span><div><h2>KRT TRADERS</h2><span>Monthly Invoice Report</span></div></div><div class="report-meta"><div class="meta-item"><span class="meta-label">Month</span><span class="meta-value">${monthName} ${year}</span></div><div class="meta-item"><span class="meta-label">Total Invoices</span><span class="meta-value">${filtered.length}</span></div><div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${new Date().toLocaleDateString()}</span></div></div></div></div>`;
     filtered.forEach(inv => {
@@ -1226,7 +1270,7 @@ function generateMonthlyReport() {
             totalGst += gst;
             rows += `<tr><td><div class="category-cell"><span class="category-icon" style="background:${colors[c.category] || '#64748b'}20;color:${colors[c.category] || '#64748b'};"><i class="fas ${c.category === 'Foam' ? 'fa-layer-group' : c.category === 'Steel' ? 'fa-cogs' : c.category === 'Fancy' ? 'fa-gem' : c.category === 'Micro' ? 'fa-microscope' : 'fa-box'}"></i></span><span class="category-name">${labels[c.category] || c.category}</span></div></td><td><span class="badge-count">${c.totalPcs}</span></td><td>${c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-'}</td><td>${c.totalKg > 0 ? c.totalKg.toFixed(3) : '-'}</td><td>${(c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0).toFixed(2)}</td><td class="amount-cell">Rs. ${excl.toFixed(2)}</td><td class="gst-cell">Rs. ${gst.toFixed(2)}</td><td class="amount-cell-bold">Rs. ${c.totalAmount.toFixed(2)}</td><td><span class="hs-code">${c.hsCode}</span></td></tr>`;
         });
-        html += `<div class="invoice-card-modern"><div class="invoice-card-header"><div class="invoice-title-section"><span class="invoice-number-badge">#${inv.invoiceNo}</span><span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}</div><div class="invoice-party-section"><span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span><span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span></div></div><div class="table-wrap-modern"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead><tbody>${rows}<tr class="total-row-modern"><td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td><td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td><td class="total-gst">Rs. ${totalGst.toFixed(2)}</td><td class="total-amount">Rs. ${(inv.finalTotal || 0).toFixed(2)}</td><td></td></tr></tbody></table></div><div class="invoice-card-footer"><div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div><div class="footer-right"><span class="final-total">Final: <strong>Rs. ${(inv.finalTotal || 0).toFixed(2)}</strong></span></div></div></div>`;
+        html += `<div class="invoice-card-modern"><div class="invoice-card-header"><div class="invoice-title-section"><span class="invoice-number-badge">#${inv.invoiceNo}</span><span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}</div><div class="invoice-party-section"><span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span><span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span></div></div><div class="table-wrap-modern"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead><tbody>${rows}<tr class="total-row-modern"><td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td><td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td><td class="total-gst">Rs. ${totalGst.toFixed(2)}</td><td class="total-amount">Rs. ${(inv.grossAmount || 0).toFixed(2)}</td><td></td></tr></tbody></table></div><div class="invoice-card-footer"><div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div><div class="footer-right"><span class="final-total">Final: <strong>Rs. ${(inv.grossAmount || 0).toFixed(2)}</strong></span></div></div></div>`;
     });
     html += `<div class="report-footer-modern"><div class="footer-brand"><span>KRT TRADERS ERP System</span></div><div class="footer-stats"><div class="stat-item"><span class="stat-label">Total Invoices</span><span class="stat-number">${filtered.length}</span></div><div class="stat-item"><span class="stat-label">Total Items</span><span class="stat-number">${totalItems}</span></div><div class="stat-item"><span class="stat-label">Grand Total</span><span class="stat-number grand">Rs. ${totalSales.toFixed(2)}</span></div></div><div class="footer-copy">© ${new Date().getFullYear()} KRT TRADERS. All rights reserved.</div></div></div>`;
     container.innerHTML = html;
@@ -1245,47 +1289,7 @@ function printMonthlyReport() {
     if (!content || content.includes('Select a month')) { showNotification('Generate a report first!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1100,height=800');
     w.document.write(`<!DOCTYPE html><html><head><title>Monthly Report</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:11px;margin:10px;background:#fff}
-    .monthly-report-wrapper{max-width:1300px;margin:0 auto}.report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}
-    .report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
-    .report-brand{display:flex;align-items:center;gap:15px}.report-brand h2{font-size:22px;color:#fff}
-    .report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}
-    .report-meta{display:flex;gap:15px;flex-wrap:wrap}.meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}
-    .meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}
-    .meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}
-    .invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
-    .invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    .invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}
-    .invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}
-    .discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}
-    .invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}
-    .table-wrap-modern{overflow-x:auto;padding:0}.table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}
-    .table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}
-    .table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}
-    .table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}
-    .category-cell{display:flex;align-items:center;gap:6px}
-    .category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
-    .category-name{font-weight:500;font-size:10px}
-    .badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}
-    .hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}
-    .amount-cell{font-weight:500}.amount-cell-bold{font-weight:700;color:#0a3d2a}
-    .gst-cell{font-weight:600;color:#d97706}
-    .total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}.total-row-modern td{padding:6px 8px;font-weight:700}
-    .total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}
-    .total-amount{color:#0a3d2a;font-size:12px}
-    .invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-    .footer-left{font-size:10px;color:#555}
-    .footer-right .final-total{font-size:13px;font-weight:600}.footer-right .final-total strong{color:#0a3d2a;font-size:15px}
-    .report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}
-    .footer-brand{color:rgba(255,255,255,0.5);font-size:12px}
-    .footer-stats{display:flex;gap:20px}.footer-stats .stat-item{text-align:center}
-    .footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}
-    .footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}
-    .footer-stats .stat-number.grand{color:#22c99a}
-    .footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}
-    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0.1in;padding:0}
-    </style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:11px;margin:10px;background:#fff}.monthly-report-wrapper{max-width:1300px;margin:0 auto}.report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}.report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}.report-brand{display:flex;align-items:center;gap:15px}.report-brand h2{font-size:22px;color:#fff}.report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}.report-meta{display:flex;gap:15px;flex-wrap:wrap}.meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}.meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}.meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}.invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}.invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}.invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}.invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}.discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}.invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}.table-wrap-modern{overflow-x:auto;padding:0}.table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}.table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}.table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}.table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}.category-cell{display:flex;align-items:center;gap:6px}.category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}.category-name{font-weight:500;font-size:10px}.badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}.hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}.amount-cell{font-weight:500}.amount-cell-bold{font-weight:700;color:#0a3d2a}.gst-cell{font-weight:600;color:#d97706}.total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}.total-row-modern td{padding:6px 8px;font-weight:700}.total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}.total-amount{color:#0a3d2a;font-size:12px}.invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.footer-left{font-size:10px;color:#555}.footer-right .final-total{font-size:13px;font-weight:600}.footer-right .final-total strong{color:#0a3d2a;font-size:15px}.report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}.footer-brand{color:rgba(255,255,255,0.5);font-size:12px}.footer-stats{display:flex;gap:20px}.footer-stats .stat-item{text-align:center}.footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}.footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}.footer-stats .stat-number.grand{color:#22c99a}.footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0.1in;padding:0}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -1320,9 +1324,7 @@ async function saveStockIn() {
         stockIn.push({ id: srNo, date, vendor, item, barcode, qty, price, total: qty * price });
         showNotification('Stock In saved!', 'success');
     }
-    renderStockIn();
-    updateBadges();
-    clearStockInForm();
+    renderStockIn(); updateBadges(); clearStockInForm();
 }
 
 function renderStockIn() {
@@ -1354,9 +1356,7 @@ async function deleteStockIn(id) {
     const { error } = await sb.from('stock_in').delete().eq('sr_no', id);
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     stockIn = stockIn.filter(s => s.id !== id);
-    renderStockIn();
-    updateBadges();
-    showNotification('Entry deleted!', 'success');
+    renderStockIn(); updateBadges(); showNotification('Entry deleted!', 'success');
 }
 
 function clearStockInForm() { ['in-vendor', 'in-barcode', 'in-item', 'in-qty', 'in-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); showNotification('Form cleared', 'info'); }
@@ -1367,11 +1367,7 @@ function exportStockIn() {
     let csv = '#,Date,Item,Vendor,Qty,Price,Total\n';
     stockIn.forEach((s, i) => { csv += `${i+1},${s.date},${s.item},${s.vendor},${s.qty},${s.price},${s.total}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'stock_in.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'stock_in.csv'; a.click(); URL.revokeObjectURL(a.href);
     showNotification('Export successful!', 'success');
 }
 
@@ -1437,9 +1433,7 @@ async function saveStockOut() {
         stockOut.push({ id: srNo, date, customer, item, barcode, qty, price, total: qty * price });
         showNotification('Stock Out saved!', 'success');
     }
-    renderStockOut();
-    updateBadges();
-    clearStockOutForm();
+    renderStockOut(); updateBadges(); clearStockOutForm();
 }
 
 function renderStockOut() {
@@ -1464,8 +1458,7 @@ function editStockOut(id) {
     document.getElementById('out-price').value = s.price;
     editingStockOutId = id;
     document.querySelector('#page-stock-out .btn-primary').innerHTML = '<i class="fas fa-edit"></i> Update Stock Out';
-    updateOutBalanceInfo();
-    window.scrollTo(0, 0);
+    updateOutBalanceInfo(); window.scrollTo(0, 0);
 }
 
 async function deleteStockOut(id) {
@@ -1473,9 +1466,7 @@ async function deleteStockOut(id) {
     const { error } = await sb.from('stock_out').delete().eq('sr_no', id);
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     stockOut = stockOut.filter(s => s.id !== id);
-    renderStockOut();
-    updateBadges();
-    showNotification('Entry deleted!', 'success');
+    renderStockOut(); updateBadges(); showNotification('Entry deleted!', 'success');
 }
 
 function clearStockOutForm() { ['out-customer', 'out-item', 'out-barcode', 'out-qty', 'out-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); document.getElementById('out-item-select').value = ''; document.getElementById('out-balance-info').innerHTML = ''; showNotification('Form cleared', 'info'); }
@@ -1486,11 +1477,7 @@ function exportStockOut() {
     let csv = '#,Date,Customer,Item,Qty,Price,Total\n';
     stockOut.forEach((s, i) => { csv += `${i+1},${s.date},${s.customer},${s.item},${s.qty},${s.price},${s.total}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'stock_out.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'stock_out.csv'; a.click(); URL.revokeObjectURL(a.href);
     showNotification('Export successful!', 'success');
 }
 
@@ -1558,9 +1545,7 @@ async function saveSPStockIn() {
         spStockIn.push({ id: srNo, date, vendor, item, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total: totalPcs * price });
         showNotification('SP Stock In saved!', 'success');
     }
-    renderSPIn();
-    updateBadges();
-    clearSPInForm();
+    renderSPIn(); updateBadges(); clearSPInForm();
 }
 
 function renderSPIn() {
@@ -1585,8 +1570,7 @@ function editSPIn(id) {
     document.getElementById('spin-price').value = s.price;
     editingSPInId = id;
     document.querySelector('#page-sp-in .btn-primary').innerHTML = '<i class="fas fa-edit"></i> Update Stock In';
-    updateSPInPreview();
-    window.scrollTo(0, 0);
+    updateSPInPreview(); window.scrollTo(0, 0);
 }
 
 async function deleteSPIn(id) {
@@ -1594,9 +1578,7 @@ async function deleteSPIn(id) {
     const { error } = await sb.from('sp_stock_in').delete().eq('sr_no', id);
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     spStockIn = spStockIn.filter(s => s.id !== id);
-    renderSPIn();
-    updateBadges();
-    showNotification('Entry deleted!', 'success');
+    renderSPIn(); updateBadges(); showNotification('Entry deleted!', 'success');
 }
 
 function clearSPInForm() { ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); updateSPInPreview(); showNotification('Form cleared', 'info'); }
@@ -1653,9 +1635,7 @@ async function saveSPStockOut() {
         spStockOut.push({ id: srNo, date, store, barcode, item, qty, price, total: qty * price, invoiceTimestamp: null });
         showNotification('SP Stock Out saved!', 'success');
     }
-    renderSPOut();
-    updateBadges();
-    clearSPOutForm();
+    renderSPOut(); updateBadges(); clearSPOutForm();
 }
 
 function renderSPOut() {
@@ -1693,9 +1673,7 @@ async function deleteSPOut(id) {
     const { error } = await sb.from('sp_stock_out').delete().eq('sr_no', id);
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     spStockOut = spStockOut.filter(s => s.id !== id);
-    renderSPOut();
-    updateBadges();
-    showNotification('Entry deleted!', 'success');
+    renderSPOut(); updateBadges(); showNotification('Entry deleted!', 'success');
 }
 
 function clearSPOutFilter() { ['spout-from', 'spout-to', 'spout-search'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); renderSPOut(); }
@@ -1751,10 +1729,8 @@ async function addLedgerEntry(person) {
         ledger.push({ id, date, credit, debit, note });
         showNotification('Entry saved!', 'success');
     }
-    if (person === 'gulzar') gulzarLedger = ledger;
-    else kashifLedger = ledger;
-    loadLedger(person);
-    clearLedgerForm(person);
+    if (person === 'gulzar') gulzarLedger = ledger; else kashifLedger = ledger;
+    loadLedger(person); clearLedgerForm(person);
 }
 
 function loadLedger(person) {
@@ -1814,10 +1790,8 @@ async function deleteLedgerEntry(person, id) {
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     let ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     ledger = ledger.filter(e => e.id !== id);
-    if (person === 'gulzar') gulzarLedger = ledger;
-    else kashifLedger = ledger;
-    loadLedger(person);
-    showNotification('Entry deleted!', 'success');
+    if (person === 'gulzar') gulzarLedger = ledger; else kashifLedger = ledger;
+    loadLedger(person); showNotification('Entry deleted!', 'success');
 }
 
 function clearLedgerHistoryFilter(person) { document.getElementById(person + '-from').value = ''; document.getElementById(person + '-to').value = ''; renderLedgerHistory(person); showNotification('Filter cleared', 'info'); }
@@ -1830,13 +1804,7 @@ function printLedger(person) {
     const totalDebit = ledger.reduce((s, e) => s + e.debit, 0);
     const w = window.open('', '_blank', 'width=900,height=700');
     w.document.write(`<!DOCTYPE html><html><head><title>${name} Ledger</title>
-    <style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}h2{text-align:center;color:#22c99a;font-size:24px}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}.header p{color:#666;font-size:14px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}.summary-box{text-align:center;padding:8px;border-radius:6px}.summary-box.credit{background:#e8f5f0;color:#22c99a}.summary-box.debit{background:#fee2e2;color:#ef4444}.summary-box.balance{background:#fef3c7;color:#f59e0b}.summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}.summary-box .value{font-size:20px;font-weight:800;display:block}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}td{padding:6px 12px;border-bottom:1px solid #ddd}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-    </style></head><body><div class="header"><h2>KRT TRADERS</h2><p><strong>${name}</strong> — Ledger Statement</p></div>
-    <div class="summary"><div class="summary-box credit"><span class="label">Total Credit</span><span class="value">Rs. ${totalCredit.toFixed(2)}</span></div><div class="summary-box debit"><span class="label">Total Debit</span><span class="value">Rs. ${totalDebit.toFixed(2)}</span></div><div class="summary-box balance"><span class="label">Net Balance</span><span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span></div></div>
-    <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>
-    ${ledger.map((e, i, arr) => { const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0); return `<tr><td>${e.date}</td><td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td><td>${e.note}</td></tr>`; }).join('')}
-    </tbody></table><div class="footer"><p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p></div>
-    <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    <style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}h2{text-align:center;color:#22c99a;font-size:24px}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}.header p{color:#666;font-size:14px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}.summary-box{text-align:center;padding:8px;border-radius:6px}.summary-box.credit{background:#e8f5f0;color:#22c99a}.summary-box.debit{background:#fee2e2;color:#ef4444}.summary-box.balance{background:#fef3c7;color:#f59e0b}.summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}.summary-box .value{font-size:20px;font-weight:800;display:block}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}td{padding:6px 12px;border-bottom:1px solid #ddd}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h2>KRT TRADERS</h2><p><strong>${name}</strong> — Ledger Statement</p></div><div class="summary"><div class="summary-box credit"><span class="label">Total Credit</span><span class="value">Rs. ${totalCredit.toFixed(2)}</span></div><div class="summary-box debit"><span class="label">Total Debit</span><span class="value">Rs. ${totalDebit.toFixed(2)}</span></div><div class="summary-box balance"><span class="label">Net Balance</span><span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span></div></div><table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>${ledger.map((e, i, arr) => { const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0); return `<tr><td>${e.date}</td><td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td><td>${e.note}</td></tr>`; }).join('')}</tbody></table><div class="footer"><p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p></div><script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -1865,8 +1833,7 @@ function addSalaryEmployeeRow() {
     if (!month) { showNotification('Select month first!', 'error'); return; }
     if (!salaryData[month]) salaryData[month] = [];
     salaryData[month].push({ name: '', salary: 0, advance: 0, note: '' });
-    renderSalaryTable(month);
-    saveSalaryData();
+    renderSalaryTable(month); saveSalaryData();
 }
 
 function updateSalRow(month, idx, field, value) {
@@ -1891,8 +1858,7 @@ function updateSalaryTotals(month) {
 async function saveSalaryMonth() {
     const month = document.getElementById('sal-month')?.value;
     if (!month) { showNotification('Select month first!', 'error'); return; }
-    await saveSalaryData();
-    showNotification('Salary month saved!', 'success');
+    await saveSalaryData(); showNotification('Salary month saved!', 'success');
 }
 
 async function saveSalaryData() {
@@ -1948,8 +1914,7 @@ function backupData() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `krt_backup_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    a.click(); URL.revokeObjectURL(a.href);
     showNotification('Backup created!', 'success');
 }
 
@@ -1994,7 +1959,7 @@ function shareWhatsApp() {
 function shareWhatsAppTax() {
     const data = taxInvoiceData;
     if (!data) { showNotification('No tax invoice to share!', 'error'); return; }
-    const msg = `🏪 *KRT TRADERS*%0A📄 *TAX INVOICE*%0A📋 #${data.invoice_no}%0A👤 Customer: ${data.customer_name}%0A💰 Total: Rs. ${data.total_amount}%0A%0AThank you for your business!`;
+    const msg = `🏪 *KRT TRADERS*%0A📄 *TAX INVOICE*%0A📋 #${data.invoice_no}%0A👤 Customer: ${data.customer_name}%0A💰 Net Amount: Rs. ${data.net_amount}%0A%0AThank you for your business!`;
     window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
