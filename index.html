@@ -2,8 +2,16 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>KRT TRADERS - Professional ERP System v4.0</title>
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="assets/logo.png" />
+    <meta name="theme-color" content="#0f5e3f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -23,15 +31,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
     </script>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js">
-    </script>
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css" />
 
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>" />
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
 
 </head>
 <body>
@@ -42,7 +46,7 @@
     <div id="login-screen">
         <div class="login-box">
             <div class="logo">
-                <span style="font-size:48px;">🏪</span>
+                <img src="assets/logo.png" alt="KRT TRADERS" class="logo-img" onerror="this.style.display='none'" />
                 KRT <span>TRADERS</span>
             </div>
             <div class="subtitle">Enterprise Resource Planning System</div>
@@ -66,7 +70,7 @@
         ============================================================ -->
         <aside id="sidebar">
             <div class="sidebar-brand">
-                <span style="font-size:30px;">🏪</span>
+                <img src="assets/logo.png" alt="KRT TRADERS" class="sidebar-logo" onerror="this.style.display='none'" />
                 <span>
                     KRT TRADERS
                     <small>ERP System v4.0</small>
@@ -142,10 +146,12 @@
                 <div class="nav-item" onclick="showPage('gulzar')">
                     <i class="fas fa-user-circle"></i>
                     <span class="sidebar-text">Gulzar Bhai</span>
+                    <span class="badge-nav" id="gulzar-badge">0</span>
                 </div>
                 <div class="nav-item" onclick="showPage('kashif')">
                     <i class="fas fa-user-circle"></i>
                     <span class="sidebar-text">Kashif Bhai</span>
+                    <span class="badge-nav" id="kashif-badge">0</span>
                 </div>
 
                 <div class="nav-section-title">Human Resource</div>
@@ -190,7 +196,7 @@
                     <button class="hamburger" onclick="toggleSidebar()">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <span style="font-size:24px;">🏪</span>
+                    <img src="assets/logo.png" alt="KRT" class="header-logo" onerror="this.style.display='none'" />
                     <h1 id="page-title">Dashboard <small>Today: <span id="todayDate"></span></small></h1>
                 </div>
                 <div class="app-header-right">
@@ -729,9 +735,9 @@
                             </div>
                         </div>
                         <div class="form-row" style="margin-bottom:12px;">
-                            <div class="form-group"><label>From</label><input type="date" id="spout-from" onchange="renderSPOutTable()" /></div>
-                            <div class="form-group"><label>To</label><input type="date" id="spout-to" onchange="renderSPOutTable()" /></div>
-                            <div class="form-group"><label>Search</label><input type="text" id="spout-search" placeholder="Search..." oninput="renderSPOutTable()" /></div>
+                            <div class="form-group"><label>From</label><input type="date" id="spout-from" onchange="renderSPOut()" /></div>
+                            <div class="form-group"><label>To</label><input type="date" id="spout-to" onchange="renderSPOut()" /></div>
+                            <div class="form-group"><label>Search</label><input type="text" id="spout-search" placeholder="Search..." oninput="renderSPOut()" /></div>
                         </div>
                         <div class="table-wrap">
                             <table>
@@ -761,101 +767,173 @@
                 </section>
 
                 <!-- ============================================================
-                GULZAR LEDGER
+                GULZAR LEDGER - COMPLETE WITH HIGHLIGHTED TOTALS
                 ============================================================ -->
                 <section id="page-gulzar" class="page-section">
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-user-circle"></i> Gulzar Bhai - Ledger</h2>
+                            <h2><i class="fas fa-user-circle" style="color:#22c99a;"></i> Gulzar Bhai - Ledger</h2>
                             <button class="btn btn-print btn-sm" onclick="printLedger('gulzar')"><i class="fas fa-print"></i> Print</button>
                         </div>
                         <div class="form-row">
-                            <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" id="gulzar-date" class="stock-date" /></div>
-                            <div class="form-group"><label>Credit (Received)</label><input type="number" id="gulzar-credit" placeholder="0.00" step="0.01" /></div>
+                            <div class="form-group">
+                                <label>Date <span class="required">*</span></label>
+                                <input type="date" id="gulzar-date" class="stock-date" />
+                            </div>
+                            <div class="form-group">
+                                <label>Credit (Received)</label>
+                                <input type="number" id="gulzar-credit" placeholder="0.00" step="0.01" />
+                            </div>
                         </div>
                         <div class="form-row" style="margin-top:12px;">
-                            <div class="form-group"><label>Debit (Paid)</label><input type="number" id="gulzar-debit" placeholder="0.00" step="0.01" /></div>
-                            <div class="form-group"><label>Note</label><input type="text" id="gulzar-note" placeholder="Description" /></div>
+                            <div class="form-group">
+                                <label>Debit (Paid)</label>
+                                <input type="number" id="gulzar-debit" placeholder="0.00" step="0.01" />
+                            </div>
+                            <div class="form-group">
+                                <label>Note</label>
+                                <input type="text" id="gulzar-note" placeholder="Description" />
+                            </div>
                         </div>
                         <div class="btn-group" style="margin-top:16px;">
                             <button class="btn btn-primary" onclick="addLedgerEntry('gulzar')"><i class="fas fa-save"></i> Save Entry</button>
                             <button class="btn btn-outline" onclick="clearLedgerForm('gulzar')"><i class="fas fa-undo"></i> Clear</button>
                         </div>
-                        <div class="ledger-summary">
-                            <span><strong>Total Credit:</strong> <span id="gulzar-total-credit">Rs. 0</span></span>
-                            <span><strong>Total Debit:</strong> <span id="gulzar-total-debit">Rs. 0</span></span>
-                            <span><strong>Balance:</strong> <span id="gulzar-balance" style="color:var(--primary);">Rs. 0</span></span>
+                        
+                        <!-- HIGHLIGHTED LEDGER SUMMARY -->
+                        <div class="ledger-summary-highlight">
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-arrow-up" style="color:#22c99a;"></i> Total Credit</span>
+                                <span class="ledger-value credit" id="gulzar-total-credit">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-arrow-down" style="color:#ef4444;"></i> Total Debit</span>
+                                <span class="ledger-value debit" id="gulzar-total-debit">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box highlight">
+                                <span class="ledger-label"><i class="fas fa-balance-scale" style="color:#f59e0b;"></i> Balance</span>
+                                <span class="ledger-value balance" id="gulzar-balance">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-file-invoice"></i> Total Entries</span>
+                                <span class="ledger-value" id="gulzar-total-entries">0</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-calendar-day"></i> Today's Entries</h2></div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
-                            <tbody id="gulzar-today-table"><tr class="no-data"><td colspan="6">No entries today</td></tr></tbody></table>
-                        </div>
-                    </div>
+
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-history"></i> History</h2>
-                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('gulzar')"><i class="fas fa-times"></i> Clear</button>
+                            <h2><i class="fas fa-calendar-day"></i> Today's Entries</h2>
+                            <span class="badge badge-info" id="gulzar-today-count">0</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="gulzar-today-table"><tr class="no-data"><td colspan="6">No entries today</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-history"></i> Full History</h2>
+                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('gulzar')"><i class="fas fa-times"></i> Clear Filter</button>
                         </div>
                         <div class="form-row" style="margin-bottom:12px;">
                             <div class="form-group"><label>From</label><input type="date" id="gulzar-from" onchange="renderLedgerHistory('gulzar')" /></div>
                             <div class="form-group"><label>To</label><input type="date" id="gulzar-to" onchange="renderLedgerHistory('gulzar')" /></div>
                         </div>
                         <div class="table-wrap">
-                            <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
-                            <tbody id="gulzar-history-table"><tr class="no-data"><td colspan="6">No entries found</td></tr></tbody></table>
+                            <table>
+                                <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="gulzar-history-table"><tr class="no-data"><td colspan="6">No entries found</td></tr></tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
 
                 <!-- ============================================================
-                KASHIF LEDGER
+                KASHIF LEDGER - COMPLETE WITH HIGHLIGHTED TOTALS
                 ============================================================ -->
                 <section id="page-kashif" class="page-section">
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-user-circle"></i> Kashif Bhai - Ledger</h2>
+                            <h2><i class="fas fa-user-circle" style="color:#22c99a;"></i> Kashif Bhai - Ledger</h2>
                             <button class="btn btn-print btn-sm" onclick="printLedger('kashif')"><i class="fas fa-print"></i> Print</button>
                         </div>
                         <div class="form-row">
-                            <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" id="kashif-date" class="stock-date" /></div>
-                            <div class="form-group"><label>Credit (Received)</label><input type="number" id="kashif-credit" placeholder="0.00" step="0.01" /></div>
+                            <div class="form-group">
+                                <label>Date <span class="required">*</span></label>
+                                <input type="date" id="kashif-date" class="stock-date" />
+                            </div>
+                            <div class="form-group">
+                                <label>Credit (Received)</label>
+                                <input type="number" id="kashif-credit" placeholder="0.00" step="0.01" />
+                            </div>
                         </div>
                         <div class="form-row" style="margin-top:12px;">
-                            <div class="form-group"><label>Debit (Paid)</label><input type="number" id="kashif-debit" placeholder="0.00" step="0.01" /></div>
-                            <div class="form-group"><label>Note</label><input type="text" id="kashif-note" placeholder="Description" /></div>
+                            <div class="form-group">
+                                <label>Debit (Paid)</label>
+                                <input type="number" id="kashif-debit" placeholder="0.00" step="0.01" />
+                            </div>
+                            <div class="form-group">
+                                <label>Note</label>
+                                <input type="text" id="kashif-note" placeholder="Description" />
+                            </div>
                         </div>
                         <div class="btn-group" style="margin-top:16px;">
                             <button class="btn btn-primary" onclick="addLedgerEntry('kashif')"><i class="fas fa-save"></i> Save Entry</button>
                             <button class="btn btn-outline" onclick="clearLedgerForm('kashif')"><i class="fas fa-undo"></i> Clear</button>
                         </div>
-                        <div class="ledger-summary">
-                            <span><strong>Total Credit:</strong> <span id="kashif-total-credit">Rs. 0</span></span>
-                            <span><strong>Total Debit:</strong> <span id="kashif-total-debit">Rs. 0</span></span>
-                            <span><strong>Balance:</strong> <span id="kashif-balance" style="color:var(--primary);">Rs. 0</span></span>
+                        
+                        <!-- HIGHLIGHTED LEDGER SUMMARY -->
+                        <div class="ledger-summary-highlight">
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-arrow-up" style="color:#22c99a;"></i> Total Credit</span>
+                                <span class="ledger-value credit" id="kashif-total-credit">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-arrow-down" style="color:#ef4444;"></i> Total Debit</span>
+                                <span class="ledger-value debit" id="kashif-total-debit">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box highlight">
+                                <span class="ledger-label"><i class="fas fa-balance-scale" style="color:#f59e0b;"></i> Balance</span>
+                                <span class="ledger-value balance" id="kashif-balance">Rs. 0.00</span>
+                            </div>
+                            <div class="ledger-summary-box">
+                                <span class="ledger-label"><i class="fas fa-file-invoice"></i> Total Entries</span>
+                                <span class="ledger-value" id="kashif-total-entries">0</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-calendar-day"></i> Today's Entries</h2></div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
-                            <tbody id="kashif-today-table"><tr class="no-data"><td colspan="6">No entries today</td></tr></tbody></table>
-                        </div>
-                    </div>
+
                     <div class="card">
                         <div class="card-header">
-                            <h2><i class="fas fa-history"></i> History</h2>
-                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('kashif')"><i class="fas fa-times"></i> Clear</button>
+                            <h2><i class="fas fa-calendar-day"></i> Today's Entries</h2>
+                            <span class="badge badge-info" id="kashif-today-count">0</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="kashif-today-table"><tr class="no-data"><td colspan="6">No entries today</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-history"></i> Full History</h2>
+                            <button class="btn btn-outline btn-sm" onclick="clearLedgerHistoryFilter('kashif')"><i class="fas fa-times"></i> Clear Filter</button>
                         </div>
                         <div class="form-row" style="margin-bottom:12px;">
                             <div class="form-group"><label>From</label><input type="date" id="kashif-from" onchange="renderLedgerHistory('kashif')" /></div>
                             <div class="form-group"><label>To</label><input type="date" id="kashif-to" onchange="renderLedgerHistory('kashif')" /></div>
                         </div>
                         <div class="table-wrap">
-                            <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
-                            <tbody id="kashif-history-table"><tr class="no-data"><td colspan="6">No entries found</td></tr></tbody></table>
+                            <table>
+                                <thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th><th>Actions</th></tr></thead>
+                                <tbody id="kashif-history-table"><tr class="no-data"><td colspan="6">No entries found</td></tr></tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -981,23 +1059,6 @@
     </div>
 
     <!-- ============================================================
-    PRINT PREVIEW MODAL
-    ============================================================ -->
-    <div id="print-preview-modal" class="modal">
-        <div class="modal-content" style="max-width:1100px;">
-            <div class="modal-header">
-                <h2><i class="fas fa-print"></i> Print Preview</h2>
-                <button class="modal-close" onclick="closePrintPreview()">&times;</button>
-            </div>
-            <div id="print-preview-body"></div>
-            <div class="modal-footer">
-                <button class="btn btn-print" onclick="executePrint()"><i class="fas fa-print"></i> Print</button>
-                <button class="btn btn-outline" onclick="closePrintPreview()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================
     INVOICE MODAL
     ============================================================ -->
     <div id="inv-modal" class="modal">
@@ -1016,8 +1077,19 @@
         </div>
     </div>
 
-    <!-- Custom JS -->
+    <!-- ============================================================
+    SCRIPTS
+    ============================================================ -->
     <script src="script.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('✅ Service Worker Registered!'))
+                .catch(err => console.log('❌ SW Error:', err));
+        }
+    </script>
 
 </body>
 </html>
