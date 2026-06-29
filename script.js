@@ -8,8 +8,6 @@
 // ============================================================
 const CONFIG = {
     APP_PASSWORD: 'admin123',
-    SUPABASE_URL: 'https://skuheucjlmuqtdmovugp.supabase.co',
-    SUPABASE_KEY: 'sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf',
     TAX_RATE: 18,
     CURRENCY: 'PKR',
     CURRENCY_SYMBOL: 'Rs.'
@@ -85,24 +83,20 @@ function getItemCategory(itemName) {
 }
 
 // ============================================================
-// SUPABASE
-// ============================================================
-const supabase = supabaseClient.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-
-// ============================================================
 // STATE
 // ============================================================
-let storeRates = [];
-let invoices = [];
-let taxInvoices = [];
-let stockIn = [];
-let stockOut = [];
-let spStockIn = [];
-let spStockOut = [];
-let gulzarLedger = [];
-let kashifLedger = [];
-let salaryData = {};
-let invoiceCounter = 0;
+let storeRates = JSON.parse(localStorage.getItem('storeRates')) || [];
+let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+let taxInvoices = JSON.parse(localStorage.getItem('taxInvoices')) || [];
+let stockIn = JSON.parse(localStorage.getItem('stockIn')) || [];
+let stockOut = JSON.parse(localStorage.getItem('stockOut')) || [];
+let spStockIn = JSON.parse(localStorage.getItem('spStockIn')) || [];
+let spStockOut = JSON.parse(localStorage.getItem('spStockOut')) || [];
+let gulzarLedger = JSON.parse(localStorage.getItem('gulzarLedger')) || [];
+let kashifLedger = JSON.parse(localStorage.getItem('kashifLedger')) || [];
+let salaryData = JSON.parse(localStorage.getItem('salaryData')) || {};
+
+let invoiceCounter = invoices.length;
 let editingRateId = null;
 let editingInvoiceTs = null;
 let editingStockInId = null;
@@ -147,7 +141,6 @@ function showNotification(message, type = 'success') {
     clearTimeout(el._timeout);
     el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
     
-    // Sound
     if (document.getElementById('sound-toggle')?.checked) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -216,7 +209,6 @@ function showPage(pageId) {
     document.getElementById('page-title').innerHTML = (titles[pageId] || pageId) + ' <small>Today: ' + new Date().toLocaleDateString() + '</small>';
     currentPage = pageId;
     
-    // Load data
     if (pageId === 'dashboard') loadDashboard();
     if (pageId === 'store-rates') renderRates();
     if (pageId === 'cash-invoice') initInvoice();
@@ -261,86 +253,6 @@ function toggleTheme() {
 }
 
 // ============================================================
-// INIT APP
-// ============================================================
-async function initApp() {
-    // Load theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    if (savedTheme === 'dark') {
-        document.getElementById('theme-icon').className = 'fas fa-sun';
-        document.getElementById('header-theme-icon').className = 'fas fa-sun';
-        document.getElementById('theme-text').textContent = 'Light Mode';
-    }
-    
-    // Set dates
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('.stock-date').forEach(el => { if (!el.value) el.value = today; });
-    
-    // Set month
-    const monthInput = document.getElementById('monthly-month');
-    if (monthInput) {
-        const now = new Date();
-        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
-    
-    // Set salary month
-    const salMonth = document.getElementById('sal-month');
-    if (salMonth) {
-        const now = new Date();
-        salMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
-    const sheetMonth = document.getElementById('sheet-month');
-    if (sheetMonth) {
-        const now = new Date();
-        sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
-    
-    // Load data
-    await loadAllData();
-    loadDashboard();
-    renderRates();
-    initInvoice();
-    updateBadges();
-    updateClock();
-    setInterval(updateClock, 1000);
-    showNotification('System Ready!', 'success');
-}
-
-// ============================================================
-// CLOCK
-// ============================================================
-function updateClock() {
-    document.getElementById('header-time').textContent = new Date().toLocaleTimeString();
-}
-
-// ============================================================
-// LOAD ALL DATA
-// ============================================================
-async function loadAllData() {
-    showLoading();
-    try {
-        // Load from localStorage (offline mode)
-        storeRates = JSON.parse(localStorage.getItem('storeRates')) || [];
-        invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-        taxInvoices = JSON.parse(localStorage.getItem('taxInvoices')) || [];
-        stockIn = JSON.parse(localStorage.getItem('stockIn')) || [];
-        stockOut = JSON.parse(localStorage.getItem('stockOut')) || [];
-        spStockIn = JSON.parse(localStorage.getItem('spStockIn')) || [];
-        spStockOut = JSON.parse(localStorage.getItem('spStockOut')) || [];
-        gulzarLedger = JSON.parse(localStorage.getItem('gulzarLedger')) || [];
-        kashifLedger = JSON.parse(localStorage.getItem('kashifLedger')) || [];
-        salaryData = JSON.parse(localStorage.getItem('salaryData')) || {};
-        invoiceCounter = invoices.length;
-        updateInvoiceNumber();
-    } catch(e) {
-        console.error('Load error:', e);
-        showNotification('Error loading data', 'error');
-    }
-    hideLoading();
-}
-
-// ============================================================
 // SAVE DATA
 // ============================================================
 function saveAllData() {
@@ -358,11 +270,54 @@ function saveAllData() {
         document.getElementById('sync-dot').classList.remove('offline');
         document.getElementById('sync-text').textContent = 'Synced ✔';
     } catch(e) {
-        console.error('Save error:', e);
         document.getElementById('sync-dot').classList.add('offline');
         document.getElementById('sync-text').textContent = 'Sync Error';
-        showNotification('Error saving data', 'error');
     }
+}
+
+// ============================================================
+// INIT APP
+// ============================================================
+function initApp() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (savedTheme === 'dark') {
+        document.getElementById('theme-icon').className = 'fas fa-sun';
+        document.getElementById('header-theme-icon').className = 'fas fa-sun';
+        document.getElementById('theme-text').textContent = 'Light Mode';
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('.stock-date').forEach(el => { if (!el.value) el.value = today; });
+    
+    const monthInput = document.getElementById('monthly-month');
+    if (monthInput) {
+        const now = new Date();
+        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    
+    const salMonth = document.getElementById('sal-month');
+    if (salMonth) {
+        const now = new Date();
+        salMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    const sheetMonth = document.getElementById('sheet-month');
+    if (sheetMonth) {
+        const now = new Date();
+        sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    
+    loadDashboard();
+    renderRates();
+    initInvoice();
+    updateBadges();
+    updateClock();
+    setInterval(updateClock, 1000);
+    showNotification('System Ready!', 'success');
+}
+
+function updateClock() {
+    document.getElementById('header-time').textContent = new Date().toLocaleTimeString();
 }
 
 // ============================================================
@@ -371,28 +326,24 @@ function saveAllData() {
 function loadDashboard() {
     const today = new Date().toISOString().split('T')[0];
     
-    // Today's sales
     const todayInvs = invoices.filter(i => i.date === today);
     const todaySales = todayInvs.reduce((s, i) => s + parseFloat(i.finalTotal || 0), 0);
     document.getElementById('dash-today-sales').textContent = 'Rs. ' + todaySales.toFixed(2);
     document.getElementById('dash-sale-count').textContent = todayInvs.length + ' invoices';
     
-    // Today's purchase
     const todayStockIn = stockIn.filter(s => s.date === today);
     const todayPurchase = todayStockIn.reduce((s, x) => s + (x.qty * x.price || 0), 0);
     document.getElementById('dash-today-purchase').textContent = 'Rs. ' + todayPurchase.toFixed(2);
     document.getElementById('dash-purchase-count').textContent = todayStockIn.reduce((s, x) => s + x.qty, 0) + ' items';
     
-    // Total stock
     const totalStock = stockIn.reduce((s, x) => s + x.qty, 0) - stockOut.reduce((s, x) => s + x.qty, 0);
     document.getElementById('dash-total-stock').textContent = totalStock;
     
-    // Outstanding
     const gulzarBal = gulzarLedger.reduce((s, x) => s + x.credit - x.debit, 0);
     const kashifBal = kashifLedger.reduce((s, x) => s + x.credit - x.debit, 0);
     document.getElementById('dash-outstanding').textContent = 'Rs. ' + (gulzarBal + kashifBal).toFixed(2);
+    document.getElementById('dash-rates').textContent = storeRates.length;
     
-    // Recent invoices
     const recent = [...invoices].reverse().slice(0, 5);
     const tbody = document.getElementById('dash-recent-inv');
     if (recent.length === 0) {
@@ -408,13 +359,9 @@ function loadDashboard() {
         `).join('');
     }
     document.getElementById('dash-recent-count').textContent = recent.length;
-    
     updateDashboardChart();
 }
 
-// ============================================================
-// DASHBOARD CHART
-// ============================================================
 function updateDashboardChart() {
     const days = parseInt(document.getElementById('chart-period').value) || 30;
     const labels = [];
@@ -450,12 +397,8 @@ function updateDashboardChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: { beginAtZero: true }
-            }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 }
@@ -525,7 +468,6 @@ function renderRates() {
         `).join('');
     }
     
-    // Update dropdowns
     const stores = [...new Set(storeRates.map(r => r.store))];
     document.getElementById('sr-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
     document.getElementById('inv-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
@@ -592,14 +534,9 @@ function filterRatesTable(search) {
 }
 
 function exportRates() {
-    if (storeRates.length === 0) {
-        showNotification('No rates to export', 'warning');
-        return;
-    }
+    if (storeRates.length === 0) { showNotification('No rates to export', 'warning'); return; }
     let csv = 'Store,Barcode,Item,Rate\n';
-    storeRates.forEach(r => {
-        csv += `${r.store},${r.barcode},${r.item},${r.rate}\n`;
-    });
+    storeRates.forEach(r => { csv += `${r.store},${r.barcode},${r.item},${r.rate}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -874,7 +811,6 @@ function generateTaxInvoiceFromCash() {
     
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     
-    // Group by category
     const categories = {};
     items.forEach(item => {
         const name = item.item || item.barcode;
@@ -942,13 +878,13 @@ function renderTaxInvoice(data) {
     data.categories.forEach(cat => {
         if (cat.totalPcs === 0) return;
         const catName = labels[cat.category] || cat.category;
-        const exclTax = cat.totalAmount / (1 + 0.18);
+        const exclTax = cat.totalAmount / 1.18;
         const gst = exclTax * 0.18;
         grandTotal += cat.totalAmount;
         rows += `
             <tr>
                 <td>${cat.totalPcs}</td>
-                <td><span style="color:${colors[cat.category] || '#64748b'};">${catName}</span></td>
+                <td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td>
                 <td>${cat.hsCode}</td>
                 <td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1400).toFixed(3) : '-'}</td>
                 <td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1000).toFixed(3) : '-'}</td>
@@ -995,7 +931,7 @@ function renderTaxInvoice(data) {
                     <tbody>
                         ${rows}
                         <tr class="total-row">
-                            <td colspan="6" style="text-align:right;">TOTAL</td>
+                            <td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td>
                             <td>Rs. ${(data.totalAmount / 1.18).toFixed(2)}</td>
                             <td>Rs. ${(data.totalAmount - data.totalAmount / 1.18).toFixed(2)}</td>
                             <td><strong>Rs. ${data.totalAmount.toFixed(2)}</strong></td>
@@ -1027,6 +963,58 @@ function renderTaxInvoice(data) {
         </div>
     `;
     taxInvoiceData = data;
+}
+
+// ============================================================
+// PRINT FUNCTIONS
+// ============================================================
+function printInvoice() {
+    const last = invoices.length > 0 ? invoices[invoices.length - 1] : null;
+    if (last) printInvoiceById(last.id);
+    else showNotification('No invoice to print!', 'error');
+}
+
+function printInvoiceById(id) {
+    const inv = invoices.find(i => i.id === id);
+    if (!inv) { showNotification('Invoice not found', 'error'); return; }
+    
+    const w = window.open('', '_blank', 'width=800,height=600');
+    w.document.write(`
+        <!DOCTYPE html><html>
+        <head><title>${inv.invoiceNo}</title>
+        <style>
+            body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
+            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}
+            .header h1{color:#22c99a;font-size:24px}
+            .info{display:flex;justify-content:space-between;margin:10px 0}
+            table{width:100%;border-collapse:collapse;margin:10px 0}
+            th{background:#22c99a;color:#fff;padding:8px;text-align:left}
+            td{padding:6px 8px;border-bottom:1px solid #ddd}
+            .total{text-align:right;margin-top:10px;font-size:14px}
+            .final{font-size:18px;font-weight:800;color:#22c99a}
+            .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
+            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+        </style>
+        </head><body>
+        <div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
+        <div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div>
+        <div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div>
+        <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
+        ${(inv.items || []).map((item, i) => `
+            <tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>
+        `).join('')}
+        </tbody></table>
+        <div class="total">
+            <p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p>
+            <p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p>
+            <p><strong>GST (${inv.taxRate}%):</strong> Rs. ${inv.taxAmt}</p>
+            <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p>
+        </div>
+        <div class="footer"><p>Thank you for your business!</p></div>
+        <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+        </body></html>
+    `);
+    w.document.close();
 }
 
 function printTaxInvoice() {
@@ -1064,6 +1052,11 @@ function printTaxInvoice() {
         </body></html>
     `);
     w.document.close();
+}
+
+function printModal() {
+    const id = window._modalInvId;
+    if (id) printInvoiceById(id);
 }
 
 // ============================================================
@@ -1199,55 +1192,6 @@ function deleteInvoice(id) {
     updateBadges();
     closeInvModal();
     showNotification('Invoice deleted!', 'success');
-}
-
-function printInvoiceById(id) {
-    const inv = invoices.find(i => i.id === id);
-    if (!inv) { showNotification('Invoice not found', 'error'); return; }
-    
-    const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`
-        <!DOCTYPE html><html>
-        <head><title>${inv.invoiceNo}</title>
-        <style>
-            body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}
-            .header h1{color:#22c99a;font-size:24px}
-            .info{display:flex;justify-content:space-between;margin:10px 0}
-            table{width:100%;border-collapse:collapse;margin:10px 0}
-            th{background:#22c99a;color:#fff;padding:8px;text-align:left}
-            td{padding:6px 8px;border-bottom:1px solid #ddd}
-            .total{text-align:right;margin-top:10px;font-size:14px}
-            .final{font-size:18px;font-weight:800;color:#22c99a}
-            .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
-            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-        </style>
-        </head><body>
-        <div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
-        <div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div>
-        <div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div>
-        <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
-        ${(inv.items || []).map((item, i) => `
-            <tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>
-        `).join('')}
-        </tbody></table>
-        <div class="total">
-            <p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p>
-            <p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p>
-            <p><strong>GST (${inv.taxRate}%):</strong> Rs. ${inv.taxAmt}</p>
-            <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p>
-        </div>
-        <div class="footer"><p>Thank you for your business!</p></div>
-        <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-        </body></html>
-    `);
-    w.document.close();
-}
-
-function printInvoice() {
-    const last = invoices.length > 0 ? invoices[invoices.length - 1] : null;
-    if (last) printInvoiceById(last.id);
-    else showNotification('No invoice to print!', 'error');
 }
 
 function refreshInvoiceHistory() {
@@ -1795,7 +1739,6 @@ function saveStockOut() {
         return;
     }
     
-    // Check balance
     const totalIn = stockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
     const totalOut = stockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
     const bal = totalIn - totalOut;
@@ -1929,7 +1872,7 @@ function calcBalance() {
                 <td><strong>${item}</strong></td>
                 <td>${inTotal}</td>
                 <td>${outTotal}</td>
-                <td><span style="font-weight:700;color:${bal > 0 ? 'var(--success)' : bal < 0 ? 'var(--danger)' : 'var(--text-light)'};">${bal}</span></td>
+                <td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td>
             </tr>
         `;
     }).join('');
@@ -2250,7 +2193,7 @@ function calcSPBalance() {
                 <td><strong>${item}</strong></td>
                 <td>${inTotal}</td>
                 <td>${outTotal}</td>
-                <td><span style="font-weight:700;color:${bal > 0 ? 'var(--success)' : bal < 0 ? 'var(--danger)' : 'var(--text-light)'};">${bal}</span></td>
+                <td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td>
                 <td>${ctnDisplay}</td>
             </tr>
         `;
@@ -2262,7 +2205,7 @@ function printSPBalance() {
 }
 
 // ============================================================
-// LEDGER (Gulzar & Kashif)
+// LEDGER (Gulzar & Kashif) - HIGHLIGHTED TOTALS
 // ============================================================
 function addLedgerEntry(person) {
     const date = document.getElementById(person + '-date').value;
@@ -2302,7 +2245,6 @@ function addLedgerEntry(person) {
 function loadLedger(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     
-    // Totals
     const totalCredit = ledger.reduce((sum, e) => sum + e.credit, 0);
     const totalDebit = ledger.reduce((sum, e) => sum + e.debit, 0);
     const balance = totalCredit - totalDebit;
@@ -2310,11 +2252,14 @@ function loadLedger(person) {
     document.getElementById(person + '-total-credit').textContent = 'Rs. ' + totalCredit.toFixed(2);
     document.getElementById(person + '-total-debit').textContent = 'Rs. ' + totalDebit.toFixed(2);
     document.getElementById(person + '-balance').textContent = 'Rs. ' + balance.toFixed(2);
+    document.getElementById(person + '-total-entries').textContent = ledger.length;
     
     // Today's entries
     const today = new Date().toISOString().split('T')[0];
     const todayEntries = ledger.filter(e => e.date === today);
     const todayBody = document.getElementById(person + '-today-table');
+    document.getElementById(person + '-today-count').textContent = todayEntries.length;
+    
     if (todayEntries.length === 0) {
         todayBody.innerHTML = '<tr class="no-data"><td colspan="6">No entries today</td></tr>';
     } else {
@@ -2324,9 +2269,9 @@ function loadLedger(person) {
             return `
                 <tr>
                     <td>${e.date}</td>
-                    <td class="text-credit">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-                    <td class="text-debit">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-                    <td>Rs. ${runningBalance.toFixed(2)}</td>
+                    <td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
+                    <td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
+                    <td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td>
                     <td>${e.note}</td>
                     <td>
                         <button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button>
@@ -2360,9 +2305,9 @@ function renderLedgerHistory(person) {
             return `
                 <tr>
                     <td>${e.date}</td>
-                    <td class="text-credit">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-                    <td class="text-debit">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-                    <td>Rs. ${runningBalance.toFixed(2)}</td>
+                    <td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
+                    <td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
+                    <td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td>
                     <td>${e.note}</td>
                     <td>
                         <button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button>
@@ -2415,32 +2360,67 @@ function clearLedgerForm(person) {
 function printLedger(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     const name = person === 'gulzar' ? 'Gulzar Bhai' : 'Kashif Bhai';
+    const totalCredit = ledger.reduce((s, e) => s + e.credit, 0);
+    const totalDebit = ledger.reduce((s, e) => s + e.debit, 0);
     
-    const w = window.open('', '_blank', 'width=800,height=600');
+    const w = window.open('', '_blank', 'width=900,height=700');
     w.document.write(`
         <!DOCTYPE html><html>
         <head><title>${name} Ledger</title>
         <style>
             body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-            h2{text-align:center;color:#22c99a}
-            table{width:100%;border-collapse:collapse;margin:10px 0}
-            th,td{border:1px solid #000;padding:5px 8px}
-            th{background:#22c99a;color:#fff;text-align:left}
+            h2{text-align:center;color:#22c99a;font-size:24px}
+            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}
+            .header p{color:#666;font-size:14px}
+            .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}
+            .summary-box{text-align:center;padding:8px;border-radius:6px}
+            .summary-box.credit{background:#e8f5f0;color:#22c99a}
+            .summary-box.debit{background:#fee2e2;color:#ef4444}
+            .summary-box.balance{background:#fef3c7;color:#f59e0b}
+            .summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}
+            .summary-box .value{font-size:20px;font-weight:800;display:block}
+            table{width:100%;border-collapse:collapse;margin:12px 0}
+            th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}
+            td{padding:6px 12px;border-bottom:1px solid #ddd}
             .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
-            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            .summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
         </style>
         </head><body>
-        <h2>KRT TRADERS — ${name} Ledger</h2>
-        <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Balance</th><th>Note</th></tr></thead><tbody>
-        ${ledger.map(e => `
-            <tr><td>${e.date}</td><td>${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-            <td>${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-            <td>Rs. ${(ledger.filter(x => x.date <= e.date).reduce((s, x) => s + x.credit - x.debit, 0)).toFixed(2)}</td>
-            <td>${e.note}</td></tr>
-        `).join('')}
+        <div class="header">
+            <h2>KRT TRADERS</h2>
+            <p><strong>${name}</strong> — Ledger Statement</p>
+        </div>
+        <div class="summary">
+            <div class="summary-box credit">
+                <span class="label">Total Credit</span>
+                <span class="value">Rs. ${totalCredit.toFixed(2)}</span>
+            </div>
+            <div class="summary-box debit">
+                <span class="label">Total Debit</span>
+                <span class="value">Rs. ${totalDebit.toFixed(2)}</span>
+            </div>
+            <div class="summary-box balance">
+                <span class="label">Net Balance</span>
+                <span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span>
+            </div>
+        </div>
+        <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>
+        ${ledger.map((e, i, arr) => {
+            const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0);
+            return `<tr>
+                <td>${e.date}</td>
+                <td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
+                <td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
+                <td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td>
+                <td>${e.note}</td>
+            </tr>`;
+        }).join('')}
         </tbody></table>
-        <div class="footer"><p>Generated by KRT TRADERS ERP System</p></div>
-        <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+        <div class="footer">
+            <p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p>
+        </div>
+        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
         </body></html>
     `);
     w.document.close();
@@ -2470,7 +2450,7 @@ function renderSalaryTable(month) {
                     <td><input type="text" value="${r.name}" oninput="updateSalRow('${month}',${i},'name',this.value)" placeholder="Name" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
                     <td><input type="number" value="${r.salary}" oninput="updateSalRow('${month}',${i},'salary',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
                     <td><input type="number" value="${r.advance}" oninput="updateSalRow('${month}',${i},'advance',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-                    <td class="row-total">Rs. ${balance}</td>
+                    <td class="row-total" style="font-weight:700;color:${balance >= 0 ? '#22c99a' : '#ef4444'};">Rs. ${balance}</td>
                     <td><input type="text" value="${r.note || ''}" oninput="updateSalRow('${month}',${i},'note',this.value)" placeholder="Note" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
                     <td><button class="btn btn-danger btn-xs" onclick="removeSalRow('${month}',${i})"><i class="fas fa-times"></i></button></td>
                 </tr>
@@ -2495,7 +2475,10 @@ function updateSalRow(month, idx, field, value) {
     else row[field] = value;
     const balance = (row.salary - row.advance).toFixed(2);
     const tr = document.getElementById('sal-body').rows[idx];
-    if (tr) tr.cells[4].innerText = 'Rs. ' + balance;
+    if (tr) {
+        tr.cells[4].innerText = 'Rs. ' + balance;
+        tr.cells[4].style.color = balance >= 0 ? '#22c99a' : '#ef4444';
+    }
     updateSalaryTotals(month);
 }
 
@@ -2541,8 +2524,8 @@ function renderSalarySheet() {
                 <td>${i+1}</td>
                 <td><strong>${r.name}</strong></td>
                 <td>Rs. ${(r.salary || 0).toFixed(2)}</td>
-                <td style="color:var(--danger);">Rs. ${(r.advance || 0).toFixed(2)}</td>
-                <td style="color:var(--primary);font-weight:700;">Rs. ${((r.salary || 0) - (r.advance || 0)).toFixed(2)}</td>
+                <td style="color:#ef4444;">Rs. ${(r.advance || 0).toFixed(2)}</td>
+                <td style="color:#22c99a;font-weight:700;">Rs. ${((r.salary || 0) - (r.advance || 0)).toFixed(2)}</td>
                 <td>${r.note || ''}</td>
             </tr>
         `).join('');
@@ -2563,7 +2546,6 @@ function printSalarySheet() {
 // ============================================================
 function saveSettings() {
     const taxRate = parseFloat(document.getElementById('tax-rate-setting').value) || 18;
-    CONFIG.TAX_RATE = taxRate;
     localStorage.setItem('taxRate', taxRate);
     document.getElementById('inv-tax-rate').value = taxRate;
     showNotification('Settings saved!', 'success');
@@ -2571,7 +2553,6 @@ function saveSettings() {
 
 function updateCurrency() {
     const currency = document.getElementById('currency-select').value;
-    CONFIG.CURRENCY = currency;
     localStorage.setItem('currency', currency);
     calcInvoice();
     showNotification('Currency updated!', 'success');
@@ -2582,16 +2563,8 @@ function updateCurrency() {
 // ============================================================
 function backupData() {
     const data = {
-        storeRates,
-        invoices,
-        taxInvoices,
-        stockIn,
-        stockOut,
-        spStockIn,
-        spStockOut,
-        gulzarLedger,
-        kashifLedger,
-        salaryData,
+        storeRates, invoices, taxInvoices, stockIn, stockOut,
+        spStockIn, spStockOut, gulzarLedger, kashifLedger, salaryData,
         timestamp: new Date().toISOString(),
         version: '4.0'
     };
@@ -2699,6 +2672,8 @@ function updateBadges() {
     document.getElementById('inv-hist-badge').textContent = invoices.length;
     document.getElementById('tax-hist-badge').textContent = taxInvoices.length;
     document.getElementById('dash-badge').textContent = invoices.length;
+    document.getElementById('gulzar-badge').textContent = gulzarLedger.length;
+    document.getElementById('kashif-badge').textContent = kashifLedger.length;
 }
 
 // ============================================================
@@ -2711,27 +2686,11 @@ document.addEventListener('keydown', function(e) {
     }
     if (e.key === 'Escape') {
         closeInvModal();
-        closePrintPreview();
     }
     if (e.ctrlKey && e.key === 'p') {
         if (currentPage === 'cash-invoice') printInvoice();
     }
 });
-
-// ============================================================
-// PRINT PREVIEW
-// ============================================================
-function closePrintPreview() {
-    document.getElementById('print-preview-modal').classList.remove('open');
-}
-
-function executePrint() {
-    const content = document.getElementById('print-preview-body').innerHTML;
-    const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(`<!DOCTYPE html><html><head><title>Print</title></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
-    w.document.close();
-    closePrintPreview();
-}
 
 // ============================================================
 // INITIALIZE
