@@ -1,6 +1,6 @@
 // ============================================================
-// KRT TRADERS ERP SYSTEM - COMPLETE (SUPABASE MODE)
-// Version: 4.0 - All Data Online
+// KRT TRADERS ERP SYSTEM - COMPLETE JAVASCRIPT
+// Version: 4.0 - Supabase Mode (Online)
 // ============================================================
 
 // ============================================================
@@ -21,114 +21,66 @@ const CONFIG = {
 };
 
 // ============================================================
+// PRODUCT DATABASE & CATEGORIES
+// ============================================================
+const PRODUCTS = {
+    "6957404902857": "SPONGE SCRUB 2 IN 1", "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+    "6971432358486": "FANCY HANDLE 2 IN 1", "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+    "9031582648886": "FANCY HANDLE 3 IN 1", "9031582691028": "FANCY HANDLE 1 PCS",
+    "9035484809734": "COLOR SPONGE 6 COLOR", "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+    "40883779": "BATH BELT", "925100017805": "REGULAR LAMINATE 2 IN 1",
+    "925100017812": "REGULAR LAMINATE 1 PCS", "925100017652": "NAIL SAVER 1 PCS",
+    "925100017799": "NAIL SAVER 2 IN 1", "2215414451340": "LARGE LAMINATE 1 PCS",
+    "8512532310295": "REGULAR PAD 1 PCS", "8500532310186": "LARGE PAD 1 PCS",
+    "6267207001641": "REGULAR SPIRAL 2 IN 1", "6267207001665": "JUMBO SPIRAL 2 IN 1",
+    "230062603912": "REGULAR SPIRAL 1 PCS", "6267207001658": "JUMBO SPIRAL 1 PCS",
+    "4684000000190": "JUMBO SPIRAL 4 IN 1", "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+    "6971432358721": "FANCY NYLON SCRUBBER", "4684000000992": "NAIL SAVER 3 IN 1",
+    "4684000001005": "LARGE LAMINATE 3 IN 1", "925100018864": "SILVER CLASSIC BODY RAZOR",
+    "5489754856234": "MICRO FIBER 1 PCS"
+};
+
+const ITEM_CATEGORIES = {
+    'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
+    'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
+    'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+    'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
+    'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
+    'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+    'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
+    'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
+    'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
+    'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
+    'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+    'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+    'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
+    'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
+    'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
+    'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
+    'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+    'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+    'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
+};
+
+function getItemCategory(itemName) {
+    return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
+}
+
+// ============================================================
 // STATE
 // ============================================================
-let storeRates = [];
-let invoices = [];
-let taxInvoices = [];
-let stockIn = [];
-let stockOut = [];
-let spStockIn = [];
-let spStockOut = [];
-let gulzarLedger = [];
-let kashifLedger = [];
-let salaryData = {};
-let invoiceCounter = 0;
-let editingRateId = null;
-let editingInvoiceTs = null;
-let editingStockInId = null;
-let editingStockOutId = null;
-let editingSPInId = null;
-let editingSPOutId = null;
+let storeRates = [], invoices = [], taxInvoices = [], stockIn = [], stockOut = [];
+let spStockIn = [], spStockOut = [], gulzarLedger = [], kashifLedger = [], salaryData = {};
+let invoiceCounter = 0, editingRateId = null, editingInvoiceTs = null;
+let editingStockInId = null, editingStockOutId = null, editingSPInId = null, editingSPOutId = null;
 let editingLedgerId = { gulzar: null, kashif: null };
-let manualInvoiceNumber = '';
-let currentPage = 'dashboard';
-let chartInstance = null;
-let taxInvoiceData = null;
-
-// ============================================================
-// LOAD DATA FROM SUPABASE
-// ============================================================
-async function loadAllData() {
-    try {
-        showLoading();
-        setSyncStatus(false, 'Loading...');
-
-        // Load all tables in parallel
-        const [ratesRes, invRes, taxInvRes, sinRes, soutRes, spinRes, spoutRes, gulRes, kasRes, salRes] = await Promise.all([
-            sb.from('store_rates').select('*').order('id'),
-            sb.from('invoices').select('*').order('timestamp'),
-            sb.from('tax_invoices').select('*').order('timestamp'),
-            sb.from('stock_in').select('*').order('sr_no'),
-            sb.from('stock_out').select('*').order('sr_no'),
-            sb.from('sp_stock_in').select('*').order('sr_no'),
-            sb.from('sp_stock_out').select('*').order('sr_no'),
-            sb.from('gulzar_ledger').select('*').order('id'),
-            sb.from('kashif_ledger').select('*').order('id'),
-            sb.from('salary_data').select('*').order('month')
-        ]);
-
-        // Parse data
-        storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
-        invoices = (invRes.data || []).map(r => ({ 
-            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
-            ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, items: r.items || [],
-            discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0',
-            subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0',
-            taxRate: Number(r.tax_rate) || 18, taxAmt: r.total_gst || '0',
-            finalTotal: r.final_total || '0'
-        }));
-        taxInvoices = (taxInvRes.data || []).map(r => ({
-            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
-            ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, categories: r.categories || [],
-            totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0,
-            totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0,
-            cashInvoiceId: r.cash_invoice_timestamp
-        }));
-        stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
-        stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
-        spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
-        spStockOut = (spoutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, item: r.item_name, qty: Number(r.qty), price: Number(r.price) || 0, total: Number(r.total) || 0, invoiceTimestamp: r.invoice_timestamp || null }));
-        gulzarLedger = (gulRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
-        kashifLedger = (kasRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
-        
-        // Salary Data
-        salaryData = {};
-        (salRes.data || []).forEach(r => { salaryData[r.month] = r.rows || []; });
-
-        invoiceCounter = invoices.length;
-        console.log('✅ Data loaded from Supabase!');
-        console.log('📊 Invoices:', invoices.length);
-        console.log('📊 Store Rates:', storeRates.length);
-        console.log('📊 Stock In:', stockIn.length);
-        console.log('📊 Gulzar Entries:', gulzarLedger.length);
-
-        setSyncStatus(true, 'Synced ✔');
-        hideLoading();
-        showNotification('Data loaded from Supabase!', 'success');
-
-    } catch (error) {
-        console.error('❌ Load error:', error);
-        setSyncStatus(false, 'Sync Error');
-        hideLoading();
-        showNotification('Error loading data: ' + error.message, 'error');
-    }
-}
-
-// ============================================================
-// SAVE DATA TO SUPABASE
-// ============================================================
-async function saveAllData() {
-    try {
-        setSyncStatus(false, 'Saving...');
-        // Data is saved individually via their respective functions
-        setSyncStatus(true, 'Synced ✔');
-    } catch (error) {
-        console.error('❌ Save error:', error);
-        setSyncStatus(false, 'Sync Error');
-        showNotification('Error saving data: ' + error.message, 'error');
-    }
-}
+let manualInvoiceNumber = '', currentPage = 'dashboard', chartInstance = null, taxInvoiceData = null;
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -149,14 +101,50 @@ function showNotification(message, type = 'success') {
     el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-function showLoading() {
-    const el = document.getElementById('loading-overlay');
-    if (el) el.style.display = 'flex';
-}
+function showLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'flex'; }
+function hideLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'none'; }
 
-function hideLoading() {
-    const el = document.getElementById('loading-overlay');
-    if (el) el.style.display = 'none';
+// ============================================================
+// LOAD DATA FROM SUPABASE
+// ============================================================
+async function loadAllData() {
+    try {
+        showLoading();
+        setSyncStatus(false, 'Loading...');
+        const [ratesRes, invRes, taxInvRes, sinRes, soutRes, spinRes, spoutRes, gulRes, kasRes, salRes] = await Promise.all([
+            sb.from('store_rates').select('*').order('id'),
+            sb.from('invoices').select('*').order('timestamp'),
+            sb.from('tax_invoices').select('*').order('timestamp'),
+            sb.from('stock_in').select('*').order('sr_no'),
+            sb.from('stock_out').select('*').order('sr_no'),
+            sb.from('sp_stock_in').select('*').order('sr_no'),
+            sb.from('sp_stock_out').select('*').order('sr_no'),
+            sb.from('gulzar_ledger').select('*').order('id'),
+            sb.from('kashif_ledger').select('*').order('id'),
+            sb.from('salary_data').select('*').order('month')
+        ]);
+        storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
+        invoices = (invRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [], discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0', subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0', taxRate: Number(r.tax_rate) || 18, taxAmt: r.total_gst || '0', finalTotal: r.final_total || '0' }));
+        taxInvoices = (taxInvRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [], totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0, totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0, cashInvoiceId: r.cash_invoice_timestamp }));
+        stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
+        stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
+        spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
+        spStockOut = (spoutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, item: r.item_name, qty: Number(r.qty), price: Number(r.price) || 0, total: Number(r.total) || 0, invoiceTimestamp: r.invoice_timestamp || null }));
+        gulzarLedger = (gulRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
+        kashifLedger = (kasRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
+        salaryData = {};
+        (salRes.data || []).forEach(r => { salaryData[r.month] = r.rows || []; });
+        invoiceCounter = invoices.length;
+        console.log('✅ Data loaded from Supabase!');
+        setSyncStatus(true, 'Synced ✔');
+        hideLoading();
+        showNotification('Data loaded from Supabase!', 'success');
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        setSyncStatus(false, 'Sync Error');
+        hideLoading();
+        showNotification('Error loading data: ' + error.message, 'error');
+    }
 }
 
 // ============================================================
@@ -176,13 +164,11 @@ function login() {
 }
 
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        location.reload();
-    }
+    if (confirm('Are you sure you want to logout?')) { location.reload(); }
 }
 
 // ============================================================
-// SIDEBAR
+// SIDEBAR & NAVIGATION
 // ============================================================
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('collapsed');
@@ -192,41 +178,15 @@ function toggleSidebar() {
 function showPage(pageId) {
     document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
     const page = document.getElementById('page-' + pageId);
     if (page) page.classList.add('active');
-    
     document.querySelectorAll('.nav-item').forEach(n => {
         const onclick = n.getAttribute('onclick');
-        if (onclick && onclick.includes("'" + pageId + "'")) {
-            n.classList.add('active');
-        }
+        if (onclick && onclick.includes("'" + pageId + "'")) n.classList.add('active');
     });
-    
-    const titles = {
-        dashboard: 'Dashboard',
-        'store-rates': 'Store Rates',
-        'cash-invoice': 'Cash Invoice',
-        'tax-invoice': 'Tax Invoice',
-        'invoice-history': 'Invoice History',
-        'tax-history': 'Tax History',
-        'monthly-list': 'Monthly List',
-        'stock-in': 'Stock In',
-        'stock-out': 'Stock Out',
-        'stock-balance': 'Stock Balance',
-        'sp-in': 'SP Stock In',
-        'sp-out': 'SP Stock Out',
-        'sp-balance': 'SP Balance',
-        gulzar: 'Gulzar Ledger',
-        kashif: 'Kashif Ledger',
-        'salary-entry': 'Salary Entry',
-        'salary-sheet': 'Salary Sheet',
-        settings: 'Settings'
-    };
-    
+    const titles = { dashboard: 'Dashboard', 'store-rates': 'Store Rates', 'cash-invoice': 'Cash Invoice', 'tax-invoice': 'Tax Invoice', 'invoice-history': 'Invoice History', 'tax-history': 'Tax History', 'monthly-list': 'Monthly List', 'stock-in': 'Stock In', 'stock-out': 'Stock Out', 'stock-balance': 'Stock Balance', 'sp-in': 'SP Stock In', 'sp-out': 'SP Stock Out', 'sp-balance': 'SP Balance', gulzar: 'Gulzar Ledger', kashif: 'Kashif Ledger', 'salary-entry': 'Salary Entry', 'salary-sheet': 'Salary Sheet', settings: 'Settings' };
     document.getElementById('page-title').innerHTML = (titles[pageId] || pageId) + ' <small>Today: ' + new Date().toLocaleDateString() + '</small>';
     currentPage = pageId;
-    
     if (pageId === 'dashboard') loadDashboard();
     if (pageId === 'store-rates') renderRates();
     if (pageId === 'cash-invoice') initInvoice();
@@ -241,7 +201,6 @@ function showPage(pageId) {
     if (pageId === 'gulzar' || pageId === 'kashif') loadLedger(pageId);
     if (pageId === 'salary-entry') loadSalaryMonth();
     if (pageId === 'salary-sheet') renderSalarySheet();
-    
     updateBadges();
 }
 
@@ -253,11 +212,9 @@ function toggleTheme() {
     const current = html.getAttribute('data-theme');
     const newTheme = current === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', newTheme);
-    
     const icon = document.getElementById('theme-icon');
     const headerIcon = document.getElementById('header-theme-icon');
     const text = document.getElementById('theme-text');
-    
     if (newTheme === 'dark') {
         icon.className = 'fas fa-sun';
         headerIcon.className = 'fas fa-sun';
@@ -274,7 +231,6 @@ function toggleTheme() {
 // INIT APP
 // ============================================================
 async function initApp() {
-    // Load theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     if (savedTheme === 'dark') {
@@ -282,33 +238,15 @@ async function initApp() {
         document.getElementById('header-theme-icon').className = 'fas fa-sun';
         document.getElementById('theme-text').textContent = 'Light Mode';
     }
-    
-    // Set dates
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('.stock-date').forEach(el => { if (!el.value) el.value = today; });
-    
-    // Set month
     const monthInput = document.getElementById('monthly-month');
-    if (monthInput) {
-        const now = new Date();
-        monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
-    
+    if (monthInput) { const now = new Date(); monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); }
     const salMonth = document.getElementById('sal-month');
-    if (salMonth) {
-        const now = new Date();
-        salMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
+    if (salMonth) { const now = new Date(); salMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); }
     const sheetMonth = document.getElementById('sheet-month');
-    if (sheetMonth) {
-        const now = new Date();
-        sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    }
-    
-    // Load data from Supabase
+    if (sheetMonth) { const now = new Date(); sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); }
     await loadAllData();
-    
-    // Render all pages
     loadDashboard();
     renderRates();
     initInvoice();
@@ -317,48 +255,31 @@ async function initApp() {
     setInterval(updateClock, 1000);
 }
 
-function updateClock() {
-    const el = document.getElementById('header-time');
-    if (el) el.textContent = new Date().toLocaleTimeString();
-}
+function updateClock() { const el = document.getElementById('header-time'); if (el) el.textContent = new Date().toLocaleTimeString(); }
 
 // ============================================================
 // DASHBOARD
 // ============================================================
 function loadDashboard() {
     const today = new Date().toISOString().split('T')[0];
-    
     const todayInvs = invoices.filter(i => i.date === today);
     const todaySales = todayInvs.reduce((s, i) => s + parseFloat(i.finalTotal || 0), 0);
     document.getElementById('dash-today-sales').textContent = 'Rs. ' + todaySales.toFixed(2);
     document.getElementById('dash-sale-count').textContent = todayInvs.length + ' invoices';
-    
     const todayStockIn = stockIn.filter(s => s.date === today);
     const todayPurchase = todayStockIn.reduce((s, x) => s + (x.qty * x.price || 0), 0);
     document.getElementById('dash-today-purchase').textContent = 'Rs. ' + todayPurchase.toFixed(2);
     document.getElementById('dash-purchase-count').textContent = todayStockIn.reduce((s, x) => s + x.qty, 0) + ' items';
-    
     const totalStock = stockIn.reduce((s, x) => s + x.qty, 0) - stockOut.reduce((s, x) => s + x.qty, 0);
     document.getElementById('dash-total-stock').textContent = totalStock;
-    
     const gulzarBal = gulzarLedger.reduce((s, x) => s + x.credit - x.debit, 0);
     const kashifBal = kashifLedger.reduce((s, x) => s + x.credit - x.debit, 0);
     document.getElementById('dash-outstanding').textContent = 'Rs. ' + (gulzarBal + kashifBal).toFixed(2);
     document.getElementById('dash-rates').textContent = storeRates.length;
-    
     const recent = [...invoices].reverse().slice(0, 5);
     const tbody = document.getElementById('dash-recent-inv');
-    if (recent.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="4">No invoices found</td></tr>';
-    } else {
-        tbody.innerHTML = recent.map(inv => `
-            <tr>
-                <td><strong>${inv.invoiceNo}</strong></td>
-                <td>${inv.customerName || '-'}</td>
-                <td>${inv.date}</td>
-                <td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td>
-            </tr>
-        `).join('');
+    if (recent.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="4">No invoices found</td></tr>'; } else {
+        tbody.innerHTML = recent.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr>`).join('');
     }
     document.getElementById('dash-recent-count').textContent = recent.length;
     updateDashboardChart();
@@ -366,80 +287,30 @@ function loadDashboard() {
 
 function updateDashboardChart() {
     const days = parseInt(document.getElementById('chart-period').value) || 30;
-    const labels = [];
-    const data = [];
-    
+    const labels = [], data = [];
     for (let i = days - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         labels.push(dateStr.slice(5));
-        const dailyTotal = invoices
-            .filter(inv => inv.date === dateStr)
-            .reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
+        const dailyTotal = invoices.filter(inv => inv.date === dateStr).reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
         data.push(dailyTotal);
     }
-    
     const ctx = document.getElementById('salesChart')?.getContext('2d');
     if (!ctx) return;
     if (chartInstance) chartInstance.destroy();
-    
     chartInstance = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sales (Rs.)',
-                data: data,
-                borderColor: '#22c99a',
-                backgroundColor: 'rgba(34, 201, 154, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-        }
+        data: { labels, datasets: [{ label: 'Sales (Rs.)', data, borderColor: '#22c99a', backgroundColor: 'rgba(34,201,154,0.1)', fill: true, tension: 0.3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
     });
 }
 
 // ============================================================
-// STORE RATES
+// STORE RATES - COMPLETE CRUD
 // ============================================================
 function srBarcodeInput() {
     const bc = document.getElementById('sr-barcode').value.trim();
-    const PRODUCTS = {
-        "6957404902857": "SPONGE SCRUB 2 IN 1",
-        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-        "6971432358486": "FANCY HANDLE 2 IN 1",
-        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-        "9031582648886": "FANCY HANDLE 3 IN 1",
-        "9031582691028": "FANCY HANDLE 1 PCS",
-        "9035484809734": "COLOR SPONGE 6 COLOR",
-        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-        "40883779": "BATH BELT",
-        "925100017805": "REGULAR LAMINATE 2 IN 1",
-        "925100017812": "REGULAR LAMINATE 1 PCS",
-        "925100017652": "NAIL SAVER 1 PCS",
-        "925100017799": "NAIL SAVER 2 IN 1",
-        "2215414451340": "LARGE LAMINATE 1 PCS",
-        "8512532310295": "REGULAR PAD 1 PCS",
-        "8500532310186": "LARGE PAD 1 PCS",
-        "6267207001641": "REGULAR SPIRAL 2 IN 1",
-        "6267207001665": "JUMBO SPIRAL 2 IN 1",
-        "230062603912": "REGULAR SPIRAL 1 PCS",
-        "6267207001658": "JUMBO SPIRAL 1 PCS",
-        "4684000000190": "JUMBO SPIRAL 4 IN 1",
-        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-        "6971432358721": "FANCY NYLON SCRUBBER",
-        "4684000000992": "NAIL SAVER 3 IN 1",
-        "4684000001005": "LARGE LAMINATE 3 IN 1",
-        "925100018864": "SILVER CLASSIC BODY RAZOR",
-        "5489754856234": "MICRO FIBER 1 PCS"
-    };
     if (PRODUCTS[bc]) document.getElementById('sr-item').value = PRODUCTS[bc];
 }
 
@@ -448,12 +319,7 @@ async function saveStoreRate() {
     const barcode = document.getElementById('sr-barcode').value.trim();
     const item = document.getElementById('sr-item').value.trim() || barcode;
     const rate = parseFloat(document.getElementById('sr-rate').value) || 0;
-    
-    if (!store || !barcode || rate <= 0) {
-        showNotification('Store, barcode and rate are required!', 'error');
-        return;
-    }
-    
+    if (!store || !barcode || rate <= 0) { showNotification('Store, barcode and rate are required!', 'error'); return; }
     if (editingRateId !== null) {
         const { error } = await sb.from('store_rates').update({ store, barcode, item, rate }).eq('id', editingRateId);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -470,7 +336,6 @@ async function saveStoreRate() {
         storeRates.push({ id, store, barcode, item, rate });
         showNotification('Rate saved!', 'success');
     }
-    
     renderRates();
     clearRateForm();
     updateBadges();
@@ -479,33 +344,21 @@ async function saveStoreRate() {
 function renderRates() {
     const tbody = document.getElementById('sr-table-body');
     if (!tbody) return;
-    if (storeRates.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="5">No rates added yet</td></tr>';
-    } else {
+    if (storeRates.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="5">No rates added yet</td></tr>'; } else {
         tbody.innerHTML = storeRates.map(r => `
             <tr data-search="${(r.store + r.barcode + r.item).toLowerCase()}" data-store="${r.store}">
                 <td><span class="badge badge-store">${r.store}</span></td>
                 <td style="font-family:monospace;font-size:12px">${r.barcode}</td>
                 <td>${r.item}</td>
                 <td><strong>Rs. ${r.rate}</strong></td>
-                <td>
-                    <button class="btn btn-edit btn-sm" onclick="editRate(${r.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+                <td><button class="btn btn-edit btn-sm" onclick="editRate(${r.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-sm" onclick="deleteRate(${r.id})"><i class="fas fa-trash"></i></button></td>
+            </tr>`).join('');
     }
-    
     const stores = [...new Set(storeRates.map(r => r.store))];
     document.getElementById('sr-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
     document.getElementById('inv-store-list').innerHTML = stores.map(s => `<option value="${s}">`).join('');
-    
     const filter = document.getElementById('sr-filter-store');
-    if (filter) {
-        const currentVal = filter.value;
-        filter.innerHTML = '<option value="">All Stores</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
-        filter.value = currentVal;
-    }
+    if (filter) { const currentVal = filter.value; filter.innerHTML = '<option value="">All Stores</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join(''); filter.value = currentVal; }
 }
 
 function editRate(id) {
@@ -521,12 +374,7 @@ function editRate(id) {
     window.scrollTo(0, 0);
 }
 
-function cancelRateEdit() {
-    editingRateId = null;
-    clearRateForm();
-    document.getElementById('sr-save-btn').innerHTML = '<i class="fas fa-save"></i> Save Rate';
-    document.getElementById('sr-cancel-btn').style.display = 'none';
-}
+function cancelRateEdit() { editingRateId = null; clearRateForm(); document.getElementById('sr-save-btn').innerHTML = '<i class="fas fa-save"></i> Save Rate'; document.getElementById('sr-cancel-btn').style.display = 'none'; }
 
 async function deleteRate(id) {
     if (!confirm('Delete this rate?')) return;
@@ -538,24 +386,13 @@ async function deleteRate(id) {
     showNotification('Rate deleted!', 'success');
 }
 
-function clearRateForm() {
-    ['sr-store', 'sr-barcode', 'sr-item', 'sr-rate'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-}
+function clearRateForm() { ['sr-store', 'sr-barcode', 'sr-item', 'sr-rate'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
 
 function toggleRatesVisibility() {
     const container = document.getElementById('rates-list-container');
     const text = document.getElementById('rates-toggle-text');
     if (!container) return;
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        text.textContent = 'Hide';
-    } else {
-        container.style.display = 'none';
-        text.textContent = 'Show';
-    }
+    if (container.style.display === 'none') { container.style.display = 'block'; text.textContent = 'Hide'; } else { container.style.display = 'none'; text.textContent = 'Show'; }
 }
 
 function filterRatesTable(search) {
@@ -594,10 +431,8 @@ function initInvoice() {
     document.getElementById('inv-tax-rate').value = 18;
     calcInvoice();
     updateInvoiceNumber();
-    
     const dateInput = document.getElementById('inv-date');
     if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-    
     editingInvoiceTs = null;
     const cancelBtn = document.getElementById('inv-cancel-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
@@ -612,25 +447,14 @@ function updateInvoiceNumber() {
     display.textContent = 'INV-' + String(nextNum).padStart(3, '0');
 }
 
-function updateInvoiceNumberManual(value) {
-    manualInvoiceNumber = value.trim();
-    updateInvoiceNumber();
-}
+function updateInvoiceNumberManual(value) { manualInvoiceNumber = value.trim(); updateInvoiceNumber(); }
 
 function addInvoiceRow() {
     const tbody = document.getElementById('inv-body');
     if (!tbody) return;
     const n = tbody.children.length + 1;
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td>${n}</td>
-        <td><input type="text" class="inv-barcode" placeholder="Barcode" onchange="onInvBarcode(this)" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-        <td><input type="text" class="inv-item" placeholder="Item name" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-        <td><input type="number" class="inv-qty" value="1" min="1" oninput="calcInvoice()" style="width:60px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-        <td><input type="number" class="inv-rate" placeholder="0.00" step="0.01" oninput="calcInvoice()" style="width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-        <td class="inv-total">Rs. 0.00</td>
-        <td><button class="btn btn-danger btn-xs" onclick="removeInvoiceRow(this)"><i class="fas fa-times"></i></button></td>
-    `;
+    tr.innerHTML = `<td>${n}</td><td><input type="text" class="inv-barcode" placeholder="Barcode" onchange="onInvBarcode(this)" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><input type="text" class="inv-item" placeholder="Item name" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><input type="number" class="inv-qty" value="1" min="1" oninput="calcInvoice()" style="width:60px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><input type="number" class="inv-rate" placeholder="0.00" step="0.01" oninput="calcInvoice()" style="width:80px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td class="inv-total">Rs. 0.00</td><td><button class="btn btn-danger btn-xs" onclick="removeInvoiceRow(this)"><i class="fas fa-times"></i></button></td>`;
     tbody.appendChild(tr);
     calcInvoice();
 }
@@ -638,10 +462,7 @@ function addInvoiceRow() {
 function removeInvoiceRow(btn) {
     const row = btn.closest('tr');
     const tbody = document.getElementById('inv-body');
-    if (tbody.children.length <= 1) {
-        showNotification('At least one item is required', 'warning');
-        return;
-    }
+    if (tbody.children.length <= 1) { showNotification('At least one item is required', 'warning'); return; }
     row.remove();
     document.querySelectorAll('#inv-body tr').forEach((tr, i) => tr.cells[0].textContent = i + 1);
     calcInvoice();
@@ -650,35 +471,6 @@ function removeInvoiceRow(btn) {
 function onInvBarcode(input) {
     const bc = input.value.trim();
     const row = input.closest('tr');
-    const PRODUCTS = {
-        "6957404902857": "SPONGE SCRUB 2 IN 1",
-        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-        "6971432358486": "FANCY HANDLE 2 IN 1",
-        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-        "9031582648886": "FANCY HANDLE 3 IN 1",
-        "9031582691028": "FANCY HANDLE 1 PCS",
-        "9035484809734": "COLOR SPONGE 6 COLOR",
-        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-        "40883779": "BATH BELT",
-        "925100017805": "REGULAR LAMINATE 2 IN 1",
-        "925100017812": "REGULAR LAMINATE 1 PCS",
-        "925100017652": "NAIL SAVER 1 PCS",
-        "925100017799": "NAIL SAVER 2 IN 1",
-        "2215414451340": "LARGE LAMINATE 1 PCS",
-        "8512532310295": "REGULAR PAD 1 PCS",
-        "8500532310186": "LARGE PAD 1 PCS",
-        "6267207001641": "REGULAR SPIRAL 2 IN 1",
-        "6267207001665": "JUMBO SPIRAL 2 IN 1",
-        "230062603912": "REGULAR SPIRAL 1 PCS",
-        "6267207001658": "JUMBO SPIRAL 1 PCS",
-        "4684000000190": "JUMBO SPIRAL 4 IN 1",
-        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-        "6971432358721": "FANCY NYLON SCRUBBER",
-        "4684000000992": "NAIL SAVER 3 IN 1",
-        "4684000001005": "LARGE LAMINATE 3 IN 1",
-        "925100018864": "SILVER CLASSIC BODY RAZOR",
-        "5489754856234": "MICRO FIBER 1 PCS"
-    };
     if (PRODUCTS[bc]) row.querySelector('.inv-item').value = PRODUCTS[bc];
     const storeName = document.getElementById('inv-store')?.value?.trim() || '';
     const rate = storeRates.find(r => r.store === storeName && r.barcode === bc);
@@ -692,17 +484,8 @@ function onInvStoreChange(value) {
     if (!preview || !info) return;
     if (value) {
         const rates = storeRates.filter(r => r.store === value);
-        if (rates.length > 0) {
-            info.innerHTML = '<i class="fas fa-check-circle" style="color:#22c99a;"></i> Rates loaded for: <strong>' + value + '</strong>';
-            preview.innerHTML = rates.map(r => `<span class="badge badge-primary">${r.barcode}: Rs. ${r.rate.toFixed(2)}</span>`).join(' ');
-        } else {
-            info.innerHTML = '<i class="fas fa-store"></i> No rates found for: <strong>' + value + '</strong>';
-            preview.innerHTML = '';
-        }
-    } else {
-        info.innerHTML = '<i class="fas fa-store"></i> Enter store name to see rates';
-        preview.innerHTML = '';
-    }
+        if (rates.length > 0) { info.innerHTML = '<i class="fas fa-check-circle" style="color:#22c99a;"></i> Rates loaded for: <strong>' + value + '</strong>'; preview.innerHTML = rates.map(r => `<span class="badge badge-primary">${r.barcode}: Rs. ${r.rate.toFixed(2)}</span>`).join(' '); } else { info.innerHTML = '<i class="fas fa-store"></i> No rates found for: <strong>' + value + '</strong>'; preview.innerHTML = ''; }
+    } else { info.innerHTML = '<i class="fas fa-store"></i> Enter store name to see rates'; preview.innerHTML = ''; }
     calcInvoice();
 }
 
@@ -716,17 +499,14 @@ function calcInvoice() {
         row.querySelector('.inv-total').textContent = 'Rs. ' + total.toFixed(2);
         subtotal += total;
     });
-    
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
     const currency = document.getElementById('inv-currency')?.value || 'PKR';
     const symbol = currency === 'PKR' ? 'Rs.' : currency === 'USD' ? '$' : '€';
-    
     const discountAmt = (subtotal * discount) / 100;
     const afterDiscount = subtotal - discountAmt;
     const taxAmt = (afterDiscount * taxRate) / 100;
     const finalTotal = afterDiscount + taxAmt;
-    
     document.getElementById('inv-subtotal').textContent = symbol + ' ' + subtotal.toFixed(2);
     document.getElementById('inv-disc-label').textContent = 'Discount (' + discount + '%):';
     document.getElementById('inv-disc-amt').textContent = '- ' + symbol + ' ' + discountAmt.toFixed(2);
@@ -738,10 +518,7 @@ function calcInvoice() {
 }
 
 function clearInvoiceForm() {
-    ['inv-customer', 'inv-store', 'inv-customer-ntn', 'inv-customer-strn', 'inv-customer-address'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
+    ['inv-customer', 'inv-store', 'inv-customer-ntn', 'inv-customer-strn', 'inv-customer-address'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('inv-discount').value = 0;
     document.getElementById('inv-tax-rate').value = 18;
     const body = document.getElementById('inv-body');
@@ -757,12 +534,7 @@ function clearInvoiceForm() {
     showNotification('Form cleared', 'info');
 }
 
-function cancelInvoiceEdit() {
-    editingInvoiceTs = null;
-    document.getElementById('inv-cancel-btn').style.display = 'none';
-    clearInvoiceForm();
-    showNotification('Edit cancelled', 'info');
-}
+function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
 // SAVE INVOICE
@@ -774,28 +546,16 @@ async function saveInvoiceNow() {
     const ntn = document.getElementById('inv-customer-ntn').value.trim();
     const strn = document.getElementById('inv-customer-strn').value.trim();
     const address = document.getElementById('inv-customer-address').value.trim();
-    
-    if (!customer || !date) {
-        showNotification('Customer name and date are required!', 'error');
-        return;
-    }
-    
+    if (!customer || !date) { showNotification('Customer name and date are required!', 'error'); return; }
     const items = [];
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
         const item = row.querySelector('.inv-item').value || '';
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
-        if (qty > 0 && rate > 0) {
-            items.push({ barcode, item, qty, rate, total: qty * rate });
-        }
+        if (qty > 0 && rate > 0) items.push({ barcode, item, qty, rate, total: qty * rate });
     });
-    
-    if (items.length === 0) {
-        showNotification('Add at least one item!', 'error');
-        return;
-    }
-    
+    if (items.length === 0) { showNotification('Add at least one item!', 'error'); return; }
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
@@ -803,29 +563,9 @@ async function saveInvoiceNow() {
     const afterDiscount = subtotal - discountAmt;
     const taxAmt = (afterDiscount * taxRate) / 100;
     const finalTotal = afterDiscount + taxAmt;
-    
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     const ts = editingInvoiceTs || Date.now();
-    
-    const invoiceData = {
-        timestamp: ts,
-        invoice_no: invoiceNo,
-        customer_name: customer,
-        store_name: store,
-        ntn: ntn || '',
-        strn: strn || '',
-        address: address || '',
-        date: date,
-        items: items,
-        discount_percent: discount,
-        discount_amt: discountAmt.toFixed(2),
-        sub_total: subtotal.toFixed(2),
-        after_discount: afterDiscount.toFixed(2),
-        tax_rate: taxRate,
-        total_gst: taxAmt.toFixed(2),
-        final_total: finalTotal.toFixed(2)
-    };
-    
+    const invoiceData = { timestamp: ts, invoice_no: invoiceNo, customer_name: customer, store_name: store, ntn: ntn || '', strn: strn || '', address: address || '', date: date, items: items, discount_percent: discount, discount_amt: discountAmt.toFixed(2), sub_total: subtotal.toFixed(2), after_discount: afterDiscount.toFixed(2), tax_rate: taxRate, total_gst: taxAmt.toFixed(2), final_total: finalTotal.toFixed(2) };
     if (editingInvoiceTs !== null) {
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -841,7 +581,6 @@ async function saveInvoiceNow() {
         invoiceCounter++;
         showNotification('Invoice saved!', 'success');
     }
-    
     renderInvoiceHistory();
     updateBadges();
     loadDashboard();
@@ -859,28 +598,16 @@ async function generateTaxInvoiceFromCash() {
     const ntn = document.getElementById('inv-customer-ntn').value.trim();
     const strn = document.getElementById('inv-customer-strn').value.trim();
     const address = document.getElementById('inv-customer-address').value.trim();
-    
-    if (!customer) {
-        showNotification('Please fill customer name first', 'error');
-        return;
-    }
-    
+    if (!customer) { showNotification('Please fill customer name first', 'error'); return; }
     const items = [];
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
         const item = row.querySelector('.inv-item').value || '';
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
-        if (qty > 0 && rate > 0) {
-            items.push({ barcode, item, qty, rate, total: qty * rate });
-        }
+        if (qty > 0 && rate > 0) items.push({ barcode, item, qty, rate, total: qty * rate });
     });
-    
-    if (items.length === 0) {
-        showNotification('Add items first!', 'error');
-        return;
-    }
-    
+    if (items.length === 0) { showNotification('Add items first!', 'error'); return; }
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
@@ -888,86 +615,21 @@ async function generateTaxInvoiceFromCash() {
     const afterDiscount = subtotal - discountAmt;
     const taxAmt = (afterDiscount * taxRate) / 100;
     const finalTotal = afterDiscount + taxAmt;
-    
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
-    
-    const ITEM_CATEGORIES = {
-        'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
-        'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
-        'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-        'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
-        'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
-        'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-        'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
-        'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
-        'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-        'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
-        'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
-        'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-        'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-        'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
-        'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
-        'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
-        'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
-        'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-        'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-        'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-        'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
-    };
-    
-    function getItemCategory(itemName) {
-        return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
-    }
-    
     const categories = {};
     items.forEach(item => {
         const name = item.item || item.barcode;
         const info = getItemCategory(name);
         const key = info.category;
-        if (!categories[key]) {
-            categories[key] = {
-                category: key,
-                hsCode: info.hsCode,
-                totalPcs: 0,
-                totalAmount: 0,
-                weight: info.weight || 0
-            };
-        }
+        if (!categories[key]) { categories[key] = { category: key, hsCode: info.hsCode, totalPcs: 0, totalAmount: 0, weight: info.weight || 0 }; }
         categories[key].totalPcs += item.qty;
         const amount = item.total * (1 - discount / 100);
         categories[key].totalAmount += amount;
     });
-    
-    const categoryList = Object.values(categories).map(c => ({
-        ...c,
-        avgRate: c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0
-    }));
-    
-    const taxInvoiceData = {
-        timestamp: Date.now(),
-        invoice_no: invoiceNo + '-TAX',
-        customer_name: customer,
-        store_name: store,
-        ntn: ntn || '',
-        strn: strn || '',
-        address: address || '',
-        date: date,
-        categories: categoryList,
-        total_amount: finalTotal.toFixed(2),
-        total_gst: taxAmt.toFixed(2),
-        total_gross: afterDiscount.toFixed(2),
-        discount_percent: discount,
-        cash_invoice_timestamp: editingInvoiceTs || Date.now()
-    };
-    
+    const categoryList = Object.values(categories).map(c => ({ ...c, avgRate: c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0 }));
+    const taxInvoiceData = { timestamp: Date.now(), invoice_no: invoiceNo + '-TAX', customer_name: customer, store_name: store, ntn: ntn || '', strn: strn || '', address: address || '', date: date, categories: categoryList, total_amount: finalTotal.toFixed(2), total_gst: taxAmt.toFixed(2), total_gross: afterDiscount.toFixed(2), discount_percent: discount, cash_invoice_timestamp: editingInvoiceTs || Date.now() };
     const { error } = await sb.from('tax_invoices').insert(taxInvoiceData);
     if (error) { showNotification('Error generating tax invoice: ' + error.message, 'error'); return; }
-    
     taxInvoices.push({ ...taxInvoiceData, id: taxInvoiceData.timestamp });
     showNotification('Tax Invoice generated!', 'success');
     renderTaxInvoice(taxInvoiceData);
@@ -979,18 +641,11 @@ function renderTaxInvoice(data) {
     const container = document.getElementById('tax-invoice-container');
     if (!container) return;
     if (!data || !data.categories || data.categories.length === 0) {
-        container.innerHTML = `
-            <div class="tax-invoice-placeholder">
-                <i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i>
-                <p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i><p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.</p></div>`;
         return;
     }
-    
     const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor', 'Other': 'Other Items' };
     const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444', 'Other': '#64748b' };
-    
     let rows = '';
     let grandTotal = 0;
     data.categories.forEach(cat => {
@@ -999,87 +654,9 @@ function renderTaxInvoice(data) {
         const exclTax = cat.totalAmount / 1.18;
         const gst = exclTax * 0.18;
         grandTotal += cat.totalAmount;
-        rows += `
-            <tr>
-                <td>${cat.totalPcs}</td>
-                <td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td>
-                <td>${cat.hsCode}</td>
-                <td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1400).toFixed(3) : '-'}</td>
-                <td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1000).toFixed(3) : '-'}</td>
-                <td>${cat.avgRate.toFixed(2)}</td>
-                <td>Rs. ${exclTax.toFixed(2)}</td>
-                <td>Rs. ${gst.toFixed(2)}</td>
-                <td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td>
-            </tr>
-        `;
+        rows += `<tr><td>${cat.totalPcs}</td><td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td><td>${cat.hsCode}</td><td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1400).toFixed(3) : '-'}</td><td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1000).toFixed(3) : '-'}</td><td>${cat.avgRate.toFixed(2)}</td><td>Rs. ${exclTax.toFixed(2)}</td><td>Rs. ${gst.toFixed(2)}</td><td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td></tr>`;
     });
-    
-    container.innerHTML = `
-        <div class="tax-invoice-display">
-            <div class="header">
-                <h1>KRT TRADERS</h1>
-                <p class="sub-title">Deals in all kinds of cleaning item and general products</p>
-                <p class="invoice-title">SALES TAX INVOICE</p>
-                <p class="copy-type">Original — Duplicate</p>
-            </div>
-            <div class="info-grid">
-                <div><strong>Invoice #:</strong> ${data.invoice_no}</div>
-                <div><strong>Date:</strong> ${data.date}</div>
-                <div><strong>Discount:</strong> ${data.discount_percent}%</div>
-            </div>
-            <div class="buyer-grid">
-                <div class="buyer-box">
-                    <span class="box-title">Supplier</span>
-                    <div class="box-name">KRT TRADERS</div>
-                    <div class="box-detail">NTN: 2995454-1</div>
-                    <div class="box-detail">STRN: 300299545411</div>
-                    <div class="box-detail">Address: Lahore, Pakistan</div>
-                </div>
-                <div class="buyer-box">
-                    <span class="box-title">Buyer</span>
-                    <div class="box-name">${data.customer_name}</div>
-                    <div class="box-detail">NTN: ${data.ntn || '-'}</div>
-                    <div class="box-detail">STRN: ${data.strn || '-'}</div>
-                    <div class="box-detail">Address: ${data.address || '-'}</div>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead>
-                    <tbody>
-                        ${rows}
-                        <tr class="total-row">
-                            <td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td>
-                            <td>Rs. ${(data.total_amount / 1.18).toFixed(2)}</td>
-                            <td>Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</td>
-                            <td><strong>Rs. ${data.total_amount}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="totals-grid">
-                <div>
-                    <div><strong>Total Amount (After Discount):</strong> Rs. ${data.total_amount}</div>
-                    <div><strong>Excluding Tax:</strong> Rs. ${(data.total_amount / 1.18).toFixed(2)}</div>
-                    <div><strong>GST @ 18%:</strong> Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</div>
-                    <div><strong>Gross Amount:</strong> Rs. ${data.total_amount}</div>
-                </div>
-                <div style="text-align:right;">
-                    <div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(data.total_amount * data.discount_percent / 100).toFixed(2)}</div>
-                    <div><strong>Sub Total:</strong> Rs. ${(data.total_amount / (1 - data.discount_percent/100)).toFixed(2)}</div>
-                    <div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${data.total_amount}</div>
-                </div>
-            </div>
-            <div class="signature-section">
-                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div>
-                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div>
-                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div>
-            </div>
-            <div class="footer-note">
-                <p>Generated by KRT TRADERS ERP System | Thank you for your business!</p>
-            </div>
-        </div>
-    `;
+    container.innerHTML = `<div class="tax-invoice-display"><div class="header"><h1>KRT TRADERS</h1><p class="sub-title">Deals in all kinds of cleaning item and general products</p><p class="invoice-title">SALES TAX INVOICE</p><p class="copy-type">Original — Duplicate</p></div><div class="info-grid"><div><strong>Invoice #:</strong> ${data.invoice_no}</div><div><strong>Date:</strong> ${data.date}</div><div><strong>Discount:</strong> ${data.discount_percent}%</div></div><div class="buyer-grid"><div class="buyer-box"><span class="box-title">Supplier</span><div class="box-name">KRT TRADERS</div><div class="box-detail">NTN: 2995454-1</div><div class="box-detail">STRN: 300299545411</div><div class="box-detail">Address: Lahore, Pakistan</div></div><div class="buyer-box"><span class="box-title">Buyer</span><div class="box-name">${data.customer_name}</div><div class="box-detail">NTN: ${data.ntn || '-'}</div><div class="box-detail">STRN: ${data.strn || '-'}</div><div class="box-detail">Address: ${data.address || '-'}</div></div></div><div class="table-wrap"><table><thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead><tbody>${rows}<tr class="total-row"><td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td><td>Rs. ${(data.total_amount / 1.18).toFixed(2)}</td><td>Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</td><td><strong>Rs. ${data.total_amount}</strong></td></tr></tbody></table></div><div class="totals-grid"><div><div><strong>Total Amount (After Discount):</strong> Rs. ${data.total_amount}</div><div><strong>Excluding Tax:</strong> Rs. ${(data.total_amount / 1.18).toFixed(2)}</div><div><strong>GST @ 18%:</strong> Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</div><div><strong>Gross Amount:</strong> Rs. ${data.total_amount}</div></div><div style="text-align:right;"><div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(data.total_amount * data.discount_percent / 100).toFixed(2)}</div><div><strong>Sub Total:</strong> Rs. ${(data.total_amount / (1 - data.discount_percent/100)).toFixed(2)}</div><div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${data.total_amount}</div></div></div><div class="signature-section"><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div></div><div class="footer-note"><p>Generated by KRT TRADERS ERP System | Thank you for your business!</p></div></div>`;
     taxInvoiceData = data;
 }
 
@@ -1095,131 +672,36 @@ function printInvoice() {
 function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
-    
     const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`
-        <!DOCTYPE html><html>
-        <head><title>${inv.invoice_no}</title>
-        <style>
-            body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}
-            .header h1{color:#22c99a;font-size:24px}
-            .info{display:flex;justify-content:space-between;margin:10px 0}
-            table{width:100%;border-collapse:collapse;margin:10px 0}
-            th{background:#22c99a;color:#fff;padding:8px;text-align:left}
-            td{padding:6px 8px;border-bottom:1px solid #ddd}
-            .total{text-align:right;margin-top:10px;font-size:14px}
-            .final{font-size:18px;font-weight:800;color:#22c99a}
-            .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
-            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-        </style>
-        </head><body>
-        <div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
-        <div class="info"><span><strong>Invoice:</strong> ${inv.invoice_no}</span><span><strong>Date:</strong> ${inv.date}</span></div>
-        <div class="info"><span><strong>Customer:</strong> ${inv.customer_name}</span><span><strong>Store:</strong> ${inv.store_name || '-'}</span></div>
-        <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
-        ${(inv.items || []).map((item, i) => `
-            <tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>
-        `).join('')}
-        </tbody></table>
-        <div class="total">
-            <p><strong>Sub Total:</strong> Rs. ${inv.sub_total}</p>
-            <p><strong>Discount (${inv.discount_percent}%):</strong> - Rs. ${inv.discount_amt}</p>
-            <p><strong>GST (${inv.tax_rate}%):</strong> Rs. ${inv.total_gst}</p>
-            <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.final_total}</p>
-        </div>
-        <div class="footer"><p>Thank you for your business!</p></div>
-        <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
-        </body></html>
-    `);
+    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p><p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p><p><strong>GST (${inv.taxRate}%):</strong> Rs. ${inv.taxAmt}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
     w.document.close();
 }
 
 function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container')?.innerHTML;
-    if (!content || content.includes('No Tax Invoice')) {
-        showNotification('No tax invoice to print!', 'error');
-        return;
-    }
+    if (!content || content.includes('No Tax Invoice')) { showNotification('No tax invoice to print!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1000,height=800');
-    w.document.write(`
-        <!DOCTYPE html><html>
-        <head><title>Tax Invoice</title>
-        <style>
-            *{margin:0;padding:0;box-sizing:border-box}
-            body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-            .tax-invoice-display{max-width:1100px;margin:0 auto}
-            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}
-            .header h1{font-size:28px;color:#22c99a}
-            .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
-            .buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
-            .buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}
-            .buyer-box .box-title{font-weight:700;color:#22c99a;display:block}
-            table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}
-            th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
-            td{padding:6px 10px;border-bottom:1px solid #eee}
-            .total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}
-            .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}
-            .signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}
-            .signature-section .sig-box{text-align:center}
-            .signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}
-            .signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
-            .footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
-            .no-print{display:none !important}
-            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-        </style>
-        </head><body>
-        ${content}
-        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
-        </body></html>
-    `);
+    w.document.write(`<!DOCTYPE html><html><head><title>Tax Invoice</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.tax-invoice-display{max-width:1100px;margin:0 auto}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}.header h1{font-size:28px;color:#22c99a}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}.buyer-box .box-title{font-weight:700;color:#22c99a;display:block}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}td{padding:6px 10px;border-bottom:1px solid #eee}.total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}.totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}.signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}.signature-section .sig-box{text-align:center}.signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}.signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}.footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}.no-print{display:none !important}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
-function printModal() {
-    const id = window._modalInvId;
-    if (id) printInvoiceById(id);
-}
+function printModal() { const id = window._modalInvId; if (id) printInvoiceById(id); }
 
 // ============================================================
-// INVOICE HISTORY
+// INVOICE HISTORY - COMPLETE CRUD
 // ============================================================
 function renderInvoiceHistory() {
     const from = document.getElementById('inv-hist-from')?.value || '';
     const to = document.getElementById('inv-hist-to')?.value || '';
     const search = (document.getElementById('inv-hist-search')?.value || '').toLowerCase();
-    
     let filtered = [...invoices].reverse();
     if (from) filtered = filtered.filter(inv => inv.date >= from);
     if (to) filtered = filtered.filter(inv => inv.date <= to);
-    if (search) {
-        filtered = filtered.filter(inv =>
-            (inv.invoice_no || '').toLowerCase().includes(search) ||
-            (inv.customer_name || '').toLowerCase().includes(search) ||
-            (inv.store_name || '').toLowerCase().includes(search)
-        );
-    }
-    
+    if (search) filtered = filtered.filter(inv => (inv.invoiceNo || '').toLowerCase().includes(search) || (inv.customerName || '').toLowerCase().includes(search) || (inv.storeName || '').toLowerCase().includes(search));
     const tbody = document.getElementById('inv-history-body');
     if (!tbody) return;
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="7">No invoices found</td></tr>';
-    } else {
-        tbody.innerHTML = filtered.map(inv => `
-            <tr>
-                <td><strong>${inv.invoice_no}</strong></td>
-                <td>${inv.store_name || '-'}</td>
-                <td>${inv.customer_name || '-'}</td>
-                <td>${inv.date}</td>
-                <td>${inv.items?.length || 0}</td>
-                <td>Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="7">No invoices found</td></tr>'; } else {
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.items?.length || 0}</td><td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td><td><button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('inv-hist-badge').textContent = filtered.length;
 }
@@ -1227,79 +709,35 @@ function renderInvoiceHistory() {
 function viewInvoice(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
-    
     const body = document.getElementById('inv-modal-body');
     if (!body) return;
-    body.innerHTML = `
-        <div style="padding:10px 0;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
-                <div><strong>Invoice #:</strong> ${inv.invoice_no}</div>
-                <div><strong>Date:</strong> ${inv.date}</div>
-                <div><strong>Customer:</strong> ${inv.customer_name}</div>
-                <div><strong>Store:</strong> ${inv.store_name || '-'}</div>
-                <div><strong>NTN:</strong> ${inv.ntn || '-'}</div>
-                <div><strong>STRN:</strong> ${inv.strn || '-'}</div>
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead>
-                <tbody>
-                    ${(inv.items || []).map(item => `
-                        <tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td>
-                        <td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td>
-                        <td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td>
-                        <td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>
-                    `).join('')}
-                    <tr style="font-weight:bold;background:#e8f5f0;">
-                        <td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td>
-                        <td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;">
-                <span><strong>Discount:</strong> ${inv.discount_percent}%</span>
-                <span><strong>GST:</strong> ${inv.tax_rate}%</span>
-                <span><strong>Final:</strong> Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</span>
-            </div>
-        </div>
-    `;
+    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent}%</span><span><strong>GST:</strong> ${inv.taxRate}%</span><span><strong>Final:</strong> Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
     document.getElementById('modal-del-btn').onclick = () => deleteInvoice(id);
     document.getElementById('inv-modal').classList.add('open');
     window._modalInvId = id;
 }
 
-function closeInvModal() {
-    document.getElementById('inv-modal').classList.remove('open');
-}
+function closeInvModal() { document.getElementById('inv-modal').classList.remove('open'); }
 
-function editInvoiceFromModal() {
-    closeInvModal();
-    if (window._modalInvId) loadInvoiceToForm(window._modalInvId);
-}
+function editInvoiceFromModal() { closeInvModal(); if (window._modalInvId) loadInvoiceToForm(window._modalInvId); }
 
 function loadInvoiceToForm(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) return;
     showPage('cash-invoice');
-    document.getElementById('inv-customer').value = inv.customer_name || '';
-    document.getElementById('inv-store').value = inv.store_name || '';
+    document.getElementById('inv-customer').value = inv.customerName || '';
+    document.getElementById('inv-store').value = inv.storeName || '';
     document.getElementById('inv-customer-ntn').value = inv.ntn || '';
     document.getElementById('inv-customer-strn').value = inv.strn || '';
     document.getElementById('inv-customer-address').value = inv.address || '';
     document.getElementById('inv-date').value = inv.date || '';
-    document.getElementById('inv-discount').value = inv.discount_percent || 0;
-    document.getElementById('inv-tax-rate').value = inv.tax_rate || 18;
-    document.getElementById('inv-number').value = inv.invoice_no || '';
-    manualInvoiceNumber = inv.invoice_no || '';
-    onInvStoreChange(inv.store_name || '');
+    document.getElementById('inv-discount').value = inv.discountPercent || 0;
+    document.getElementById('inv-tax-rate').value = inv.taxRate || 18;
+    document.getElementById('inv-number').value = inv.invoiceNo || '';
+    manualInvoiceNumber = inv.invoiceNo || '';
+    onInvStoreChange(inv.storeName || '');
     document.getElementById('inv-body').innerHTML = '';
-    (inv.items || []).forEach(item => {
-        addInvoiceRow();
-        const row = document.querySelector('#inv-body tr:last-child');
-        row.querySelector('.inv-barcode').value = item.barcode || '';
-        row.querySelector('.inv-item').value = item.item || '';
-        row.querySelector('.inv-qty').value = item.qty || 1;
-        row.querySelector('.inv-rate').value = item.rate || 0;
-    });
+    (inv.items || []).forEach(item => { addInvoiceRow(); const row = document.querySelector('#inv-body tr:last-child'); row.querySelector('.inv-barcode').value = item.barcode || ''; row.querySelector('.inv-item').value = item.item || ''; row.querySelector('.inv-qty').value = item.qty || 1; row.querySelector('.inv-rate').value = item.rate || 0; });
     calcInvoice();
     editingInvoiceTs = inv.id;
     document.getElementById('inv-cancel-btn').style.display = 'inline-flex';
@@ -1319,24 +757,13 @@ async function deleteInvoice(id) {
     showNotification('Invoice deleted!', 'success');
 }
 
-function refreshInvoiceHistory() {
-    renderInvoiceHistory();
-    showNotification('Refreshed!', 'info');
-}
-
-function clearInvoiceHistoryFilter() {
-    document.getElementById('inv-hist-from').value = '';
-    document.getElementById('inv-hist-to').value = '';
-    document.getElementById('inv-hist-search').value = '';
-    renderInvoiceHistory();
-}
+function refreshInvoiceHistory() { renderInvoiceHistory(); showNotification('Refreshed!', 'info'); }
+function clearInvoiceHistoryFilter() { document.getElementById('inv-hist-from').value = ''; document.getElementById('inv-hist-to').value = ''; document.getElementById('inv-hist-search').value = ''; renderInvoiceHistory(); }
 
 function exportInvoiceHistory() {
     if (invoices.length === 0) { showNotification('No invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Items,Total\n';
-    invoices.forEach(inv => {
-        csv += `${inv.invoice_no},${inv.customer_name || ''},${inv.store_name || ''},${inv.date},${inv.items?.length || 0},${inv.final_total || 0}\n`;
-    });
+    invoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${inv.finalTotal || 0}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1347,63 +774,26 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY
+// TAX HISTORY - COMPLETE CRUD
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from')?.value || '';
     const to = document.getElementById('tax-hist-to')?.value || '';
     const search = (document.getElementById('tax-hist-search')?.value || '').toLowerCase();
-    
     let filtered = [...taxInvoices].reverse();
     if (from) filtered = filtered.filter(inv => inv.date >= from);
     if (to) filtered = filtered.filter(inv => inv.date <= to);
-    if (search) {
-        filtered = filtered.filter(inv =>
-            (inv.invoice_no || '').toLowerCase().includes(search) ||
-            (inv.customer_name || '').toLowerCase().includes(search)
-        );
-    }
-    
+    if (search) filtered = filtered.filter(inv => (inv.invoiceNo || '').toLowerCase().includes(search) || (inv.customerName || '').toLowerCase().includes(search));
     const tbody = document.getElementById('tax-history-body');
     if (!tbody) return;
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>';
-    } else {
-        tbody.innerHTML = filtered.map(inv => `
-            <tr>
-                <td><strong>${inv.invoice_no}</strong></td>
-                <td>${inv.store_name || '-'}</td>
-                <td>${inv.customer_name || '-'}</td>
-                <td>${inv.date}</td>
-                <td>${inv.categories?.length || 0} categories</td>
-                <td>Rs. ${(inv.total_amount / 1.18).toFixed(2)}</td>
-                <td>Rs. ${(inv.total_amount - inv.total_amount / 1.18).toFixed(2)}</td>
-                <td><strong>Rs. ${inv.total_amount}</strong></td>
-                <td>${inv.discount_percent}%</td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>'; } else {
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.categories?.length || 0} categories</td><td>Rs. ${(inv.totalAmount / 1.18).toFixed(2)}</td><td>Rs. ${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)}</td><td><strong>Rs. ${inv.totalAmount}</strong></td><td>${inv.discountPercent}%</td><td><button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('tax-hist-badge').textContent = filtered.length;
 }
 
-function viewTaxInvoice(id) {
-    const inv = taxInvoices.find(i => i.id === id);
-    if (!inv) { showNotification('Tax invoice not found', 'error'); return; }
-    renderTaxInvoice(inv);
-    showPage('tax-invoice');
-}
-
-function printTaxInvoiceById(id) {
-    const inv = taxInvoices.find(i => i.id === id);
-    if (!inv) { showNotification('Tax invoice not found', 'error'); return; }
-    renderTaxInvoice(inv);
-    setTimeout(() => printTaxInvoice(), 300);
-}
+function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
+function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
 
 async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
@@ -1415,24 +805,13 @@ async function deleteTaxInvoice(id) {
     showNotification('Tax invoice deleted!', 'success');
 }
 
-function refreshTaxHistory() {
-    renderTaxHistory();
-    showNotification('Refreshed!', 'info');
-}
-
-function clearTaxHistoryFilter() {
-    document.getElementById('tax-hist-from').value = '';
-    document.getElementById('tax-hist-to').value = '';
-    document.getElementById('tax-hist-search').value = '';
-    renderTaxHistory();
-}
+function refreshTaxHistory() { renderTaxHistory(); showNotification('Refreshed!', 'info'); }
+function clearTaxHistoryFilter() { document.getElementById('tax-hist-from').value = ''; document.getElementById('tax-hist-to').value = ''; document.getElementById('tax-hist-search').value = ''; renderTaxHistory(); }
 
 function exportTaxHistory() {
     if (taxInvoices.length === 0) { showNotification('No tax invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Categories,Amount,GST,Gross,Discount\n';
-    taxInvoices.forEach(inv => {
-        csv += `${inv.invoice_no},${inv.customer_name || ''},${inv.store_name || ''},${inv.date},${inv.categories?.length || 0},${(inv.total_amount / 1.18).toFixed(2)},${(inv.total_amount - inv.total_amount / 1.18).toFixed(2)},${inv.total_amount},${inv.discount_percent}%\n`;
-    });
+    taxInvoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)},${inv.totalAmount},${inv.discountPercent}%\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1448,193 +827,46 @@ function exportTaxHistory() {
 function generateMonthlyReport() {
     const month = document.getElementById('monthly-month')?.value;
     if (!month) { showNotification('Select a month!', 'error'); return; }
-    
     const [year, monthNum] = month.split('-').map(Number);
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const monthName = monthNames[monthNum - 1];
-    
-    const filtered = invoices.filter(inv => {
-        const d = new Date(inv.date);
-        return d.getFullYear() === year && d.getMonth() === monthNum - 1;
-    });
-    
+    const filtered = invoices.filter(inv => { const d = new Date(inv.date); return d.getFullYear() === year && d.getMonth() === monthNum - 1; });
     const container = document.getElementById('monthly-report-container');
     if (!container) return;
-    if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="monthly-report-empty">
-                <i class="fas fa-calendar-times" style="font-size:48px;color:#cbd5e1;"></i>
-                <h3>No Invoices Found</h3>
-                <p>No invoices found for ${monthName} ${year}</p>
-            </div>
-        `;
-        return;
-    }
-    
-    const totalSales = filtered.reduce((s, inv) => s + parseFloat(inv.final_total || 0), 0);
+    if (filtered.length === 0) { container.innerHTML = `<div class="monthly-report-empty"><i class="fas fa-calendar-times" style="font-size:48px;color:#cbd5e1;"></i><h3>No Invoices Found</h3><p>No invoices found for ${monthName} ${year}</p></div>`; return; }
+    const totalSales = filtered.reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
     const totalItems = filtered.reduce((s, inv) => s + (inv.items?.length || 0), 0);
-    
-    let html = `
-        <div class="monthly-report-wrapper">
-            <div class="report-header-modern">
-                <div class="report-header-top">
-                    <div class="report-brand">
-                        <span style="font-size:32px;">🏪</span>
-                        <div>
-                            <h2>KRT TRADERS</h2>
-                            <span>Monthly Invoice Report</span>
-                        </div>
-                    </div>
-                    <div class="report-meta">
-                        <div class="meta-item"><span class="meta-label">Month</span><span class="meta-value">${monthName} ${year}</span></div>
-                        <div class="meta-item"><span class="meta-label">Total Invoices</span><span class="meta-value">${filtered.length}</span></div>
-                        <div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${new Date().toLocaleDateString()}</span></div>
-                    </div>
-                </div>
-            </div>
-    `;
-    
+    let html = `<div class="monthly-report-wrapper"><div class="report-header-modern"><div class="report-header-top"><div class="report-brand"><span style="font-size:32px;">🏪</span><div><h2>KRT TRADERS</h2><span>Monthly Invoice Report</span></div></div><div class="report-meta"><div class="meta-item"><span class="meta-label">Month</span><span class="meta-value">${monthName} ${year}</span></div><div class="meta-item"><span class="meta-label">Total Invoices</span><span class="meta-value">${filtered.length}</span></div><div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${new Date().toLocaleDateString()}</span></div></div></div></div>`;
     filtered.forEach(inv => {
         const catData = {};
-        const disc = inv.discount_percent || 0;
+        const disc = inv.discountPercent || 0;
         (inv.items || []).forEach(item => {
             const name = item.item || item.barcode;
-            const ITEM_CATEGORIES = {
-                'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
-                'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
-                'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-                'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
-                'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
-                'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-                'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
-                'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
-                'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-                'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
-                'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
-                'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-                'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-                'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
-                'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
-                'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
-                'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
-                'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-                'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-                'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-                'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
-            };
-            function getItemCategory(itemName) {
-                return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
-            }
             const info = getItemCategory(name);
             const key = info.category;
             const qty = parseFloat(item.qty) || 0;
             const rate = parseFloat(item.rate) || 0;
             const amount = (qty * rate) * (1 - disc / 100);
-            if (!catData[key]) {
-                catData[key] = {
-                    category: key,
-                    hsCode: info.hsCode,
-                    totalPcs: 0,
-                    totalSheet: 0,
-                    totalKg: 0,
-                    totalAmount: 0,
-                    weight: info.weight || 0
-                };
-            }
+            if (!catData[key]) { catData[key] = { category: key, hsCode: info.hsCode, totalPcs: 0, totalSheet: 0, totalKg: 0, totalAmount: 0, weight: info.weight || 0 }; }
             catData[key].totalPcs += qty;
             catData[key].totalAmount += amount;
             if (key === 'Foam' && info.weight > 0) catData[key].totalSheet += (qty * info.weight) / 1400;
             if (key === 'Steel' && info.weight > 0) catData[key].totalKg += (qty * info.weight) / 1000;
         });
-        
         const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor', 'Other': 'Other Items' };
         const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444', 'Other': '#64748b' };
-        
-        let rows = '';
-        let totalExcl = 0;
-        let totalGst = 0;
+        let rows = '', totalExcl = 0, totalGst = 0;
         Object.values(catData).forEach(c => {
             if (c.totalPcs === 0) return;
             const excl = c.totalAmount / 1.18;
             const gst = excl * 0.18;
             totalExcl += excl;
             totalGst += gst;
-            rows += `
-                <tr>
-                    <td>
-                        <div class="category-cell">
-                            <span class="category-icon" style="background:${colors[c.category] || '#64748b'}20;color:${colors[c.category] || '#64748b'};">
-                                <i class="fas ${c.category === 'Foam' ? 'fa-layer-group' : c.category === 'Steel' ? 'fa-cogs' : c.category === 'Fancy' ? 'fa-gem' : c.category === 'Micro' ? 'fa-microscope' : 'fa-box'}"></i>
-                            </span>
-                            <span class="category-name">${labels[c.category] || c.category}</span>
-                        </div>
-                    </td>
-                    <td><span class="badge-count">${c.totalPcs}</span></td>
-                    <td>${c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-'}</td>
-                    <td>${c.totalKg > 0 ? c.totalKg.toFixed(3) : '-'}</td>
-                    <td>${(c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0).toFixed(2)}</td>
-                    <td class="amount-cell">Rs. ${excl.toFixed(2)}</td>
-                    <td class="gst-cell">Rs. ${gst.toFixed(2)}</td>
-                    <td class="amount-cell-bold">Rs. ${c.totalAmount.toFixed(2)}</td>
-                    <td><span class="hs-code">${c.hsCode}</span></td>
-                </tr>
-            `;
+            rows += `<tr><td><div class="category-cell"><span class="category-icon" style="background:${colors[c.category] || '#64748b'}20;color:${colors[c.category] || '#64748b'};"><i class="fas ${c.category === 'Foam' ? 'fa-layer-group' : c.category === 'Steel' ? 'fa-cogs' : c.category === 'Fancy' ? 'fa-gem' : c.category === 'Micro' ? 'fa-microscope' : 'fa-box'}"></i></span><span class="category-name">${labels[c.category] || c.category}</span></div></td><td><span class="badge-count">${c.totalPcs}</span></td><td>${c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-'}</td><td>${c.totalKg > 0 ? c.totalKg.toFixed(3) : '-'}</td><td>${(c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0).toFixed(2)}</td><td class="amount-cell">Rs. ${excl.toFixed(2)}</td><td class="gst-cell">Rs. ${gst.toFixed(2)}</td><td class="amount-cell-bold">Rs. ${c.totalAmount.toFixed(2)}</td><td><span class="hs-code">${c.hsCode}</span></td></tr>`;
         });
-        
-        html += `
-            <div class="invoice-card-modern">
-                <div class="invoice-card-header">
-                    <div class="invoice-title-section">
-                        <span class="invoice-number-badge">#${inv.invoice_no}</span>
-                        <span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>
-                        ${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}
-                    </div>
-                    <div class="invoice-party-section">
-                        <span><i class="fas fa-store"></i> ${inv.store_name || inv.customer_name || '-'}</span>
-                        <span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span>
-                    </div>
-                </div>
-                <div class="table-wrap-modern">
-                    <table>
-                        <thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead>
-                        <tbody>
-                            ${rows}
-                            <tr class="total-row-modern">
-                                <td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td>
-                                <td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td>
-                                <td class="total-gst">Rs. ${totalGst.toFixed(2)}</td>
-                                <td class="total-amount">Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="invoice-card-footer">
-                    <div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div>
-                    <div class="footer-right"><span class="final-total">Final: <strong>Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</strong></span></div>
-                </div>
-            </div>
-        `;
+        html += `<div class="invoice-card-modern"><div class="invoice-card-header"><div class="invoice-title-section"><span class="invoice-number-badge">#${inv.invoiceNo}</span><span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}</div><div class="invoice-party-section"><span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span><span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span></div></div><div class="table-wrap-modern"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead><tbody>${rows}<tr class="total-row-modern"><td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td><td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td><td class="total-gst">Rs. ${totalGst.toFixed(2)}</td><td class="total-amount">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td><td></td></tr></tbody></table></div><div class="invoice-card-footer"><div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div><div class="footer-right"><span class="final-total">Final: <strong>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</strong></span></div></div></div>`;
     });
-    
-    html += `
-            <div class="report-footer-modern">
-                <div class="footer-brand"><span>KRT TRADERS ERP System</span></div>
-                <div class="footer-stats">
-                    <div class="stat-item"><span class="stat-label">Total Invoices</span><span class="stat-number">${filtered.length}</span></div>
-                    <div class="stat-item"><span class="stat-label">Total Items</span><span class="stat-number">${totalItems}</span></div>
-                    <div class="stat-item"><span class="stat-label">Grand Total</span><span class="stat-number grand">Rs. ${totalSales.toFixed(2)}</span></div>
-                </div>
-                <div class="footer-copy">© ${new Date().getFullYear()} KRT TRADERS. All rights reserved.</div>
-            </div>
-        </div>
-    `;
-    
+    html += `<div class="report-footer-modern"><div class="footer-brand"><span>KRT TRADERS ERP System</span></div><div class="footer-stats"><div class="stat-item"><span class="stat-label">Total Invoices</span><span class="stat-number">${filtered.length}</span></div><div class="stat-item"><span class="stat-label">Total Items</span><span class="stat-number">${totalItems}</span></div><div class="stat-item"><span class="stat-label">Grand Total</span><span class="stat-number grand">Rs. ${totalSales.toFixed(2)}</span></div></div><div class="footer-copy">© ${new Date().getFullYear()} KRT TRADERS. All rights reserved.</div></div></div>`;
     container.innerHTML = html;
     showNotification(`Report generated for ${monthName} ${year}`, 'success');
 }
@@ -1642,120 +874,23 @@ function generateMonthlyReport() {
 function clearMonthlyReport() {
     const container = document.getElementById('monthly-report-container');
     if (!container) return;
-    container.innerHTML = `
-        <div class="tax-invoice-placeholder">
-            <i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i>
-            <p style="margin-top:12px;color:var(--text-light);">Select a month and click "Generate"</p>
-        </div>
-    `;
+    container.innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-calendar-alt" style="font-size:48px;color:var(--text-light);"></i><p style="margin-top:12px;color:var(--text-light);">Select a month and click "Generate"</p></div>`;
     showNotification('Report cleared', 'info');
 }
 
 function printMonthlyReport() {
     const content = document.getElementById('monthly-report-container')?.innerHTML;
-    if (!content || content.includes('Select a month')) {
-        showNotification('Generate a report first!', 'error');
-        return;
-    }
-    
+    if (!content || content.includes('Select a month')) { showNotification('Generate a report first!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1100,height=800');
-    w.document.write(`
-        <!DOCTYPE html><html>
-        <head><title>Monthly Report</title>
-        <style>
-            *{margin:0;padding:0;box-sizing:border-box}
-            body{font-family:Arial;font-size:11px;margin:10px;background:#fff}
-            .monthly-report-wrapper{max-width:1300px;margin:0 auto}
-            .report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}
-            .report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
-            .report-brand{display:flex;align-items:center;gap:15px}
-            .report-brand h2{font-size:22px;color:#fff}
-            .report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}
-            .report-meta{display:flex;gap:15px;flex-wrap:wrap}
-            .meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}
-            .meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}
-            .meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}
-            .invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
-            .invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-            .invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-            .invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}
-            .invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}
-            .discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}
-            .invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}
-            .table-wrap-modern{overflow-x:auto;padding:0}
-            .table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}
-            .table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}
-            .table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}
-            .table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}
-            .category-cell{display:flex;align-items:center;gap:6px}
-            .category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
-            .category-name{font-weight:500;font-size:10px}
-            .badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}
-            .hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}
-            .amount-cell{font-weight:500}
-            .amount-cell-bold{font-weight:700;color:#0a3d2a}
-            .gst-cell{font-weight:600;color:#d97706}
-            .total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}
-            .total-row-modern td{padding:6px 8px;font-weight:700}
-            .total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}
-            .total-amount{color:#0a3d2a;font-size:12px}
-            .invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-            .footer-left{font-size:10px;color:#555}
-            .footer-right .final-total{font-size:13px;font-weight:600}
-            .footer-right .final-total strong{color:#0a3d2a;font-size:15px}
-            .report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}
-            .footer-brand{color:rgba(255,255,255,0.5);font-size:12px}
-            .footer-stats{display:flex;gap:20px}
-            .footer-stats .stat-item{text-align:center}
-            .footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}
-            .footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}
-            .footer-stats .stat-number.grand{color:#22c99a}
-            .footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}
-            *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-            body{margin:0.1in;padding:0}
-        </style>
-        </head><body>
-        ${content}
-        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
-        </body></html>
-    `);
+    w.document.write(`<!DOCTYPE html><html><head><title>Monthly Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:11px;margin:10px;background:#fff}.monthly-report-wrapper{max-width:1300px;margin:0 auto}.report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}.report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}.report-brand{display:flex;align-items:center;gap:15px}.report-brand h2{font-size:22px;color:#fff}.report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}.report-meta{display:flex;gap:15px;flex-wrap:wrap}.meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}.meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}.meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}.invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}.invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}.invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}.invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}.discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}.invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}.table-wrap-modern{overflow-x:auto;padding:0}.table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}.table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}.table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}.table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}.category-cell{display:flex;align-items:center;gap:6px}.category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}.category-name{font-weight:500;font-size:10px}.badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}.hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}.amount-cell{font-weight:500}.amount-cell-bold{font-weight:700;color:#0a3d2a}.gst-cell{font-weight:600;color:#d97706}.total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}.total-row-modern td{padding:6px 8px;font-weight:700}.total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}.total-amount{color:#0a3d2a;font-size:12px}.invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.footer-left{font-size:10px;color:#555}.footer-right .final-total{font-size:13px;font-weight:600}.footer-right .final-total strong{color:#0a3d2a;font-size:15px}.report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}.footer-brand{color:rgba(255,255,255,0.5);font-size:12px}.footer-stats{display:flex;gap:20px}.footer-stats .stat-item{text-align:center}.footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}.footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}.footer-stats .stat-number.grand{color:#22c99a}.footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0.1in;padding:0}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
 // ============================================================
-// STOCK IN
+// STOCK IN - COMPLETE CRUD
 // ============================================================
 function inBarcodeInput() {
     const bc = document.getElementById('in-barcode').value.trim();
-    const PRODUCTS = {
-        "6957404902857": "SPONGE SCRUB 2 IN 1",
-        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-        "6971432358486": "FANCY HANDLE 2 IN 1",
-        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-        "9031582648886": "FANCY HANDLE 3 IN 1",
-        "9031582691028": "FANCY HANDLE 1 PCS",
-        "9035484809734": "COLOR SPONGE 6 COLOR",
-        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-        "40883779": "BATH BELT",
-        "925100017805": "REGULAR LAMINATE 2 IN 1",
-        "925100017812": "REGULAR LAMINATE 1 PCS",
-        "925100017652": "NAIL SAVER 1 PCS",
-        "925100017799": "NAIL SAVER 2 IN 1",
-        "2215414451340": "LARGE LAMINATE 1 PCS",
-        "8512532310295": "REGULAR PAD 1 PCS",
-        "8500532310186": "LARGE PAD 1 PCS",
-        "6267207001641": "REGULAR SPIRAL 2 IN 1",
-        "6267207001665": "JUMBO SPIRAL 2 IN 1",
-        "230062603912": "REGULAR SPIRAL 1 PCS",
-        "6267207001658": "JUMBO SPIRAL 1 PCS",
-        "4684000000190": "JUMBO SPIRAL 4 IN 1",
-        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-        "6971432358721": "FANCY NYLON SCRUBBER",
-        "4684000000992": "NAIL SAVER 3 IN 1",
-        "4684000001005": "LARGE LAMINATE 3 IN 1",
-        "925100018864": "SILVER CLASSIC BODY RAZOR",
-        "5489754856234": "MICRO FIBER 1 PCS"
-    };
     if (PRODUCTS[bc]) document.getElementById('in-item').value = PRODUCTS[bc];
 }
 
@@ -1766,12 +901,7 @@ async function saveStockIn() {
     const vendor = document.getElementById('in-vendor').value.trim() || 'N/A';
     const barcode = document.getElementById('in-barcode').value.trim() || 'N/A';
     const date = document.getElementById('in-date').value;
-    
-    if (!item || qty <= 0) {
-        showNotification('Item and quantity are required!', 'error');
-        return;
-    }
-    
+    if (!item || qty <= 0) { showNotification('Item and quantity are required!', 'error'); return; }
     if (editingStockInId !== null) {
         const { error } = await sb.from('stock_in').update({ date, vendor, item_name: item, barcode, qty, price, total: qty * price }).eq('sr_no', editingStockInId);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -1787,7 +917,6 @@ async function saveStockIn() {
         stockIn.push({ id: srNo, date, vendor, item, barcode, qty, price, total: qty * price });
         showNotification('Stock In saved!', 'success');
     }
-    
     renderStockIn();
     updateBadges();
     clearStockInForm();
@@ -1796,24 +925,8 @@ async function saveStockIn() {
 function renderStockIn() {
     const tbody = document.getElementById('stock-in-table');
     if (!tbody) return;
-    if (stockIn.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>';
-    } else {
-        tbody.innerHTML = [...stockIn].reverse().map((s, i) => `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${s.date}</td>
-                <td>${s.item}</td>
-                <td>${s.vendor}</td>
-                <td><span class="qty-pill">${s.qty}</span></td>
-                <td>Rs. ${s.price.toFixed(2)}</td>
-                <td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="editStockIn(${s.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteStockIn(${s.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (stockIn.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>'; } else {
+        tbody.innerHTML = [...stockIn].reverse().map((s, i) => `<tr><td>${i + 1}</td><td>${s.date}</td><td>${s.item}</td><td>${s.vendor}</td><td><span class="qty-pill">${s.qty}</span></td><td>Rs. ${s.price.toFixed(2)}</td><td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td><td><button class="btn btn-edit btn-xs" onclick="editStockIn(${s.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteStockIn(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('stock-in-count').textContent = stockIn.length;
 }
@@ -1843,24 +956,13 @@ async function deleteStockIn(id) {
     showNotification('Entry deleted!', 'success');
 }
 
-function clearStockInForm() {
-    ['in-vendor', 'in-barcode', 'in-item', 'in-qty', 'in-price'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    showNotification('Form cleared', 'info');
-}
-
-function printStockInHistory() {
-    window.print();
-}
+function clearStockInForm() { ['in-vendor', 'in-barcode', 'in-item', 'in-qty', 'in-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); showNotification('Form cleared', 'info'); }
+function printStockInHistory() { window.print(); }
 
 function exportStockIn() {
     if (stockIn.length === 0) { showNotification('No data to export', 'warning'); return; }
     let csv = '#,Date,Item,Vendor,Qty,Price,Total\n';
-    stockIn.forEach((s, i) => {
-        csv += `${i+1},${s.date},${s.item},${s.vendor},${s.qty},${s.price},${s.total}\n`;
-    });
+    stockIn.forEach((s, i) => { csv += `${i+1},${s.date},${s.item},${s.vendor},${s.qty},${s.price},${s.total}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1871,37 +973,26 @@ function exportStockIn() {
 }
 
 // ============================================================
-// STOCK OUT
+// STOCK OUT - COMPLETE CRUD
 // ============================================================
 function updateStockOutDropdown() {
     const select = document.getElementById('out-item-select');
     if (!select) return;
     const uniqueItems = [...new Set(stockIn.map(s => s.item))];
-    select.innerHTML = '<option value="">-- Select Item --</option>' +
-        uniqueItems.map(item => `<option value="${item}">${item}</option>`).join('');
+    select.innerHTML = '<option value="">-- Select Item --</option>' + uniqueItems.map(item => `<option value="${item}">${item}</option>`).join('');
 }
 
 function onOutItemSelect() {
     const item = document.getElementById('out-item-select').value;
     document.getElementById('out-item').value = item;
     const entry = stockIn.find(s => s.item === item);
-    if (entry) {
-        document.getElementById('out-barcode').value = entry.barcode === 'N/A' ? '' : entry.barcode;
-        document.getElementById('out-price').value = entry.price;
-    }
+    if (entry) { document.getElementById('out-barcode').value = entry.barcode === 'N/A' ? '' : entry.barcode; document.getElementById('out-price').value = entry.price; }
     updateOutBalanceInfo();
 }
 
 function onOutCustomItem() {
     const val = document.getElementById('out-item').value.trim();
-    if (val) {
-        document.getElementById('out-item-select').value = '';
-        const entry = stockIn.find(s => s.item === val);
-        if (entry) {
-            document.getElementById('out-barcode').value = entry.barcode === 'N/A' ? '' : entry.barcode;
-            document.getElementById('out-price').value = entry.price;
-        }
-    }
+    if (val) { document.getElementById('out-item-select').value = ''; const entry = stockIn.find(s => s.item === val); if (entry) { document.getElementById('out-barcode').value = entry.barcode === 'N/A' ? '' : entry.barcode; document.getElementById('out-price').value = entry.price; } }
     updateOutBalanceInfo();
 }
 
@@ -1923,20 +1014,11 @@ async function saveStockOut() {
     const price = parseFloat(document.getElementById('out-price').value) || 0;
     const barcode = document.getElementById('out-barcode').value.trim() || 'N/A';
     const date = document.getElementById('out-date').value;
-    
-    if (!customer || !item || qty <= 0) {
-        showNotification('Customer, item and quantity are required!', 'error');
-        return;
-    }
-    
+    if (!customer || !item || qty <= 0) { showNotification('Customer, item and quantity are required!', 'error'); return; }
     const totalIn = stockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
     const totalOut = stockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
     const bal = totalIn - totalOut;
-    if (qty > bal) {
-        showNotification(`Insufficient stock! Available: ${bal}`, 'error');
-        return;
-    }
-    
+    if (qty > bal) { showNotification(`Insufficient stock! Available: ${bal}`, 'error'); return; }
     if (editingStockOutId !== null) {
         const { error } = await sb.from('stock_out').update({ date, customer, item_name: item, barcode, qty, price, total: qty * price }).eq('sr_no', editingStockOutId);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -1952,7 +1034,6 @@ async function saveStockOut() {
         stockOut.push({ id: srNo, date, customer, item, barcode, qty, price, total: qty * price });
         showNotification('Stock Out saved!', 'success');
     }
-    
     renderStockOut();
     updateBadges();
     clearStockOutForm();
@@ -1961,24 +1042,8 @@ async function saveStockOut() {
 function renderStockOut() {
     const tbody = document.getElementById('stock-out-table');
     if (!tbody) return;
-    if (stockOut.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>';
-    } else {
-        tbody.innerHTML = [...stockOut].reverse().map((s, i) => `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${s.date}</td>
-                <td>${s.customer}</td>
-                <td>${s.item}</td>
-                <td><span class="qty-pill">${s.qty}</span></td>
-                <td>Rs. ${s.price.toFixed(2)}</td>
-                <td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="editStockOut(${s.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteStockOut(${s.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (stockOut.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="8">No entries found</td></tr>'; } else {
+        tbody.innerHTML = [...stockOut].reverse().map((s, i) => `<tr><td>${i + 1}</td><td>${s.date}</td><td>${s.customer}</td><td>${s.item}</td><td><span class="qty-pill">${s.qty}</span></td><td>Rs. ${s.price.toFixed(2)}</td><td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td><td><button class="btn btn-edit btn-xs" onclick="editStockOut(${s.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteStockOut(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('stock-out-count').textContent = stockOut.length;
 }
@@ -2010,26 +1075,13 @@ async function deleteStockOut(id) {
     showNotification('Entry deleted!', 'success');
 }
 
-function clearStockOutForm() {
-    ['out-customer', 'out-item', 'out-barcode', 'out-qty', 'out-price'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    document.getElementById('out-item-select').value = '';
-    document.getElementById('out-balance-info').innerHTML = '';
-    showNotification('Form cleared', 'info');
-}
-
-function printStockOutHistory() {
-    window.print();
-}
+function clearStockOutForm() { ['out-customer', 'out-item', 'out-barcode', 'out-qty', 'out-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); document.getElementById('out-item-select').value = ''; document.getElementById('out-balance-info').innerHTML = ''; showNotification('Form cleared', 'info'); }
+function printStockOutHistory() { window.print(); }
 
 function exportStockOut() {
     if (stockOut.length === 0) { showNotification('No data to export', 'warning'); return; }
     let csv = '#,Date,Customer,Item,Qty,Price,Total\n';
-    stockOut.forEach((s, i) => {
-        csv += `${i+1},${s.date},${s.customer},${s.item},${s.qty},${s.price},${s.total}\n`;
-    });
+    stockOut.forEach((s, i) => { csv += `${i+1},${s.date},${s.customer},${s.item},${s.qty},${s.price},${s.total}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -2046,65 +1098,23 @@ function calcBalance() {
     const items = [...new Set([...stockIn.map(s => s.item), ...stockOut.map(s => s.item)])];
     const tbody = document.getElementById('balance-table');
     if (!tbody) return;
-    if (items.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="5">No stock found</td></tr>';
-        return;
-    }
+    if (items.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="5">No stock found</td></tr>'; return; }
     tbody.innerHTML = items.map(item => {
         const inTotal = stockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
         const outTotal = stockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
         const bal = inTotal - outTotal;
         const barcode = stockIn.find(s => s.item === item)?.barcode || '-';
-        return `
-            <tr>
-                <td><code>${barcode}</code></td>
-                <td><strong>${item}</strong></td>
-                <td>${inTotal}</td>
-                <td>${outTotal}</td>
-                <td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td>
-            </tr>
-        `;
+        return `<tr><td><code>${barcode}</code></td><td><strong>${item}</strong></td><td>${inTotal}</td><td>${outTotal}</td><td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td></tr>`;
     }).join('');
 }
 
-function printStockBalance() {
-    window.print();
-}
+function printStockBalance() { window.print(); }
 
 // ============================================================
-// SP STOCK IN
+// SP STOCK IN - COMPLETE CRUD
 // ============================================================
 function spinBarcodeInput() {
     const bc = document.getElementById('spin-barcode').value.trim();
-    const PRODUCTS = {
-        "6957404902857": "SPONGE SCRUB 2 IN 1",
-        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-        "6971432358486": "FANCY HANDLE 2 IN 1",
-        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-        "9031582648886": "FANCY HANDLE 3 IN 1",
-        "9031582691028": "FANCY HANDLE 1 PCS",
-        "9035484809734": "COLOR SPONGE 6 COLOR",
-        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-        "40883779": "BATH BELT",
-        "925100017805": "REGULAR LAMINATE 2 IN 1",
-        "925100017812": "REGULAR LAMINATE 1 PCS",
-        "925100017652": "NAIL SAVER 1 PCS",
-        "925100017799": "NAIL SAVER 2 IN 1",
-        "2215414451340": "LARGE LAMINATE 1 PCS",
-        "8512532310295": "REGULAR PAD 1 PCS",
-        "8500532310186": "LARGE PAD 1 PCS",
-        "6267207001641": "REGULAR SPIRAL 2 IN 1",
-        "6267207001665": "JUMBO SPIRAL 2 IN 1",
-        "230062603912": "REGULAR SPIRAL 1 PCS",
-        "6267207001658": "JUMBO SPIRAL 1 PCS",
-        "4684000000190": "JUMBO SPIRAL 4 IN 1",
-        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-        "6971432358721": "FANCY NYLON SCRUBBER",
-        "4684000000992": "NAIL SAVER 3 IN 1",
-        "4684000001005": "LARGE LAMINATE 3 IN 1",
-        "925100018864": "SILVER CLASSIC BODY RAZOR",
-        "5489754856234": "MICRO FIBER 1 PCS"
-    };
     if (PRODUCTS[bc]) document.getElementById('spin-item').value = PRODUCTS[bc];
     updateSPInPreview();
 }
@@ -2127,11 +1137,9 @@ async function saveSPStockIn() {
     const price = parseFloat(document.getElementById('spin-price').value) || 0;
     const date = document.getElementById('spin-date').value;
     const vendor = document.getElementById('spin-vendor').value.trim() || 'N/A';
-    
     if (!item) { showNotification('Item name is required!', 'error'); return; }
     const totalPcs = (ctn * pcsPerCtn) + extra;
     if (totalPcs <= 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
-    
     if (editingSPInId !== null) {
         const { error } = await sb.from('sp_stock_in').update({ date, vendor, item_name: item, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: totalPcs, price, total: totalPcs * price }).eq('sr_no', editingSPInId);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -2147,7 +1155,6 @@ async function saveSPStockIn() {
         spStockIn.push({ id: srNo, date, vendor, item, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total: totalPcs * price });
         showNotification('SP Stock In saved!', 'success');
     }
-    
     renderSPIn();
     updateBadges();
     clearSPInForm();
@@ -2156,28 +1163,8 @@ async function saveSPStockIn() {
 function renderSPIn() {
     const tbody = document.getElementById('sp-in-table');
     if (!tbody) return;
-    if (spStockIn.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="12">No entries found</td></tr>';
-    } else {
-        tbody.innerHTML = [...spStockIn].reverse().map((s, i) => `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${s.date}</td>
-                <td>${s.item}</td>
-                <td><code>${s.barcode}</code></td>
-                <td>${s.vendor}</td>
-                <td>${s.ctn}</td>
-                <td>${s.extra}</td>
-                <td>${s.pcsPerCtn}</td>
-                <td><span class="qty-pill">${s.totalPcs}</span></td>
-                <td>Rs. ${s.price.toFixed(2)}</td>
-                <td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="editSPIn(${s.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteSPIn(${s.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (spStockIn.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="12">No entries found</td></tr>'; } else {
+        tbody.innerHTML = [...spStockIn].reverse().map((s, i) => `<tr><td>${i + 1}</td><td>${s.date}</td><td>${s.item}</td><td><code>${s.barcode}</code></td><td>${s.vendor}</td><td>${s.ctn}</td><td>${s.extra}</td><td>${s.pcsPerCtn}</td><td><span class="qty-pill">${s.totalPcs}</span></td><td>Rs. ${s.price.toFixed(2)}</td><td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td><td><button class="btn btn-edit btn-xs" onclick="editSPIn(${s.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteSPIn(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
 }
 
@@ -2209,17 +1196,10 @@ async function deleteSPIn(id) {
     showNotification('Entry deleted!', 'success');
 }
 
-function clearSPInForm() {
-    ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    updateSPInPreview();
-    showNotification('Form cleared', 'info');
-}
+function clearSPInForm() { ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); updateSPInPreview(); showNotification('Form cleared', 'info'); }
 
 // ============================================================
-// SP STOCK OUT
+// SP STOCK OUT - COMPLETE CRUD
 // ============================================================
 function updateSPStoreList() {
     const stores = [...new Set(spStockOut.map(s => s.store))];
@@ -2246,15 +1226,8 @@ function spoutBarcodeInput() {
             const ctnPart = pcsPerCtn > 0 ? Math.floor(bal / pcsPerCtn) : 0;
             const pcsPart = pcsPerCtn > 0 ? bal % pcsPerCtn : bal;
             info.innerHTML = `<span class="badge ${bal > 0 ? 'badge-success' : 'badge-danger'}">Available: ${bal} Pcs (${ctnPart} Ctn + ${pcsPart} Pcs)</span>`;
-            if (!document.getElementById('spout-price').value && entry.price) {
-                document.getElementById('spout-price').value = entry.price;
-            }
-        } else if (PRODUCTS[bc]) {
-            document.getElementById('spout-item').value = PRODUCTS[bc];
-            info.innerHTML = `<span class="badge badge-warning">⚠ No stock found</span>";
-        } else {
-            info.innerHTML = '';
-        }
+            if (!document.getElementById('spout-price').value && entry.price) { document.getElementById('spout-price').value = entry.price; }
+        } else if (PRODUCTS[bc]) { document.getElementById('spout-item').value = PRODUCTS[bc]; info.innerHTML = `<span class="badge badge-warning">⚠ No stock found</span>`; } else { info.innerHTML = ''; }
     }
 }
 
@@ -2265,18 +1238,9 @@ async function saveSPStockOut() {
     const qty = parseFloat(document.getElementById('spout-qty').value) || 0;
     const price = parseFloat(document.getElementById('spout-price').value) || 0;
     const date = document.getElementById('spout-date').value;
-    
-    if (!store || !barcode || !item || qty <= 0) {
-        showNotification('Store, barcode, item and quantity are required!', 'error');
-        return;
-    }
-    
+    if (!store || !barcode || !item || qty <= 0) { showNotification('Store, barcode, item and quantity are required!', 'error'); return; }
     const bal = getSPBalance(barcode);
-    if (qty > bal) {
-        showNotification(`Insufficient stock! Available: ${bal} Pcs`, 'error');
-        return;
-    }
-    
+    if (qty > bal) { showNotification(`Insufficient stock! Available: ${bal} Pcs`, 'error'); return; }
     if (editingSPOutId !== null) {
         const { error } = await sb.from('sp_stock_out').update({ date, store, barcode, item_name: item, qty, price, total: qty * price }).eq('sr_no', editingSPOutId);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -2292,7 +1256,6 @@ async function saveSPStockOut() {
         spStockOut.push({ id: srNo, date, store, barcode, item, qty, price, total: qty * price, invoiceTimestamp: null });
         showNotification('SP Stock Out saved!', 'success');
     }
-    
     renderSPOut();
     updateBadges();
     clearSPOutForm();
@@ -2302,33 +1265,14 @@ function renderSPOut() {
     const from = document.getElementById('spout-from')?.value || '';
     const to = document.getElementById('spout-to')?.value || '';
     const search = (document.getElementById('spout-search')?.value || '').toLowerCase();
-    
     let list = [...spStockOut].reverse();
     if (from) list = list.filter(s => s.date >= from);
     if (to) list = list.filter(s => s.date <= to);
     if (search) list = list.filter(s => (s.store + s.item + s.barcode).toLowerCase().includes(search));
-    
     const tbody = document.getElementById('sp-out-table');
     if (!tbody) return;
-    if (list.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="9">No entries found</td></tr>';
-    } else {
-        tbody.innerHTML = list.map((s, i) => `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${s.date}</td>
-                <td><span class="badge badge-store">${s.store}</span></td>
-                <td>${s.item}</td>
-                <td><code>${s.barcode}</code></td>
-                <td><span class="qty-pill">${s.qty}</span></td>
-                <td>Rs. ${s.price.toFixed(2)}</td>
-                <td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td>
-                <td>
-                    <button class="btn btn-edit btn-xs" onclick="editSPOut(${s.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-danger btn-xs" onclick="deleteSPOut(${s.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+    if (list.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="9">No entries found</td></tr>'; } else {
+        tbody.innerHTML = list.map((s, i) => `<tr><td>${i + 1}</td><td>${s.date}</td><td><span class="badge badge-store">${s.store}</span></td><td>${s.item}</td><td><code>${s.barcode}</code></td><td><span class="qty-pill">${s.qty}</span></td><td>Rs. ${s.price.toFixed(2)}</td><td><span class="total-pill">Rs. ${s.total.toFixed(2)}</span></td><td><button class="btn btn-edit btn-xs" onclick="editSPOut(${s.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteSPOut(${s.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
 }
 
@@ -2357,26 +1301,9 @@ async function deleteSPOut(id) {
     showNotification('Entry deleted!', 'success');
 }
 
-function clearSPOutFilter() {
-    ['spout-from', 'spout-to', 'spout-search'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    renderSPOut();
-}
-
-function clearSPOutForm() {
-    ['spout-store', 'spout-barcode', 'spout-item', 'spout-qty', 'spout-price'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    document.getElementById('spout-balance-info').innerHTML = '';
-    showNotification('Form cleared', 'info');
-}
-
-function printSPOutTable() {
-    window.print();
-}
+function clearSPOutFilter() { ['spout-from', 'spout-to', 'spout-search'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); renderSPOut(); }
+function clearSPOutForm() { ['spout-store', 'spout-barcode', 'spout-item', 'spout-qty', 'spout-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); document.getElementById('spout-balance-info').innerHTML = ''; showNotification('Form cleared', 'info'); }
+function printSPOutTable() { window.print(); }
 
 // ============================================================
 // SP BALANCE
@@ -2385,10 +1312,7 @@ function calcSPBalance() {
     const items = [...new Set([...spStockIn.map(s => s.item), ...spStockOut.map(s => s.item)])];
     const tbody = document.getElementById('sp-balance-table');
     if (!tbody) return;
-    if (items.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="6">No stock found</td></tr>';
-        return;
-    }
+    if (items.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="6">No stock found</td></tr>'; return; }
     tbody.innerHTML = items.map(item => {
         const inTotal = spStockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.totalPcs, 0);
         const outTotal = spStockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
@@ -2396,49 +1320,25 @@ function calcSPBalance() {
         const barcode = spStockIn.find(s => s.item === item)?.barcode || '-';
         const pcsPerCtn = spStockIn.find(s => s.item === item)?.pcsPerCtn || 0;
         let ctnDisplay;
-        if (pcsPerCtn > 0) {
-            const ctnPart = Math.floor(bal / pcsPerCtn);
-            const pcsPart = bal % pcsPerCtn;
-            ctnDisplay = ctnPart > 0 && pcsPart > 0 ? `${ctnPart} Ctn + ${pcsPart} Pcs` :
-                ctnPart > 0 ? `${ctnPart} Ctn` : `${pcsPart} Pcs`;
-        } else {
-            ctnDisplay = `${bal} Pcs`;
-        }
-        return `
-            <tr>
-                <td><code>${barcode}</code></td>
-                <td><strong>${item}</strong></td>
-                <td>${inTotal}</td>
-                <td>${outTotal}</td>
-                <td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td>
-                <td>${ctnDisplay}</td>
-            </tr>
-        `;
+        if (pcsPerCtn > 0) { const ctnPart = Math.floor(bal / pcsPerCtn); const pcsPart = bal % pcsPerCtn; ctnDisplay = ctnPart > 0 && pcsPart > 0 ? `${ctnPart} Ctn + ${pcsPart} Pcs` : ctnPart > 0 ? `${ctnPart} Ctn` : `${pcsPart} Pcs`; } else { ctnDisplay = `${bal} Pcs`; }
+        return `<tr><td><code>${barcode}</code></td><td><strong>${item}</strong></td><td>${inTotal}</td><td>${outTotal}</td><td><span style="font-weight:700;color:${bal > 0 ? '#22c99a' : bal < 0 ? '#ef4444' : '#64748b'};">${bal}</span></td><td>${ctnDisplay}</td></tr>`;
     }).join('');
 }
 
-function printSPBalance() {
-    window.print();
-}
+function printSPBalance() { window.print(); }
 
 // ============================================================
-// LEDGER (Gulzar & Kashif)
+// LEDGER (Gulzar & Kashif) - COMPLETE CRUD
 // ============================================================
 async function addLedgerEntry(person) {
     const date = document.getElementById(person + '-date').value;
     const credit = parseFloat(document.getElementById(person + '-credit').value) || 0;
     const debit = parseFloat(document.getElementById(person + '-debit').value) || 0;
     const note = document.getElementById(person + '-note').value.trim() || '';
-    
     if (!date) { showNotification('Date is required!', 'error'); return; }
-    if (credit === 0 && debit === 0) {
-        showNotification('Enter either credit or debit!', 'error');
-        return;
-    }
-    
+    if (credit === 0 && debit === 0) { showNotification('Enter either credit or debit!', 'error'); return; }
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     const table = person === 'gulzar' ? 'gulzar_ledger' : 'kashif_ledger';
-    
     if (editingLedgerId[person] !== null) {
         const { error } = await sb.from(table).update({ date, credit, debit, note }).eq('id', editingLedgerId[person]);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -2454,54 +1354,30 @@ async function addLedgerEntry(person) {
         ledger.push({ id, date, credit, debit, note });
         showNotification('Entry saved!', 'success');
     }
-    
     if (person === 'gulzar') gulzarLedger = ledger;
     else kashifLedger = ledger;
-    
     loadLedger(person);
     clearLedgerForm(person);
 }
 
 function loadLedger(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
-    
     const totalCredit = ledger.reduce((sum, e) => sum + e.credit, 0);
     const totalDebit = ledger.reduce((sum, e) => sum + e.debit, 0);
     const balance = totalCredit - totalDebit;
-    
     document.getElementById(person + '-total-credit').textContent = 'Rs. ' + totalCredit.toFixed(2);
     document.getElementById(person + '-total-debit').textContent = 'Rs. ' + totalDebit.toFixed(2);
     document.getElementById(person + '-balance').textContent = 'Rs. ' + balance.toFixed(2);
     document.getElementById(person + '-total-entries').textContent = ledger.length;
-    
     const today = new Date().toISOString().split('T')[0];
     const todayEntries = ledger.filter(e => e.date === today);
     const todayBody = document.getElementById(person + '-today-table');
     document.getElementById(person + '-today-count').textContent = todayEntries.length;
-    
     if (!todayBody) return;
-    if (todayEntries.length === 0) {
-        todayBody.innerHTML = '<tr class="no-data"><td colspan="6">No entries today</td></tr>';
-    } else {
+    if (todayEntries.length === 0) { todayBody.innerHTML = '<tr class="no-data"><td colspan="6">No entries today</td></tr>'; } else {
         let runningBalance = 0;
-        todayBody.innerHTML = todayEntries.map(e => {
-            runningBalance += e.credit - e.debit;
-            return `
-                <tr>
-                    <td>${e.date}</td>
-                    <td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-                    <td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-                    <td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td>
-                    <td>${e.note}</td>
-                    <td>
-                        <button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger btn-xs" onclick="deleteLedgerEntry('${person}', ${e.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        todayBody.innerHTML = todayEntries.map(e => { runningBalance += e.credit - e.debit; return `<tr><td>${e.date}</td><td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td><td>${e.note}</td><td><button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteLedgerEntry('${person}', ${e.id})"><i class="fas fa-trash"></i></button></td></tr>`; }).join('');
     }
-    
     renderLedgerHistory(person);
 }
 
@@ -2509,34 +1385,15 @@ function renderLedgerHistory(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     const from = document.getElementById(person + '-from')?.value || '';
     const to = document.getElementById(person + '-to')?.value || '';
-    
     let filtered = [...ledger];
     if (from) filtered = filtered.filter(e => e.date >= from);
     if (to) filtered = filtered.filter(e => e.date <= to);
     filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
     const body = document.getElementById(person + '-history-table');
     if (!body) return;
-    if (filtered.length === 0) {
-        body.innerHTML = '<tr class="no-data"><td colspan="6">No entries found</td></tr>';
-    } else {
+    if (filtered.length === 0) { body.innerHTML = '<tr class="no-data"><td colspan="6">No entries found</td></tr>'; } else {
         let runningBalance = 0;
-        body.innerHTML = filtered.map(e => {
-            runningBalance += e.credit - e.debit;
-            return `
-                <tr>
-                    <td>${e.date}</td>
-                    <td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-                    <td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-                    <td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td>
-                    <td>${e.note}</td>
-                    <td>
-                        <button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger btn-xs" onclick="deleteLedgerEntry('${person}', ${e.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        body.innerHTML = filtered.map(e => { runningBalance += e.credit - e.debit; return `<tr><td>${e.date}</td><td class="text-credit" style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td class="text-debit" style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${runningBalance.toFixed(2)}</td><td>${e.note}</td><td><button class="btn btn-edit btn-xs" onclick="editLedgerEntry('${person}', ${e.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-xs" onclick="deleteLedgerEntry('${person}', ${e.id})"><i class="fas fa-trash"></i></button></td></tr>`; }).join('');
     }
 }
 
@@ -2566,86 +1423,16 @@ async function deleteLedgerEntry(person, id) {
     showNotification('Entry deleted!', 'success');
 }
 
-function clearLedgerHistoryFilter(person) {
-    document.getElementById(person + '-from').value = '';
-    document.getElementById(person + '-to').value = '';
-    renderLedgerHistory(person);
-    showNotification('Filter cleared', 'info');
-}
-
-function clearLedgerForm(person) {
-    document.getElementById(person + '-credit').value = '';
-    document.getElementById(person + '-debit').value = '';
-    document.getElementById(person + '-note').value = '';
-    showNotification('Form cleared', 'info');
-}
+function clearLedgerHistoryFilter(person) { document.getElementById(person + '-from').value = ''; document.getElementById(person + '-to').value = ''; renderLedgerHistory(person); showNotification('Filter cleared', 'info'); }
+function clearLedgerForm(person) { document.getElementById(person + '-credit').value = ''; document.getElementById(person + '-debit').value = ''; document.getElementById(person + '-note').value = ''; showNotification('Form cleared', 'info'); }
 
 function printLedger(person) {
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     const name = person === 'gulzar' ? 'Gulzar Bhai' : 'Kashif Bhai';
     const totalCredit = ledger.reduce((s, e) => s + e.credit, 0);
     const totalDebit = ledger.reduce((s, e) => s + e.debit, 0);
-    
     const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(`
-        <!DOCTYPE html><html>
-        <head><title>${name} Ledger</title>
-        <style>
-            body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
-            h2{text-align:center;color:#22c99a;font-size:24px}
-            .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}
-            .header p{color:#666;font-size:14px}
-            .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}
-            .summary-box{text-align:center;padding:8px;border-radius:6px}
-            .summary-box.credit{background:#e8f5f0;color:#22c99a}
-            .summary-box.debit{background:#fee2e2;color:#ef4444}
-            .summary-box.balance{background:#fef3c7;color:#f59e0b}
-            .summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}
-            .summary-box .value{font-size:20px;font-weight:800;display:block}
-            table{width:100%;border-collapse:collapse;margin:12px 0}
-            th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}
-            td{padding:6px 12px;border-bottom:1px solid #ddd}
-            .footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}
-            @media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-            .summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-        </style>
-        </head><body>
-        <div class="header">
-            <h2>KRT TRADERS</h2>
-            <p><strong>${name}</strong> — Ledger Statement</p>
-        </div>
-        <div class="summary">
-            <div class="summary-box credit">
-                <span class="label">Total Credit</span>
-                <span class="value">Rs. ${totalCredit.toFixed(2)}</span>
-            </div>
-            <div class="summary-box debit">
-                <span class="label">Total Debit</span>
-                <span class="value">Rs. ${totalDebit.toFixed(2)}</span>
-            </div>
-            <div class="summary-box balance">
-                <span class="label">Net Balance</span>
-                <span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span>
-            </div>
-        </div>
-        <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>
-        ${ledger.map((e, i, arr) => {
-            const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0);
-            return `<tr>
-                <td>${e.date}</td>
-                <td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td>
-                <td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td>
-                <td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td>
-                <td>${e.note}</td>
-            </tr>`;
-        }).join('')}
-        </tbody></table>
-        <div class="footer">
-            <p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p>
-        </div>
-        <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
-        </body></html>
-    `);
+    w.document.write(`<!DOCTYPE html><html><head><title>${name} Ledger</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}h2{text-align:center;color:#22c99a;font-size:24px}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}.header p{color:#666;font-size:14px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}.summary-box{text-align:center;padding:8px;border-radius:6px}.summary-box.credit{background:#e8f5f0;color:#22c99a}.summary-box.debit{background:#fee2e2;color:#ef4444}.summary-box.balance{background:#fef3c7;color:#f59e0b}.summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}.summary-box .value{font-size:20px;font-weight:800;display:block}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}td{padding:6px 12px;border-bottom:1px solid #ddd}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h2>KRT TRADERS</h2><p><strong>${name}</strong> — Ledger Statement</p></div><div class="summary"><div class="summary-box credit"><span class="label">Total Credit</span><span class="value">Rs. ${totalCredit.toFixed(2)}</span></div><div class="summary-box debit"><span class="label">Total Debit</span><span class="value">Rs. ${totalDebit.toFixed(2)}</span></div><div class="summary-box balance"><span class="label">Net Balance</span><span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span></div></div><table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>${ledger.map((e, i, arr) => { const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0); return `<tr><td>${e.date}</td><td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td><td>${e.note}</td></tr>`; }).join('')}</tbody></table><div class="footer"><p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p></div><script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -2663,23 +1450,8 @@ function renderSalaryTable(month) {
     const tbody = document.getElementById('sal-body');
     if (!tbody) return;
     const rows = salaryData[month] || [];
-    if (rows.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="7">No employees — click "Add Employee"</td></tr>';
-    } else {
-        tbody.innerHTML = rows.map((r, i) => {
-            const balance = (r.salary - r.advance).toFixed(2);
-            return `
-                <tr>
-                    <td>${i+1}</td>
-                    <td><input type="text" value="${r.name}" oninput="updateSalRow('${month}',${i},'name',this.value)" placeholder="Name" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-                    <td><input type="number" value="${r.salary}" oninput="updateSalRow('${month}',${i},'salary',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-                    <td><input type="number" value="${r.advance}" oninput="updateSalRow('${month}',${i},'advance',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-                    <td class="row-total" style="font-weight:700;color:${balance >= 0 ? '#22c99a' : '#ef4444'};">Rs. ${balance}</td>
-                    <td><input type="text" value="${r.note || ''}" oninput="updateSalRow('${month}',${i},'note',this.value)" placeholder="Note" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td>
-                    <td><button class="btn btn-danger btn-xs" onclick="removeSalRow('${month}',${i})"><i class="fas fa-times"></i></button></td>
-                </tr>
-            `;
-        }).join('');
+    if (rows.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="7">No employees — click "Add Employee"</td></tr>'; } else {
+        tbody.innerHTML = rows.map((r, i) => { const balance = (r.salary - r.advance).toFixed(2); return `<tr><td>${i+1}</td><td><input type="text" value="${r.name}" oninput="updateSalRow('${month}',${i},'name',this.value)" placeholder="Name" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><input type="number" value="${r.salary}" oninput="updateSalRow('${month}',${i},'salary',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><input type="number" value="${r.advance}" oninput="updateSalRow('${month}',${i},'advance',this.value)" placeholder="0" style="width:100px;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td class="row-total" style="font-weight:700;color:${balance >= 0 ? '#22c99a' : '#ef4444'};">Rs. ${balance}</td><td><input type="text" value="${r.note || ''}" oninput="updateSalRow('${month}',${i},'note',this.value)" placeholder="Note" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;" /></td><td><button class="btn btn-danger btn-xs" onclick="removeSalRow('${month}',${i})"><i class="fas fa-times"></i></button></td></tr>`; }).join('');
     }
     updateSalaryTotals(month);
 }
@@ -2699,19 +1471,11 @@ function updateSalRow(month, idx, field, value) {
     else row[field] = value;
     const balance = (row.salary - row.advance).toFixed(2);
     const tr = document.getElementById('sal-body')?.rows[idx];
-    if (tr) {
-        tr.cells[4].innerText = 'Rs. ' + balance;
-        tr.cells[4].style.color = balance >= 0 ? '#22c99a' : '#ef4444';
-    }
+    if (tr) { tr.cells[4].innerText = 'Rs. ' + balance; tr.cells[4].style.color = balance >= 0 ? '#22c99a' : '#ef4444'; }
     updateSalaryTotals(month);
 }
 
-function removeSalRow(month, idx) {
-    salaryData[month].splice(idx, 1);
-    renderSalaryTable(month);
-    saveSalaryData();
-}
-
+function removeSalRow(month, idx) { salaryData[month].splice(idx, 1); renderSalaryTable(month); saveSalaryData(); }
 function updateSalaryTotals(month) {
     const rows = salaryData[month] || [];
     const totalSalary = rows.reduce((s, r) => s + (Number(r.salary) || 0), 0);
@@ -2739,29 +1503,11 @@ function renderSalarySheet() {
     const month = document.getElementById('sheet-month')?.value;
     const tbody = document.getElementById('sheet-body');
     if (!tbody) return;
-    if (!month) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="6">Select month</td></tr>';
-        document.getElementById('sheet-month-label').textContent = 'Select month';
-        document.getElementById('sheet-total-salary').innerText = 'Rs. 0';
-        document.getElementById('sheet-total-advance').innerText = 'Rs. 0';
-        document.getElementById('sheet-total-net').innerText = 'Rs. 0';
-        return;
-    }
+    if (!month) { tbody.innerHTML = '<tr class="no-data"><td colspan="6">Select month</td></tr>'; document.getElementById('sheet-month-label').textContent = 'Select month'; document.getElementById('sheet-total-salary').innerText = 'Rs. 0'; document.getElementById('sheet-total-advance').innerText = 'Rs. 0'; document.getElementById('sheet-total-net').innerText = 'Rs. 0'; return; }
     document.getElementById('sheet-month-label').textContent = month;
     const rows = (salaryData[month] || []).filter(r => r.name && r.name.trim());
-    if (rows.length === 0) {
-        tbody.innerHTML = '<tr class="no-data"><td colspan="6">No data for this month</td></tr>';
-    } else {
-        tbody.innerHTML = rows.map((r, i) => `
-            <tr>
-                <td>${i+1}</td>
-                <td><strong>${r.name}</strong></td>
-                <td>Rs. ${(r.salary || 0).toFixed(2)}</td>
-                <td style="color:#ef4444;">Rs. ${(r.advance || 0).toFixed(2)}</td>
-                <td style="color:#22c99a;font-weight:700;">Rs. ${((r.salary || 0) - (r.advance || 0)).toFixed(2)}</td>
-                <td>${r.note || ''}</td>
-            </tr>
-        `).join('');
+    if (rows.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="6">No data for this month</td></tr>'; } else {
+        tbody.innerHTML = rows.map((r, i) => `<tr><td>${i+1}</td><td><strong>${r.name}</strong></td><td>Rs. ${(r.salary || 0).toFixed(2)}</td><td style="color:#ef4444;">Rs. ${(r.advance || 0).toFixed(2)}</td><td style="color:#22c99a;font-weight:700;">Rs. ${((r.salary || 0) - (r.advance || 0)).toFixed(2)}</td><td>${r.note || ''}</td></tr>`).join('');
     }
     const totalSalary = rows.reduce((s, r) => s + (Number(r.salary) || 0), 0);
     const totalAdvance = rows.reduce((s, r) => s + (Number(r.advance) || 0), 0);
@@ -2770,9 +1516,7 @@ function renderSalarySheet() {
     document.getElementById('sheet-total-net').innerText = 'Rs. ' + (totalSalary - totalAdvance).toFixed(2);
 }
 
-function printSalarySheet() {
-    window.print();
-}
+function printSalarySheet() { window.print(); }
 
 // ============================================================
 // SETTINGS
@@ -2795,12 +1539,7 @@ function updateCurrency() {
 // BACKUP & RESTORE
 // ============================================================
 function backupData() {
-    const data = {
-        storeRates, invoices, taxInvoices, stockIn, stockOut,
-        spStockIn, spStockOut, gulzarLedger, kashifLedger, salaryData,
-        timestamp: new Date().toISOString(),
-        version: '4.0'
-    };
+    const data = { storeRates, invoices, taxInvoices, stockIn, stockOut, spStockIn, spStockOut, gulzarLedger, kashifLedger, salaryData, timestamp: new Date().toISOString(), version: '4.0' };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -2830,12 +1569,8 @@ function restoreData(event) {
                 salaryData = data.salaryData || {};
                 location.reload();
                 showNotification('Restore successful!', 'success');
-            } else {
-                showNotification('Invalid backup file!', 'error');
-            }
-        } catch(err) {
-            showNotification('Error restoring: ' + err.message, 'error');
-        }
+            } else { showNotification('Invalid backup file!', 'error'); }
+        } catch(err) { showNotification('Error restoring: ' + err.message, 'error'); }
     };
     reader.readAsText(file);
     event.target.value = '';
@@ -2884,17 +1619,9 @@ function scanBarcode() {
 // ============================================================
 // EXPORT FUNCTIONS
 // ============================================================
-function exportTaxInvoicePDF() {
-    showNotification('PDF export coming soon!', 'info');
-}
-
-function exportInvoiceHistoryPDF() {
-    showNotification('PDF export coming soon!', 'info');
-}
-
-function exportMonthlyReportPDF() {
-    showNotification('PDF export coming soon!', 'info');
-}
+function exportTaxInvoicePDF() { showNotification('PDF export coming soon!', 'info'); }
+function exportInvoiceHistoryPDF() { showNotification('PDF export coming soon!', 'info'); }
+function exportMonthlyReportPDF() { showNotification('PDF export coming soon!', 'info'); }
 
 // ============================================================
 // UPDATE BADGES
@@ -2912,16 +1639,9 @@ function updateBadges() {
 // KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        if (currentPage === 'cash-invoice') saveInvoiceNow();
-    }
-    if (e.key === 'Escape') {
-        closeInvModal();
-    }
-    if (e.ctrlKey && e.key === 'p') {
-        if (currentPage === 'cash-invoice') printInvoice();
-    }
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); if (currentPage === 'cash-invoice') saveInvoiceNow(); }
+    if (e.key === 'Escape') { closeInvModal(); }
+    if (e.ctrlKey && e.key === 'p') { if (currentPage === 'cash-invoice') printInvoice(); }
 });
 
 // ============================================================
