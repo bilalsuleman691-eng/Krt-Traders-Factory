@@ -1457,7 +1457,7 @@ function renderTaxHistory() {
             <td>${inv.discountPercent || 0}%</td>
             <td>
                 <button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
-                // Tax History table ke buttons section mein yeh add karein
+                
 <button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})">
     <i class="fas fa-print"></i>
 </button>
