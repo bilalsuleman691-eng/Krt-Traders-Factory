@@ -1,6 +1,6 @@
 // ============================================================
-// KRT TRADERS ERP - COMPLETE JAVASCRIPT
-// Version: 4.0 - All Requirements Fixed
+// KRT TRADERS ERP - COMPLETE FIXED
+// Version: 4.0 - ALL ISSUES FIXED
 // ============================================================
 
 // ============================================================
@@ -87,10 +87,11 @@ function getItemCategory(itemName) {
 // ============================================================
 let storeRates = [], invoices = [], taxInvoices = [], stockIn = [], stockOut = [];
 let spStockIn = [], spStockOut = [], gulzarLedger = [], kashifLedger = [], salaryData = {};
-let invoiceCounter = 0, editingRateId = null, editingInvoiceTs = null;
+let invoiceCounter = 0, editingInvoiceTs = null;
 let editingStockInId = null, editingStockOutId = null, editingSPInId = null, editingSPOutId = null;
 let editingLedgerId = { gulzar: null, kashif: null };
 let manualInvoiceNumber = '', currentPage = 'dashboard', chartInstance = null, taxInvoiceData = null;
+let editingRateId = null;
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -115,17 +116,14 @@ function showLoading() { const el = document.getElementById('loading-overlay'); 
 function hideLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'none'; }
 
 // ============================================================
-// GET SP BALANCE - Check stock availability
+// GET SP BALANCE
 // ============================================================
 function getSPBalance(barcode) {
-    const totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.totalPcs, 0);
-    const totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.qty, 0);
+    const totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
+    const totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
     return totalIn - totalOut;
 }
 
-// ============================================================
-// CHECK DUPLICATE INVOICE NUMBER
-// ============================================================
 function checkDuplicateInvoice(invoiceNo, excludeId = null) {
     return invoices.find(inv => inv.invoiceNo === invoiceNo && (excludeId === null || inv.id !== excludeId));
 }
@@ -149,32 +147,85 @@ async function loadAllData() {
             sb.from('kashif_ledger').select('*').order('id'),
             sb.from('salary_data').select('*').order('month')
         ]);
+        
         storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
+        
         invoices = (invRes.data || []).map(r => ({ 
-            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
-            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [],
-            discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0',
-            subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0',
-            gstRate: Number(r.gst_rate) || 18, gstAmt: r.gst_amt || '0',
-            finalTotal: r.final_total || '0'
+            id: r.timestamp, 
+            invoiceNo: r.invoice_no, 
+            customerName: r.customer_name, 
+            storeName: r.store_name,
+            ntn: r.ntn || '', 
+            strn: r.strn || '', 
+            address: r.address || '', 
+            date: r.date, 
+            items: r.items || [],
+            discountPercent: Number(r.discount_percent) || 0, 
+            discountAmt: parseFloat(r.discount_amt) || 0,
+            subtotal: parseFloat(r.sub_total) || 0, 
+            afterDiscount: parseFloat(r.after_discount) || 0,
+            gstRate: Number(r.gst_rate) || 18, 
+            gstAmt: parseFloat(r.gst_amt) || 0,
+            finalTotal: parseFloat(r.final_total) || 0
         }));
+        
         taxInvoices = (taxInvRes.data || []).map(r => ({
-            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
-            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [],
-            totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0,
-            totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0,
+            id: r.timestamp, 
+            invoiceNo: r.invoice_no, 
+            customerName: r.customer_name, 
+            storeName: r.store_name,
+            ntn: r.ntn || '', 
+            strn: r.strn || '', 
+            address: r.address || '', 
+            date: r.date, 
+            categories: r.categories || [],
+            totalAmount: parseFloat(r.total_amount) || 0, 
+            totalGst: parseFloat(r.total_gst) || 0,
+            totalGross: parseFloat(r.total_gross) || 0, 
+            discountPercent: Number(r.discount_percent) || 0,
             cashInvoiceId: r.cash_invoice_timestamp
         }));
+        
         stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
-        spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
-        spStockOut = (spoutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, item: r.item_name, qty: Number(r.qty), price: Number(r.price) || 0, total: Number(r.total) || 0, invoiceTimestamp: r.invoice_timestamp || null }));
+        
+        spStockIn = (spinRes.data || []).map(r => ({ 
+            id: r.sr_no, 
+            date: r.date, 
+            vendor: r.vendor, 
+            item: r.item_name, 
+            barcode: r.barcode, 
+            pcsPerCtn: Number(r.pcs_per_ctn) || 0, 
+            ctn: Number(r.ctn) || 0, 
+            extra: Number(r.extra) || 0, 
+            totalPcs: Number(r.total_pcs) || 0, 
+            price: Number(r.price) || 0, 
+            total: Number(r.total) || 0 
+        }));
+        
+        spStockOut = (spoutRes.data || []).map(r => ({ 
+            id: r.sr_no, 
+            date: r.date, 
+            store: r.store, 
+            barcode: r.barcode, 
+            item: r.item_name, 
+            qty: Number(r.qty), 
+            price: Number(r.price) || 0, 
+            total: Number(r.total) || 0, 
+            invoiceTimestamp: r.invoice_timestamp || null 
+        }));
+        
         gulzarLedger = (gulRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
         kashifLedger = (kasRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
+        
         salaryData = {};
         (salRes.data || []).forEach(r => { salaryData[r.month] = r.rows || []; });
+        
         invoiceCounter = invoices.length;
         console.log('✅ Data loaded from Supabase!');
+        console.log('📊 Invoices:', invoices.length);
+        console.log('📊 SP Stock In:', spStockIn.length);
+        console.log('📊 SP Stock Out:', spStockOut.length);
         setSyncStatus(true, 'Synced ✔');
         hideLoading();
         showNotification('Data loaded from Supabase!', 'success');
@@ -302,7 +353,7 @@ function updateClock() { const el = document.getElementById('header-time'); if (
 function loadDashboard() {
     const today = new Date().toISOString().split('T')[0];
     const todayInvs = invoices.filter(i => i.date === today);
-    const todaySales = todayInvs.reduce((s, i) => s + parseFloat(i.finalTotal || 0), 0);
+    const todaySales = todayInvs.reduce((s, i) => s + (i.finalTotal || 0), 0);
     document.getElementById('dash-today-sales').textContent = 'Rs. ' + todaySales.toFixed(2);
     document.getElementById('dash-sale-count').textContent = todayInvs.length + ' invoices';
     const todayStockIn = stockIn.filter(s => s.date === today);
@@ -318,21 +369,21 @@ function loadDashboard() {
     const recent = [...invoices].reverse().slice(0, 5);
     const tbody = document.getElementById('dash-recent-inv');
     if (recent.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="4">No invoices found</td></tr>'; } else {
-        tbody.innerHTML = recent.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr>`).join('');
+        tbody.innerHTML = recent.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>Rs. ${(inv.finalTotal || 0).toFixed(2)}</td></tr>`).join('');
     }
     document.getElementById('dash-recent-count').textContent = recent.length;
     updateDashboardChart();
 }
 
 function updateDashboardChart() {
-    const days = parseInt(document.getElementById('chart-period').value) || 30;
+    const days = parseInt(document.getElementById('chart-period')?.value) || 30;
     const labels = [], data = [];
     for (let i = days - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         labels.push(dateStr.slice(5));
-        const dailyTotal = invoices.filter(inv => inv.date === dateStr).reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
+        const dailyTotal = invoices.filter(inv => inv.date === dateStr).reduce((s, inv) => s + (inv.finalTotal || 0), 0);
         data.push(dailyTotal);
     }
     const ctx = document.getElementById('salesChart')?.getContext('2d');
@@ -346,7 +397,7 @@ function updateDashboardChart() {
 }
 
 // ============================================================
-// STORE RATES - COMPLETE CRUD
+// STORE RATES
 // ============================================================
 function srBarcodeInput() {
     const bc = document.getElementById('sr-barcode').value.trim();
@@ -576,7 +627,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - COMPLETE WITH ALL REQUIREMENTS
+// SAVE INVOICE - COMPLETE FIXED
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -739,6 +790,7 @@ async function saveInvoiceNow() {
                     total: spRow.total,
                     invoiceTimestamp: ts
                 });
+                console.log('✅ SP Stock Out inserted:', spRow.item_name, spRow.qty);
             }
         }
     }
@@ -765,10 +817,13 @@ async function saveInvoiceNow() {
     );
     
     renderInvoiceHistory();
+    renderTaxHistory();
+    renderSPOut();
     updateBadges();
     loadDashboard();
     clearInvoiceForm();
     updateInvoiceNumber();
+    showNotification('✅ Invoice saved successfully!', 'success');
 }
 
 // ============================================================
@@ -785,7 +840,6 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
     
     const categories = {};
     const disc = discountPercent || 0;
-    const taxRateFinal = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
     
     // Group items by category with discount applied
     items.forEach(item => {
@@ -882,6 +936,7 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
     } else {
         taxInvoices.push(taxInvoiceData);
         renderTaxInvoice(taxInvoiceData);
+        console.log('✅ Tax Invoice generated:', invoiceNo + '-TAX');
     }
 }
 
@@ -984,7 +1039,7 @@ function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p><p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p><p><strong>GST (${inv.gstRate}%):</strong> Rs. ${inv.gstAmt}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${(inv.subtotal || 0).toFixed(2)}</p><p><strong>Discount (${inv.discountPercent || 0}%):</strong> - Rs. ${(inv.discountAmt || 0).toFixed(2)}</p><p><strong>GST (${inv.gstRate || 18}%):</strong> Rs. ${(inv.gstAmt || 0).toFixed(2)}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -999,7 +1054,7 @@ function printTaxInvoice() {
 function printModal() { const id = window._modalInvId; if (id) printInvoiceById(id); }
 
 // ============================================================
-// INVOICE HISTORY - COMPLETE CRUD
+// INVOICE HISTORY
 // ============================================================
 function renderInvoiceHistory() {
     const from = document.getElementById('inv-hist-from')?.value || '';
@@ -1012,7 +1067,7 @@ function renderInvoiceHistory() {
     const tbody = document.getElementById('inv-history-body');
     if (!tbody) return;
     if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="7">No invoices found</td></tr>'; } else {
-        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.items?.length || 0}</td><td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td><td><button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.items?.length || 0}</td><td>Rs. ${(inv.finalTotal || 0).toFixed(2)}</td><td><button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('inv-hist-badge').textContent = filtered.length;
 }
@@ -1022,7 +1077,7 @@ function viewInvoice(id) {
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const body = document.getElementById('inv-modal-body');
     if (!body) return;
-    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent}%</span><span><strong>GST:</strong> ${inv.gstRate}%</span><span><strong>Final:</strong> Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
+    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent || 0}%</span><span><strong>GST:</strong> ${inv.gstRate || 18}%</span><span><strong>Final:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
     document.getElementById('modal-del-btn').onclick = () => deleteInvoice(id);
     document.getElementById('inv-modal').classList.add('open');
     window._modalInvId = id;
@@ -1061,7 +1116,6 @@ async function deleteInvoice(id) {
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     invoices = invoices.filter(inv => inv.id !== id);
     taxInvoices = taxInvoices.filter(inv => inv.cashInvoiceId !== id);
-    // Delete SP Stock Out
     const spToDelete = spStockOut.filter(e => e.invoiceTimestamp === id);
     for (const sp of spToDelete) {
         await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
@@ -1080,7 +1134,7 @@ function clearInvoiceHistoryFilter() { document.getElementById('inv-hist-from').
 function exportInvoiceHistory() {
     if (invoices.length === 0) { showNotification('No invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Items,Total\n';
-    invoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${inv.finalTotal || 0}\n`; });
+    invoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${(inv.finalTotal || 0).toFixed(2)}\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1091,7 +1145,7 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY - COMPLETE CRUD
+// TAX HISTORY
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from')?.value || '';
@@ -1104,7 +1158,7 @@ function renderTaxHistory() {
     const tbody = document.getElementById('tax-history-body');
     if (!tbody) return;
     if (filtered.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="10">No tax invoices found</td></tr>'; } else {
-        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.categories?.length || 0} categories</td><td>Rs. ${(inv.totalAmount / 1.18).toFixed(2)}</td><td>Rs. ${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)}</td><td><strong>Rs. ${inv.totalAmount}</strong></td><td>${inv.discountPercent}%</td><td><button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        tbody.innerHTML = filtered.map(inv => `<tr><td><strong>${inv.invoiceNo}</strong></td><td>${inv.storeName || '-'}</td><td>${inv.customerName || '-'}</td><td>${inv.date}</td><td>${inv.categories?.length || 0} categories</td><td>Rs. ${(inv.totalAmount / 1.18).toFixed(2)}</td><td>Rs. ${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)}</td><td><strong>Rs. ${(inv.totalAmount || 0).toFixed(2)}</strong></td><td>${inv.discountPercent || 0}%</td><td><button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button><button class="btn btn-danger btn-xs" onclick="deleteTaxInvoice(${inv.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     }
     document.getElementById('tax-hist-badge').textContent = filtered.length;
 }
@@ -1129,7 +1183,7 @@ function clearTaxHistoryFilter() { document.getElementById('tax-hist-from').valu
 function exportTaxHistory() {
     if (taxInvoices.length === 0) { showNotification('No tax invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Categories,Amount,GST,Gross,Discount\n';
-    taxInvoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)},${inv.totalAmount},${inv.discountPercent}%\n`; });
+    taxInvoices.forEach(inv => { csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount || 0).toFixed(2)},${inv.discountPercent || 0}%\n`; });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1152,7 +1206,7 @@ function generateMonthlyReport() {
     const container = document.getElementById('monthly-report-container');
     if (!container) return;
     if (filtered.length === 0) { container.innerHTML = `<div class="monthly-report-empty"><i class="fas fa-calendar-times" style="font-size:48px;color:#cbd5e1;"></i><h3>No Invoices Found</h3><p>No invoices found for ${monthName} ${year}</p></div>`; return; }
-    const totalSales = filtered.reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
+    const totalSales = filtered.reduce((s, inv) => s + (inv.finalTotal || 0), 0);
     const totalItems = filtered.reduce((s, inv) => s + (inv.items?.length || 0), 0);
     let html = `<div class="monthly-report-wrapper"><div class="report-header-modern"><div class="report-header-top"><div class="report-brand"><span style="font-size:32px;">🏪</span><div><h2>KRT TRADERS</h2><span>Monthly Invoice Report</span></div></div><div class="report-meta"><div class="meta-item"><span class="meta-label">Month</span><span class="meta-value">${monthName} ${year}</span></div><div class="meta-item"><span class="meta-label">Total Invoices</span><span class="meta-value">${filtered.length}</span></div><div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${new Date().toLocaleDateString()}</span></div></div></div></div>`;
     filtered.forEach(inv => {
@@ -1182,7 +1236,7 @@ function generateMonthlyReport() {
             totalGst += gst;
             rows += `<tr><td><div class="category-cell"><span class="category-icon" style="background:${colors[c.category] || '#64748b'}20;color:${colors[c.category] || '#64748b'};"><i class="fas ${c.category === 'Foam' ? 'fa-layer-group' : c.category === 'Steel' ? 'fa-cogs' : c.category === 'Fancy' ? 'fa-gem' : c.category === 'Micro' ? 'fa-microscope' : 'fa-box'}"></i></span><span class="category-name">${labels[c.category] || c.category}</span></div></td><td><span class="badge-count">${c.totalPcs}</span></td><td>${c.totalSheet > 0 ? c.totalSheet.toFixed(3) : '-'}</td><td>${c.totalKg > 0 ? c.totalKg.toFixed(3) : '-'}</td><td>${(c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0).toFixed(2)}</td><td class="amount-cell">Rs. ${excl.toFixed(2)}</td><td class="gst-cell">Rs. ${gst.toFixed(2)}</td><td class="amount-cell-bold">Rs. ${c.totalAmount.toFixed(2)}</td><td><span class="hs-code">${c.hsCode}</span></td></tr>`;
         });
-        html += `<div class="invoice-card-modern"><div class="invoice-card-header"><div class="invoice-title-section"><span class="invoice-number-badge">#${inv.invoiceNo}</span><span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}</div><div class="invoice-party-section"><span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span><span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span></div></div><div class="table-wrap-modern"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead><tbody>${rows}<tr class="total-row-modern"><td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td><td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td><td class="total-gst">Rs. ${totalGst.toFixed(2)}</td><td class="total-amount">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td><td></td></tr></tbody></table></div><div class="invoice-card-footer"><div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div><div class="footer-right"><span class="final-total">Final: <strong>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</strong></span></div></div></div>`;
+        html += `<div class="invoice-card-modern"><div class="invoice-card-header"><div class="invoice-title-section"><span class="invoice-number-badge">#${inv.invoiceNo}</span><span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}</div><div class="invoice-party-section"><span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span><span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span></div></div><div class="table-wrap-modern"><table><thead><tr><th>Category</th><th>PCS</th><th>Sheet</th><th>KG</th><th>Rate/PCS</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th><th>HS Code</th></tr></thead><tbody>${rows}<tr class="total-row-modern"><td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td><td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td><td class="total-gst">Rs. ${totalGst.toFixed(2)}</td><td class="total-amount">Rs. ${(inv.finalTotal || 0).toFixed(2)}</td><td></td></tr></tbody></table></div><div class="invoice-card-footer"><div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div><div class="footer-right"><span class="final-total">Final: <strong>Rs. ${(inv.finalTotal || 0).toFixed(2)}</strong></span></div></div></div>`;
     });
     html += `<div class="report-footer-modern"><div class="footer-brand"><span>KRT TRADERS ERP System</span></div><div class="footer-stats"><div class="stat-item"><span class="stat-label">Total Invoices</span><span class="stat-number">${filtered.length}</span></div><div class="stat-item"><span class="stat-label">Total Items</span><span class="stat-number">${totalItems}</span></div><div class="stat-item"><span class="stat-label">Grand Total</span><span class="stat-number grand">Rs. ${totalSales.toFixed(2)}</span></div></div><div class="footer-copy">© ${new Date().getFullYear()} KRT TRADERS. All rights reserved.</div></div></div>`;
     container.innerHTML = html;
@@ -1205,7 +1259,7 @@ function printMonthlyReport() {
 }
 
 // ============================================================
-// STOCK IN - COMPLETE CRUD
+// STOCK IN
 // ============================================================
 function inBarcodeInput() {
     const bc = document.getElementById('in-barcode').value.trim();
@@ -1291,7 +1345,7 @@ function exportStockIn() {
 }
 
 // ============================================================
-// STOCK OUT - COMPLETE CRUD
+// STOCK OUT
 // ============================================================
 function updateStockOutDropdown() {
     const select = document.getElementById('out-item-select');
@@ -1429,7 +1483,7 @@ function calcBalance() {
 function printStockBalance() { window.print(); }
 
 // ============================================================
-// SP STOCK IN - COMPLETE CRUD
+// SP STOCK IN
 // ============================================================
 function spinBarcodeInput() {
     const bc = document.getElementById('spin-barcode').value.trim();
@@ -1517,7 +1571,7 @@ async function deleteSPIn(id) {
 function clearSPInForm() { ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); updateSPInPreview(); showNotification('Form cleared', 'info'); }
 
 // ============================================================
-// SP STOCK OUT - COMPLETE CRUD
+// SP STOCK OUT
 // ============================================================
 function updateSPStoreList() {
     const stores = [...new Set(spStockOut.map(s => s.store))];
@@ -1626,8 +1680,8 @@ function calcSPBalance() {
     if (!tbody) return;
     if (items.length === 0) { tbody.innerHTML = '<tr class="no-data"><td colspan="6">No stock found</td></tr>'; return; }
     tbody.innerHTML = items.map(item => {
-        const inTotal = spStockIn.filter(s => s.item === item).reduce((sum, s) => sum + s.totalPcs, 0);
-        const outTotal = spStockOut.filter(s => s.item === item).reduce((sum, s) => sum + s.qty, 0);
+        const inTotal = spStockIn.filter(s => s.item === item).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
+        const outTotal = spStockOut.filter(s => s.item === item).reduce((sum, s) => sum + (s.qty || 0), 0);
         const bal = inTotal - outTotal;
         const barcode = spStockIn.find(s => s.item === item)?.barcode || '-';
         const pcsPerCtn = spStockIn.find(s => s.item === item)?.pcsPerCtn || 0;
@@ -1640,7 +1694,7 @@ function calcSPBalance() {
 function printSPBalance() { window.print(); }
 
 // ============================================================
-// LEDGER (Gulzar & Kashif) - COMPLETE CRUD
+// LEDGER (Gulzar & Kashif)
 // ============================================================
 async function addLedgerEntry(person) {
     const date = document.getElementById(person + '-date').value;
