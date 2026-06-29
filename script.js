@@ -1,10 +1,17 @@
 // ============================================================
-// KRT TRADERS ERP - COMPLETE SCRIPT (LocalStorage Mode)
-// Version: 4.0 - Local Storage Only
+// KRT TRADERS ERP SYSTEM - COMPLETE (SUPABASE MODE)
+// Version: 4.0 - All Data Online
 // ============================================================
 
 // ============================================================
-// CONFIGURATION
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// CONFIG
 // ============================================================
 const CONFIG = {
     APP_PASSWORD: 'admin123',
@@ -14,76 +21,7 @@ const CONFIG = {
 };
 
 // ============================================================
-// PRODUCT DATABASE
-// ============================================================
-const PRODUCTS = {
-    "6957404902857": "SPONGE SCRUB 2 IN 1",
-    "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-    "6971432358486": "FANCY HANDLE 2 IN 1",
-    "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-    "9031582648886": "FANCY HANDLE 3 IN 1",
-    "9031582691028": "FANCY HANDLE 1 PCS",
-    "9035484809734": "COLOR SPONGE 6 COLOR",
-    "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-    "40883779": "BATH BELT",
-    "925100017805": "REGULAR LAMINATE 2 IN 1",
-    "925100017812": "REGULAR LAMINATE 1 PCS",
-    "925100017652": "NAIL SAVER 1 PCS",
-    "925100017799": "NAIL SAVER 2 IN 1",
-    "2215414451340": "LARGE LAMINATE 1 PCS",
-    "8512532310295": "REGULAR PAD 1 PCS",
-    "8500532310186": "LARGE PAD 1 PCS",
-    "6267207001641": "REGULAR SPIRAL 2 IN 1",
-    "6267207001665": "JUMBO SPIRAL 2 IN 1",
-    "230062603912": "REGULAR SPIRAL 1 PCS",
-    "6267207001658": "JUMBO SPIRAL 1 PCS",
-    "4684000000190": "JUMBO SPIRAL 4 IN 1",
-    "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-    "6971432358721": "FANCY NYLON SCRUBBER",
-    "4684000000992": "NAIL SAVER 3 IN 1",
-    "4684000001005": "LARGE LAMINATE 3 IN 1",
-    "925100018864": "SILVER CLASSIC BODY RAZOR",
-    "5489754856234": "MICRO FIBER 1 PCS"
-};
-
-// ============================================================
-// ITEM CATEGORIES
-// ============================================================
-const ITEM_CATEGORIES = {
-    'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
-    'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
-    'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-    'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
-    'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
-    'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-    'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
-    'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
-    'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-    'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
-    'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
-    'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-    'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-    'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
-    'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
-    'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
-    'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
-    'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
-};
-
-function getItemCategory(itemName) {
-    return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
-}
-
-// ============================================================
-// STATE - Local Storage Only
+// STATE
 // ============================================================
 let storeRates = [];
 let invoices = [];
@@ -95,7 +33,6 @@ let spStockOut = [];
 let gulzarLedger = [];
 let kashifLedger = [];
 let salaryData = {};
-
 let invoiceCounter = 0;
 let editingRateId = null;
 let editingInvoiceTs = null;
@@ -110,57 +47,116 @@ let chartInstance = null;
 let taxInvoiceData = null;
 
 // ============================================================
-// LOAD DATA FROM LOCAL STORAGE
+// LOAD DATA FROM SUPABASE
 // ============================================================
-function loadAllData() {
+async function loadAllData() {
     try {
-        storeRates = JSON.parse(localStorage.getItem('storeRates')) || [];
-        invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-        taxInvoices = JSON.parse(localStorage.getItem('taxInvoices')) || [];
-        stockIn = JSON.parse(localStorage.getItem('stockIn')) || [];
-        stockOut = JSON.parse(localStorage.getItem('stockOut')) || [];
-        spStockIn = JSON.parse(localStorage.getItem('spStockIn')) || [];
-        spStockOut = JSON.parse(localStorage.getItem('spStockOut')) || [];
-        gulzarLedger = JSON.parse(localStorage.getItem('gulzarLedger')) || [];
-        kashifLedger = JSON.parse(localStorage.getItem('kashifLedger')) || [];
-        salaryData = JSON.parse(localStorage.getItem('salaryData')) || {};
+        showLoading();
+        setSyncStatus(false, 'Loading...');
+
+        // Load all tables in parallel
+        const [ratesRes, invRes, taxInvRes, sinRes, soutRes, spinRes, spoutRes, gulRes, kasRes, salRes] = await Promise.all([
+            sb.from('store_rates').select('*').order('id'),
+            sb.from('invoices').select('*').order('timestamp'),
+            sb.from('tax_invoices').select('*').order('timestamp'),
+            sb.from('stock_in').select('*').order('sr_no'),
+            sb.from('stock_out').select('*').order('sr_no'),
+            sb.from('sp_stock_in').select('*').order('sr_no'),
+            sb.from('sp_stock_out').select('*').order('sr_no'),
+            sb.from('gulzar_ledger').select('*').order('id'),
+            sb.from('kashif_ledger').select('*').order('id'),
+            sb.from('salary_data').select('*').order('month')
+        ]);
+
+        // Parse data
+        storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
+        invoices = (invRes.data || []).map(r => ({ 
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, items: r.items || [],
+            discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0',
+            subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0',
+            taxRate: Number(r.tax_rate) || 18, taxAmt: r.total_gst || '0',
+            finalTotal: r.final_total || '0'
+        }));
+        taxInvoices = (taxInvRes.data || []).map(r => ({
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn, strn: r.strn, address: r.address, date: r.date, categories: r.categories || [],
+            totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0,
+            totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0,
+            cashInvoiceId: r.cash_invoice_timestamp
+        }));
+        stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
+        stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
+        spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
+        spStockOut = (spoutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, item: r.item_name, qty: Number(r.qty), price: Number(r.price) || 0, total: Number(r.total) || 0, invoiceTimestamp: r.invoice_timestamp || null }));
+        gulzarLedger = (gulRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
+        kashifLedger = (kasRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
+        
+        // Salary Data
+        salaryData = {};
+        (salRes.data || []).forEach(r => { salaryData[r.month] = r.rows || []; });
+
         invoiceCounter = invoices.length;
-        console.log('✅ Data loaded from LocalStorage');
+        console.log('✅ Data loaded from Supabase!');
         console.log('📊 Invoices:', invoices.length);
         console.log('📊 Store Rates:', storeRates.length);
         console.log('📊 Stock In:', stockIn.length);
         console.log('📊 Gulzar Entries:', gulzarLedger.length);
-        console.log('📊 Kashif Entries:', kashifLedger.length);
-    } catch(e) {
-        console.error('❌ Load error:', e);
-        showNotification('Error loading data', 'error');
+
+        setSyncStatus(true, 'Synced ✔');
+        hideLoading();
+        showNotification('Data loaded from Supabase!', 'success');
+
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        setSyncStatus(false, 'Sync Error');
+        hideLoading();
+        showNotification('Error loading data: ' + error.message, 'error');
     }
 }
 
 // ============================================================
-// SAVE DATA TO LOCAL STORAGE
+// SAVE DATA TO SUPABASE
 // ============================================================
-function saveAllData() {
+async function saveAllData() {
     try {
-        localStorage.setItem('storeRates', JSON.stringify(storeRates));
-        localStorage.setItem('invoices', JSON.stringify(invoices));
-        localStorage.setItem('taxInvoices', JSON.stringify(taxInvoices));
-        localStorage.setItem('stockIn', JSON.stringify(stockIn));
-        localStorage.setItem('stockOut', JSON.stringify(stockOut));
-        localStorage.setItem('spStockIn', JSON.stringify(spStockIn));
-        localStorage.setItem('spStockOut', JSON.stringify(spStockOut));
-        localStorage.setItem('gulzarLedger', JSON.stringify(gulzarLedger));
-        localStorage.setItem('kashifLedger', JSON.stringify(kashifLedger));
-        localStorage.setItem('salaryData', JSON.stringify(salaryData));
-        document.getElementById('sync-dot')?.classList.remove('offline');
-        document.getElementById('sync-text')?.textContent = 'Synced ✔';
-        console.log('✅ Data saved to LocalStorage');
-    } catch(e) {
-        console.error('❌ Save error:', e);
-        document.getElementById('sync-dot')?.classList.add('offline');
-        document.getElementById('sync-text')?.textContent = 'Sync Error';
-        showNotification('Error saving data', 'error');
+        setSyncStatus(false, 'Saving...');
+        // Data is saved individually via their respective functions
+        setSyncStatus(true, 'Synced ✔');
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        setSyncStatus(false, 'Sync Error');
+        showNotification('Error saving data: ' + error.message, 'error');
     }
+}
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+function setSyncStatus(ok, text) {
+    const dot = document.getElementById('sync-dot');
+    const txt = document.getElementById('sync-text');
+    if (dot) dot.classList.toggle('offline', !ok);
+    if (txt) txt.innerText = text;
+}
+
+function showNotification(message, type = 'success') {
+    const el = document.getElementById('notification');
+    if (!el) return;
+    el.textContent = message;
+    el.className = type + ' show';
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function showLoading() {
+    const el = document.getElementById('loading-overlay');
+    if (el) el.style.display = 'flex';
+}
+
+function hideLoading() {
+    const el = document.getElementById('loading-overlay');
+    if (el) el.style.display = 'none';
 }
 
 // ============================================================
@@ -183,30 +179,6 @@ function logout() {
     if (confirm('Are you sure you want to logout?')) {
         location.reload();
     }
-}
-
-// ============================================================
-// NOTIFICATION
-// ============================================================
-function showNotification(message, type = 'success') {
-    const el = document.getElementById('notification');
-    if (!el) return;
-    el.textContent = message;
-    el.className = type + ' show';
-    clearTimeout(el._timeout);
-    el._timeout = setTimeout(() => el.classList.remove('show'), 3500);
-}
-
-// ============================================================
-// LOADING
-// ============================================================
-function showLoading() { 
-    const el = document.getElementById('loading-overlay');
-    if (el) el.style.display = 'flex';
-}
-function hideLoading() { 
-    const el = document.getElementById('loading-overlay');
-    if (el) el.style.display = 'none';
 }
 
 // ============================================================
@@ -301,7 +273,7 @@ function toggleTheme() {
 // ============================================================
 // INIT APP
 // ============================================================
-function initApp() {
+async function initApp() {
     // Load theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -333,15 +305,16 @@ function initApp() {
         sheetMonth.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     }
     
-    // Load data
-    loadAllData();
+    // Load data from Supabase
+    await loadAllData();
+    
+    // Render all pages
     loadDashboard();
     renderRates();
     initInvoice();
     updateBadges();
     updateClock();
     setInterval(updateClock, 1000);
-    showNotification('System Ready! Data loaded from LocalStorage', 'success');
 }
 
 function updateClock() {
@@ -438,13 +411,42 @@ function updateDashboardChart() {
 // ============================================================
 function srBarcodeInput() {
     const bc = document.getElementById('sr-barcode').value.trim();
+    const PRODUCTS = {
+        "6957404902857": "SPONGE SCRUB 2 IN 1",
+        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+        "6971432358486": "FANCY HANDLE 2 IN 1",
+        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+        "9031582648886": "FANCY HANDLE 3 IN 1",
+        "9031582691028": "FANCY HANDLE 1 PCS",
+        "9035484809734": "COLOR SPONGE 6 COLOR",
+        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+        "40883779": "BATH BELT",
+        "925100017805": "REGULAR LAMINATE 2 IN 1",
+        "925100017812": "REGULAR LAMINATE 1 PCS",
+        "925100017652": "NAIL SAVER 1 PCS",
+        "925100017799": "NAIL SAVER 2 IN 1",
+        "2215414451340": "LARGE LAMINATE 1 PCS",
+        "8512532310295": "REGULAR PAD 1 PCS",
+        "8500532310186": "LARGE PAD 1 PCS",
+        "6267207001641": "REGULAR SPIRAL 2 IN 1",
+        "6267207001665": "JUMBO SPIRAL 2 IN 1",
+        "230062603912": "REGULAR SPIRAL 1 PCS",
+        "6267207001658": "JUMBO SPIRAL 1 PCS",
+        "4684000000190": "JUMBO SPIRAL 4 IN 1",
+        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+        "6971432358721": "FANCY NYLON SCRUBBER",
+        "4684000000992": "NAIL SAVER 3 IN 1",
+        "4684000001005": "LARGE LAMINATE 3 IN 1",
+        "925100018864": "SILVER CLASSIC BODY RAZOR",
+        "5489754856234": "MICRO FIBER 1 PCS"
+    };
     if (PRODUCTS[bc]) document.getElementById('sr-item').value = PRODUCTS[bc];
 }
 
-function saveStoreRate() {
+async function saveStoreRate() {
     const store = document.getElementById('sr-store').value.trim();
     const barcode = document.getElementById('sr-barcode').value.trim();
-    const item = document.getElementById('sr-item').value.trim() || PRODUCTS[barcode] || barcode;
+    const item = document.getElementById('sr-item').value.trim() || barcode;
     const rate = parseFloat(document.getElementById('sr-rate').value) || 0;
     
     if (!store || !barcode || rate <= 0) {
@@ -453,27 +455,22 @@ function saveStoreRate() {
     }
     
     if (editingRateId !== null) {
+        const { error } = await sb.from('store_rates').update({ store, barcode, item, rate }).eq('id', editingRateId);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = storeRates.findIndex(r => r.id === editingRateId);
-        if (idx > -1) {
-            storeRates[idx] = { ...storeRates[idx], store, barcode, item, rate };
-        }
+        if (idx > -1) storeRates[idx] = { id: editingRateId, store, barcode, item, rate };
         editingRateId = null;
         document.getElementById('sr-save-btn').innerHTML = '<i class="fas fa-save"></i> Save Rate';
         document.getElementById('sr-cancel-btn').style.display = 'none';
         showNotification('Rate updated!', 'success');
     } else {
-        const existing = storeRates.find(r => r.store === store && r.barcode === barcode);
-        if (existing) {
-            existing.rate = rate;
-            existing.item = item;
-            showNotification('Rate updated!', 'success');
-        } else {
-            storeRates.push({ id: Date.now(), store, barcode, item, rate });
-            showNotification('Rate saved!', 'success');
-        }
+        const id = Date.now();
+        const { error } = await sb.from('store_rates').insert({ id, store, barcode, item, rate });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        storeRates.push({ id, store, barcode, item, rate });
+        showNotification('Rate saved!', 'success');
     }
     
-    saveAllData();
     renderRates();
     clearRateForm();
     updateBadges();
@@ -531,10 +528,11 @@ function cancelRateEdit() {
     document.getElementById('sr-cancel-btn').style.display = 'none';
 }
 
-function deleteRate(id) {
+async function deleteRate(id) {
     if (!confirm('Delete this rate?')) return;
+    const { error } = await sb.from('store_rates').delete().eq('id', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     storeRates = storeRates.filter(r => r.id !== id);
-    saveAllData();
     renderRates();
     updateBadges();
     showNotification('Rate deleted!', 'success');
@@ -652,6 +650,35 @@ function removeInvoiceRow(btn) {
 function onInvBarcode(input) {
     const bc = input.value.trim();
     const row = input.closest('tr');
+    const PRODUCTS = {
+        "6957404902857": "SPONGE SCRUB 2 IN 1",
+        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+        "6971432358486": "FANCY HANDLE 2 IN 1",
+        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+        "9031582648886": "FANCY HANDLE 3 IN 1",
+        "9031582691028": "FANCY HANDLE 1 PCS",
+        "9035484809734": "COLOR SPONGE 6 COLOR",
+        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+        "40883779": "BATH BELT",
+        "925100017805": "REGULAR LAMINATE 2 IN 1",
+        "925100017812": "REGULAR LAMINATE 1 PCS",
+        "925100017652": "NAIL SAVER 1 PCS",
+        "925100017799": "NAIL SAVER 2 IN 1",
+        "2215414451340": "LARGE LAMINATE 1 PCS",
+        "8512532310295": "REGULAR PAD 1 PCS",
+        "8500532310186": "LARGE PAD 1 PCS",
+        "6267207001641": "REGULAR SPIRAL 2 IN 1",
+        "6267207001665": "JUMBO SPIRAL 2 IN 1",
+        "230062603912": "REGULAR SPIRAL 1 PCS",
+        "6267207001658": "JUMBO SPIRAL 1 PCS",
+        "4684000000190": "JUMBO SPIRAL 4 IN 1",
+        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+        "6971432358721": "FANCY NYLON SCRUBBER",
+        "4684000000992": "NAIL SAVER 3 IN 1",
+        "4684000001005": "LARGE LAMINATE 3 IN 1",
+        "925100018864": "SILVER CLASSIC BODY RAZOR",
+        "5489754856234": "MICRO FIBER 1 PCS"
+    };
     if (PRODUCTS[bc]) row.querySelector('.inv-item').value = PRODUCTS[bc];
     const storeName = document.getElementById('inv-store')?.value?.trim() || '';
     const rate = storeRates.find(r => r.store === storeName && r.barcode === bc);
@@ -740,7 +767,7 @@ function cancelInvoiceEdit() {
 // ============================================================
 // SAVE INVOICE
 // ============================================================
-function saveInvoiceNow() {
+async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
     const store = document.getElementById('inv-store').value.trim();
@@ -781,45 +808,51 @@ function saveInvoiceNow() {
     const ts = editingInvoiceTs || Date.now();
     
     const invoiceData = {
-        id: ts,
-        invoiceNo,
-        customerName: customer,
-        storeName: store,
-        ntn,
-        strn,
-        address,
-        date,
-        items,
-        discountPercent: discount,
-        discountAmt: discountAmt.toFixed(2),
-        subtotal: subtotal.toFixed(2),
-        afterDiscount: afterDiscount.toFixed(2),
-        taxRate: taxRate,
-        taxAmt: taxAmt.toFixed(2),
-        finalTotal: finalTotal.toFixed(2)
+        timestamp: ts,
+        invoice_no: invoiceNo,
+        customer_name: customer,
+        store_name: store,
+        ntn: ntn || '',
+        strn: strn || '',
+        address: address || '',
+        date: date,
+        items: items,
+        discount_percent: discount,
+        discount_amt: discountAmt.toFixed(2),
+        sub_total: subtotal.toFixed(2),
+        after_discount: afterDiscount.toFixed(2),
+        tax_rate: taxRate,
+        total_gst: taxAmt.toFixed(2),
+        final_total: finalTotal.toFixed(2)
     };
     
     if (editingInvoiceTs !== null) {
+        const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = invoices.findIndex(inv => inv.id === editingInvoiceTs);
-        if (idx > -1) invoices[idx] = invoiceData;
+        if (idx > -1) invoices[idx] = { ...invoices[idx], ...invoiceData };
         editingInvoiceTs = null;
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('Invoice updated!', 'success');
     } else {
-        invoices.push(invoiceData);
+        const { error } = await sb.from('invoices').insert(invoiceData);
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        invoices.push({ ...invoiceData, id: ts });
+        invoiceCounter++;
         showNotification('Invoice saved!', 'success');
     }
     
-    saveAllData();
-    clearInvoiceForm();
+    renderInvoiceHistory();
     updateBadges();
     loadDashboard();
+    clearInvoiceForm();
+    updateInvoiceNumber();
 }
 
 // ============================================================
 // GENERATE TAX INVOICE
 // ============================================================
-function generateTaxInvoiceFromCash() {
+async function generateTaxInvoiceFromCash() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
     const store = document.getElementById('inv-store').value.trim();
@@ -858,6 +891,39 @@ function generateTaxInvoiceFromCash() {
     
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     
+    const ITEM_CATEGORIES = {
+        'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
+        'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
+        'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+        'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
+        'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
+        'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+        'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
+        'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
+        'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
+        'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
+        'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
+        'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+        'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+        'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
+        'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
+        'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
+        'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
+        'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+        'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+        'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+        'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
+    };
+    
+    function getItemCategory(itemName) {
+        return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
+    }
+    
     const categories = {};
     items.forEach(item => {
         const name = item.item || item.barcode;
@@ -883,22 +949,26 @@ function generateTaxInvoiceFromCash() {
     }));
     
     const taxInvoiceData = {
-        id: Date.now(),
-        invoiceNo: invoiceNo + '-TAX',
-        customerName: customer,
-        storeName: store,
-        ntn, strn, address,
-        date,
+        timestamp: Date.now(),
+        invoice_no: invoiceNo + '-TAX',
+        customer_name: customer,
+        store_name: store,
+        ntn: ntn || '',
+        strn: strn || '',
+        address: address || '',
+        date: date,
         categories: categoryList,
-        totalAmount: finalTotal,
-        totalGst: taxAmt,
-        totalGross: afterDiscount,
-        discountPercent: discount,
-        cashInvoiceId: editingInvoiceTs || Date.now()
+        total_amount: finalTotal.toFixed(2),
+        total_gst: taxAmt.toFixed(2),
+        total_gross: afterDiscount.toFixed(2),
+        discount_percent: discount,
+        cash_invoice_timestamp: editingInvoiceTs || Date.now()
     };
     
-    taxInvoices.push(taxInvoiceData);
-    saveAllData();
+    const { error } = await sb.from('tax_invoices').insert(taxInvoiceData);
+    if (error) { showNotification('Error generating tax invoice: ' + error.message, 'error'); return; }
+    
+    taxInvoices.push({ ...taxInvoiceData, id: taxInvoiceData.timestamp });
     showNotification('Tax Invoice generated!', 'success');
     renderTaxInvoice(taxInvoiceData);
     updateBadges();
@@ -953,9 +1023,9 @@ function renderTaxInvoice(data) {
                 <p class="copy-type">Original — Duplicate</p>
             </div>
             <div class="info-grid">
-                <div><strong>Invoice #:</strong> ${data.invoiceNo}</div>
+                <div><strong>Invoice #:</strong> ${data.invoice_no}</div>
                 <div><strong>Date:</strong> ${data.date}</div>
-                <div><strong>Discount:</strong> ${data.discountPercent}%</div>
+                <div><strong>Discount:</strong> ${data.discount_percent}%</div>
             </div>
             <div class="buyer-grid">
                 <div class="buyer-box">
@@ -967,7 +1037,7 @@ function renderTaxInvoice(data) {
                 </div>
                 <div class="buyer-box">
                     <span class="box-title">Buyer</span>
-                    <div class="box-name">${data.customerName}</div>
+                    <div class="box-name">${data.customer_name}</div>
                     <div class="box-detail">NTN: ${data.ntn || '-'}</div>
                     <div class="box-detail">STRN: ${data.strn || '-'}</div>
                     <div class="box-detail">Address: ${data.address || '-'}</div>
@@ -980,24 +1050,24 @@ function renderTaxInvoice(data) {
                         ${rows}
                         <tr class="total-row">
                             <td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td>
-                            <td>Rs. ${(data.totalAmount / 1.18).toFixed(2)}</td>
-                            <td>Rs. ${(data.totalAmount - data.totalAmount / 1.18).toFixed(2)}</td>
-                            <td><strong>Rs. ${data.totalAmount.toFixed(2)}</strong></td>
+                            <td>Rs. ${(data.total_amount / 1.18).toFixed(2)}</td>
+                            <td>Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</td>
+                            <td><strong>Rs. ${data.total_amount}</strong></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class="totals-grid">
                 <div>
-                    <div><strong>Total Amount (After Discount):</strong> Rs. ${data.totalAmount.toFixed(2)}</div>
-                    <div><strong>Excluding Tax:</strong> Rs. ${(data.totalAmount / 1.18).toFixed(2)}</div>
-                    <div><strong>GST @ 18%:</strong> Rs. ${(data.totalAmount - data.totalAmount / 1.18).toFixed(2)}</div>
-                    <div><strong>Gross Amount:</strong> Rs. ${data.totalAmount.toFixed(2)}</div>
+                    <div><strong>Total Amount (After Discount):</strong> Rs. ${data.total_amount}</div>
+                    <div><strong>Excluding Tax:</strong> Rs. ${(data.total_amount / 1.18).toFixed(2)}</div>
+                    <div><strong>GST @ 18%:</strong> Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</div>
+                    <div><strong>Gross Amount:</strong> Rs. ${data.total_amount}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div><strong>Discount (${data.discountPercent}%):</strong> - Rs. ${(data.totalAmount * data.discountPercent / 100).toFixed(2)}</div>
-                    <div><strong>Sub Total:</strong> Rs. ${(data.totalAmount / (1 - data.discountPercent/100)).toFixed(2)}</div>
-                    <div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${data.totalAmount.toFixed(2)}</div>
+                    <div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(data.total_amount * data.discount_percent / 100).toFixed(2)}</div>
+                    <div><strong>Sub Total:</strong> Rs. ${(data.total_amount / (1 - data.discount_percent/100)).toFixed(2)}</div>
+                    <div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${data.total_amount}</div>
                 </div>
             </div>
             <div class="signature-section">
@@ -1029,7 +1099,7 @@ function printInvoiceById(id) {
     const w = window.open('', '_blank', 'width=800,height=600');
     w.document.write(`
         <!DOCTYPE html><html>
-        <head><title>${inv.invoiceNo}</title>
+        <head><title>${inv.invoice_no}</title>
         <style>
             body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
             .header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}
@@ -1045,18 +1115,18 @@ function printInvoiceById(id) {
         </style>
         </head><body>
         <div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
-        <div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div>
-        <div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div>
+        <div class="info"><span><strong>Invoice:</strong> ${inv.invoice_no}</span><span><strong>Date:</strong> ${inv.date}</span></div>
+        <div class="info"><span><strong>Customer:</strong> ${inv.customer_name}</span><span><strong>Store:</strong> ${inv.store_name || '-'}</span></div>
         <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
         ${(inv.items || []).map((item, i) => `
             <tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>
         `).join('')}
         </tbody></table>
         <div class="total">
-            <p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p>
-            <p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p>
-            <p><strong>GST (${inv.taxRate}%):</strong> Rs. ${inv.taxAmt}</p>
-            <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p>
+            <p><strong>Sub Total:</strong> Rs. ${inv.sub_total}</p>
+            <p><strong>Discount (${inv.discount_percent}%):</strong> - Rs. ${inv.discount_amt}</p>
+            <p><strong>GST (${inv.tax_rate}%):</strong> Rs. ${inv.total_gst}</p>
+            <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.final_total}</p>
         </div>
         <div class="footer"><p>Thank you for your business!</p></div>
         <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
@@ -1067,7 +1137,10 @@ function printInvoiceById(id) {
 
 function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container')?.innerHTML;
-    if (!content) { showNotification('No tax invoice to print!', 'error'); return; }
+    if (!content || content.includes('No Tax Invoice')) {
+        showNotification('No tax invoice to print!', 'error');
+        return;
+    }
     const w = window.open('', '_blank', 'width=1000,height=800');
     w.document.write(`
         <!DOCTYPE html><html>
@@ -1121,9 +1194,9 @@ function renderInvoiceHistory() {
     if (to) filtered = filtered.filter(inv => inv.date <= to);
     if (search) {
         filtered = filtered.filter(inv =>
-            (inv.invoiceNo || '').toLowerCase().includes(search) ||
-            (inv.customerName || '').toLowerCase().includes(search) ||
-            (inv.storeName || '').toLowerCase().includes(search)
+            (inv.invoice_no || '').toLowerCase().includes(search) ||
+            (inv.customer_name || '').toLowerCase().includes(search) ||
+            (inv.store_name || '').toLowerCase().includes(search)
         );
     }
     
@@ -1134,12 +1207,12 @@ function renderInvoiceHistory() {
     } else {
         tbody.innerHTML = filtered.map(inv => `
             <tr>
-                <td><strong>${inv.invoiceNo}</strong></td>
-                <td>${inv.storeName || '-'}</td>
-                <td>${inv.customerName || '-'}</td>
+                <td><strong>${inv.invoice_no}</strong></td>
+                <td>${inv.store_name || '-'}</td>
+                <td>${inv.customer_name || '-'}</td>
                 <td>${inv.date}</td>
                 <td>${inv.items?.length || 0}</td>
-                <td>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td>
+                <td>Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
                 <td>
                     <button class="btn btn-edit btn-xs" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
                     <button class="btn btn-print btn-xs" onclick="printInvoiceById(${inv.id})"><i class="fas fa-print"></i></button>
@@ -1160,10 +1233,10 @@ function viewInvoice(id) {
     body.innerHTML = `
         <div style="padding:10px 0;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
-                <div><strong>Invoice #:</strong> ${inv.invoiceNo}</div>
+                <div><strong>Invoice #:</strong> ${inv.invoice_no}</div>
                 <div><strong>Date:</strong> ${inv.date}</div>
-                <div><strong>Customer:</strong> ${inv.customerName}</div>
-                <div><strong>Store:</strong> ${inv.storeName || '-'}</div>
+                <div><strong>Customer:</strong> ${inv.customer_name}</div>
+                <div><strong>Store:</strong> ${inv.store_name || '-'}</div>
                 <div><strong>NTN:</strong> ${inv.ntn || '-'}</div>
                 <div><strong>STRN:</strong> ${inv.strn || '-'}</div>
             </div>
@@ -1178,14 +1251,14 @@ function viewInvoice(id) {
                     `).join('')}
                     <tr style="font-weight:bold;background:#e8f5f0;">
                         <td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td>
-                        <td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td>
+                        <td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
                     </tr>
                 </tbody>
             </table>
             <div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;">
-                <span><strong>Discount:</strong> ${inv.discountPercent}%</span>
-                <span><strong>GST:</strong> ${inv.taxRate}%</span>
-                <span><strong>Final:</strong> Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</span>
+                <span><strong>Discount:</strong> ${inv.discount_percent}%</span>
+                <span><strong>GST:</strong> ${inv.tax_rate}%</span>
+                <span><strong>Final:</strong> Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</span>
             </div>
         </div>
     `;
@@ -1207,17 +1280,17 @@ function loadInvoiceToForm(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) return;
     showPage('cash-invoice');
-    document.getElementById('inv-customer').value = inv.customerName || '';
-    document.getElementById('inv-store').value = inv.storeName || '';
+    document.getElementById('inv-customer').value = inv.customer_name || '';
+    document.getElementById('inv-store').value = inv.store_name || '';
     document.getElementById('inv-customer-ntn').value = inv.ntn || '';
     document.getElementById('inv-customer-strn').value = inv.strn || '';
     document.getElementById('inv-customer-address').value = inv.address || '';
     document.getElementById('inv-date').value = inv.date || '';
-    document.getElementById('inv-discount').value = inv.discountPercent || 0;
-    document.getElementById('inv-tax-rate').value = inv.taxRate || 18;
-    document.getElementById('inv-number').value = inv.invoiceNo || '';
-    manualInvoiceNumber = inv.invoiceNo || '';
-    onInvStoreChange(inv.storeName || '');
+    document.getElementById('inv-discount').value = inv.discount_percent || 0;
+    document.getElementById('inv-tax-rate').value = inv.tax_rate || 18;
+    document.getElementById('inv-number').value = inv.invoice_no || '';
+    manualInvoiceNumber = inv.invoice_no || '';
+    onInvStoreChange(inv.store_name || '');
     document.getElementById('inv-body').innerHTML = '';
     (inv.items || []).forEach(item => {
         addInvoiceRow();
@@ -1233,11 +1306,12 @@ function loadInvoiceToForm(id) {
     updateInvoiceNumber();
 }
 
-function deleteInvoice(id) {
+async function deleteInvoice(id) {
     if (!confirm('Delete this invoice?')) return;
+    const { error } = await sb.from('invoices').delete().eq('timestamp', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     invoices = invoices.filter(inv => inv.id !== id);
     taxInvoices = taxInvoices.filter(inv => inv.cashInvoiceId !== id);
-    saveAllData();
     renderInvoiceHistory();
     loadDashboard();
     updateBadges();
@@ -1261,7 +1335,7 @@ function exportInvoiceHistory() {
     if (invoices.length === 0) { showNotification('No invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Items,Total\n';
     invoices.forEach(inv => {
-        csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.items?.length || 0},${inv.finalTotal || 0}\n`;
+        csv += `${inv.invoice_no},${inv.customer_name || ''},${inv.store_name || ''},${inv.date},${inv.items?.length || 0},${inv.final_total || 0}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
@@ -1285,8 +1359,8 @@ function renderTaxHistory() {
     if (to) filtered = filtered.filter(inv => inv.date <= to);
     if (search) {
         filtered = filtered.filter(inv =>
-            (inv.invoiceNo || '').toLowerCase().includes(search) ||
-            (inv.customerName || '').toLowerCase().includes(search)
+            (inv.invoice_no || '').toLowerCase().includes(search) ||
+            (inv.customer_name || '').toLowerCase().includes(search)
         );
     }
     
@@ -1297,15 +1371,15 @@ function renderTaxHistory() {
     } else {
         tbody.innerHTML = filtered.map(inv => `
             <tr>
-                <td><strong>${inv.invoiceNo}</strong></td>
-                <td>${inv.storeName || '-'}</td>
-                <td>${inv.customerName || '-'}</td>
+                <td><strong>${inv.invoice_no}</strong></td>
+                <td>${inv.store_name || '-'}</td>
+                <td>${inv.customer_name || '-'}</td>
                 <td>${inv.date}</td>
                 <td>${inv.categories?.length || 0} categories</td>
-                <td>Rs. ${(inv.totalAmount / 1.18).toFixed(2)}</td>
-                <td>Rs. ${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)}</td>
-                <td><strong>Rs. ${inv.totalAmount.toFixed(2)}</strong></td>
-                <td>${inv.discountPercent}%</td>
+                <td>Rs. ${(inv.total_amount / 1.18).toFixed(2)}</td>
+                <td>Rs. ${(inv.total_amount - inv.total_amount / 1.18).toFixed(2)}</td>
+                <td><strong>Rs. ${inv.total_amount}</strong></td>
+                <td>${inv.discount_percent}%</td>
                 <td>
                     <button class="btn btn-edit btn-xs" onclick="viewTaxInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
                     <button class="btn btn-print btn-xs" onclick="printTaxInvoiceById(${inv.id})"><i class="fas fa-print"></i></button>
@@ -1331,10 +1405,11 @@ function printTaxInvoiceById(id) {
     setTimeout(() => printTaxInvoice(), 300);
 }
 
-function deleteTaxInvoice(id) {
+async function deleteTaxInvoice(id) {
     if (!confirm('Delete this tax invoice?')) return;
+    const { error } = await sb.from('tax_invoices').delete().eq('timestamp', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     taxInvoices = taxInvoices.filter(inv => inv.id !== id);
-    saveAllData();
     renderTaxHistory();
     updateBadges();
     showNotification('Tax invoice deleted!', 'success');
@@ -1356,7 +1431,7 @@ function exportTaxHistory() {
     if (taxInvoices.length === 0) { showNotification('No tax invoices to export', 'warning'); return; }
     let csv = 'Invoice #,Customer,Store,Date,Categories,Amount,GST,Gross,Discount\n';
     taxInvoices.forEach(inv => {
-        csv += `${inv.invoiceNo},${inv.customerName || ''},${inv.storeName || ''},${inv.date},${inv.categories?.length || 0},${(inv.totalAmount / 1.18).toFixed(2)},${(inv.totalAmount - inv.totalAmount / 1.18).toFixed(2)},${inv.totalAmount.toFixed(2)},${inv.discountPercent}%\n`;
+        csv += `${inv.invoice_no},${inv.customer_name || ''},${inv.store_name || ''},${inv.date},${inv.categories?.length || 0},${(inv.total_amount / 1.18).toFixed(2)},${(inv.total_amount - inv.total_amount / 1.18).toFixed(2)},${inv.total_amount},${inv.discount_percent}%\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
@@ -1396,7 +1471,7 @@ function generateMonthlyReport() {
         return;
     }
     
-    const totalSales = filtered.reduce((s, inv) => s + parseFloat(inv.finalTotal || 0), 0);
+    const totalSales = filtered.reduce((s, inv) => s + parseFloat(inv.final_total || 0), 0);
     const totalItems = filtered.reduce((s, inv) => s + (inv.items?.length || 0), 0);
     
     let html = `
@@ -1421,9 +1496,40 @@ function generateMonthlyReport() {
     
     filtered.forEach(inv => {
         const catData = {};
-        const disc = inv.discountPercent || 0;
+        const disc = inv.discount_percent || 0;
         (inv.items || []).forEach(item => {
             const name = item.item || item.barcode;
+            const ITEM_CATEGORIES = {
+                'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
+                'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
+                'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+                'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
+                'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
+                'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
+                'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
+                'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
+                'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
+                'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
+                'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
+                'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+                'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
+                'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
+                'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
+                'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
+                'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
+                'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+                'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
+                'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+                'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
+            };
+            function getItemCategory(itemName) {
+                return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
+            }
             const info = getItemCategory(name);
             const key = info.category;
             const qty = parseFloat(item.qty) || 0;
@@ -1484,12 +1590,12 @@ function generateMonthlyReport() {
             <div class="invoice-card-modern">
                 <div class="invoice-card-header">
                     <div class="invoice-title-section">
-                        <span class="invoice-number-badge">#${inv.invoiceNo}</span>
+                        <span class="invoice-number-badge">#${inv.invoice_no}</span>
                         <span class="invoice-date-badge"><i class="far fa-calendar-alt"></i> ${inv.date}</span>
                         ${disc > 0 ? `<span class="discount-badge"><i class="fas fa-tag"></i> ${disc}% OFF</span>` : ''}
                     </div>
                     <div class="invoice-party-section">
-                        <span><i class="fas fa-store"></i> ${inv.storeName || inv.customerName || '-'}</span>
+                        <span><i class="fas fa-store"></i> ${inv.store_name || inv.customer_name || '-'}</span>
                         <span><i class="fas fa-id-card"></i> NTN: ${inv.ntn || '-'}</span>
                     </div>
                 </div>
@@ -1502,7 +1608,7 @@ function generateMonthlyReport() {
                                 <td colspan="5"><div class="total-label"><i class="fas fa-calculator"></i> TOTAL</div></td>
                                 <td class="total-excl">Rs. ${totalExcl.toFixed(2)}</td>
                                 <td class="total-gst">Rs. ${totalGst.toFixed(2)}</td>
-                                <td class="total-amount">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td>
+                                <td class="total-amount">Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</td>
                                 <td></td>
                             </tr>
                         </tbody>
@@ -1510,7 +1616,7 @@ function generateMonthlyReport() {
                 </div>
                 <div class="invoice-card-footer">
                     <div class="footer-left"><span><i class="fas fa-file-invoice"></i> Items: ${inv.items?.length || 0}</span></div>
-                    <div class="footer-right"><span class="final-total">Final: <strong>Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</strong></span></div>
+                    <div class="footer-right"><span class="final-total">Final: <strong>Rs. ${parseFloat(inv.final_total || 0).toFixed(2)}</strong></span></div>
                 </div>
             </div>
         `;
@@ -1621,10 +1727,39 @@ function printMonthlyReport() {
 // ============================================================
 function inBarcodeInput() {
     const bc = document.getElementById('in-barcode').value.trim();
+    const PRODUCTS = {
+        "6957404902857": "SPONGE SCRUB 2 IN 1",
+        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+        "6971432358486": "FANCY HANDLE 2 IN 1",
+        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+        "9031582648886": "FANCY HANDLE 3 IN 1",
+        "9031582691028": "FANCY HANDLE 1 PCS",
+        "9035484809734": "COLOR SPONGE 6 COLOR",
+        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+        "40883779": "BATH BELT",
+        "925100017805": "REGULAR LAMINATE 2 IN 1",
+        "925100017812": "REGULAR LAMINATE 1 PCS",
+        "925100017652": "NAIL SAVER 1 PCS",
+        "925100017799": "NAIL SAVER 2 IN 1",
+        "2215414451340": "LARGE LAMINATE 1 PCS",
+        "8512532310295": "REGULAR PAD 1 PCS",
+        "8500532310186": "LARGE PAD 1 PCS",
+        "6267207001641": "REGULAR SPIRAL 2 IN 1",
+        "6267207001665": "JUMBO SPIRAL 2 IN 1",
+        "230062603912": "REGULAR SPIRAL 1 PCS",
+        "6267207001658": "JUMBO SPIRAL 1 PCS",
+        "4684000000190": "JUMBO SPIRAL 4 IN 1",
+        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+        "6971432358721": "FANCY NYLON SCRUBBER",
+        "4684000000992": "NAIL SAVER 3 IN 1",
+        "4684000001005": "LARGE LAMINATE 3 IN 1",
+        "925100018864": "SILVER CLASSIC BODY RAZOR",
+        "5489754856234": "MICRO FIBER 1 PCS"
+    };
     if (PRODUCTS[bc]) document.getElementById('in-item').value = PRODUCTS[bc];
 }
 
-function saveStockIn() {
+async function saveStockIn() {
     const item = document.getElementById('in-item').value.trim();
     const qty = parseFloat(document.getElementById('in-qty').value) || 0;
     const price = parseFloat(document.getElementById('in-price').value) || 0;
@@ -1638,28 +1773,21 @@ function saveStockIn() {
     }
     
     if (editingStockInId !== null) {
+        const { error } = await sb.from('stock_in').update({ date, vendor, item_name: item, barcode, qty, price, total: qty * price }).eq('sr_no', editingStockInId);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = stockIn.findIndex(s => s.id === editingStockInId);
-        if (idx > -1) {
-            stockIn[idx] = { ...stockIn[idx], date, vendor, item, barcode, qty, price, total: qty * price };
-        }
+        if (idx > -1) stockIn[idx] = { ...stockIn[idx], date, vendor, item, barcode, qty, price, total: qty * price };
         editingStockInId = null;
         document.querySelector('#page-stock-in .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock In';
         showNotification('Stock In updated!', 'success');
     } else {
-        stockIn.push({
-            id: Date.now(),
-            date,
-            vendor,
-            item,
-            barcode,
-            qty,
-            price,
-            total: qty * price
-        });
+        const srNo = Date.now();
+        const { error } = await sb.from('stock_in').insert({ sr_no: srNo, date, vendor, item_name: item, barcode, qty, price, total: qty * price });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        stockIn.push({ id: srNo, date, vendor, item, barcode, qty, price, total: qty * price });
         showNotification('Stock In saved!', 'success');
     }
     
-    saveAllData();
     renderStockIn();
     updateBadges();
     clearStockInForm();
@@ -1705,10 +1833,11 @@ function editStockIn(id) {
     window.scrollTo(0, 0);
 }
 
-function deleteStockIn(id) {
+async function deleteStockIn(id) {
     if (!confirm('Delete this entry?')) return;
+    const { error } = await sb.from('stock_in').delete().eq('sr_no', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     stockIn = stockIn.filter(s => s.id !== id);
-    saveAllData();
     renderStockIn();
     updateBadges();
     showNotification('Entry deleted!', 'success');
@@ -1787,7 +1916,7 @@ function updateOutBalanceInfo() {
     info.innerHTML = `<span class="badge ${bal > 0 ? 'badge-success' : bal < 0 ? 'badge-danger' : 'badge-warning'}">Balance: ${bal} Pcs</span>`;
 }
 
-function saveStockOut() {
+async function saveStockOut() {
     const customer = document.getElementById('out-customer').value.trim();
     const item = document.getElementById('out-item').value.trim();
     const qty = parseFloat(document.getElementById('out-qty').value) || 0;
@@ -1809,28 +1938,21 @@ function saveStockOut() {
     }
     
     if (editingStockOutId !== null) {
+        const { error } = await sb.from('stock_out').update({ date, customer, item_name: item, barcode, qty, price, total: qty * price }).eq('sr_no', editingStockOutId);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = stockOut.findIndex(s => s.id === editingStockOutId);
-        if (idx > -1) {
-            stockOut[idx] = { ...stockOut[idx], date, customer, item, barcode, qty, price, total: qty * price };
-        }
+        if (idx > -1) stockOut[idx] = { ...stockOut[idx], date, customer, item, barcode, qty, price, total: qty * price };
         editingStockOutId = null;
         document.querySelector('#page-stock-out .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock Out';
         showNotification('Stock Out updated!', 'success');
     } else {
-        stockOut.push({
-            id: Date.now(),
-            date,
-            customer,
-            item,
-            barcode,
-            qty,
-            price,
-            total: qty * price
-        });
+        const srNo = Date.now();
+        const { error } = await sb.from('stock_out').insert({ sr_no: srNo, date, customer, item_name: item, barcode, qty, price, total: qty * price });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        stockOut.push({ id: srNo, date, customer, item, barcode, qty, price, total: qty * price });
         showNotification('Stock Out saved!', 'success');
     }
     
-    saveAllData();
     renderStockOut();
     updateBadges();
     clearStockOutForm();
@@ -1878,10 +2000,11 @@ function editStockOut(id) {
     window.scrollTo(0, 0);
 }
 
-function deleteStockOut(id) {
+async function deleteStockOut(id) {
     if (!confirm('Delete this entry?')) return;
+    const { error } = await sb.from('stock_out').delete().eq('sr_no', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     stockOut = stockOut.filter(s => s.id !== id);
-    saveAllData();
     renderStockOut();
     updateBadges();
     showNotification('Entry deleted!', 'success');
@@ -1953,6 +2076,35 @@ function printStockBalance() {
 // ============================================================
 function spinBarcodeInput() {
     const bc = document.getElementById('spin-barcode').value.trim();
+    const PRODUCTS = {
+        "6957404902857": "SPONGE SCRUB 2 IN 1",
+        "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+        "6971432358486": "FANCY HANDLE 2 IN 1",
+        "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+        "9031582648886": "FANCY HANDLE 3 IN 1",
+        "9031582691028": "FANCY HANDLE 1 PCS",
+        "9035484809734": "COLOR SPONGE 6 COLOR",
+        "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+        "40883779": "BATH BELT",
+        "925100017805": "REGULAR LAMINATE 2 IN 1",
+        "925100017812": "REGULAR LAMINATE 1 PCS",
+        "925100017652": "NAIL SAVER 1 PCS",
+        "925100017799": "NAIL SAVER 2 IN 1",
+        "2215414451340": "LARGE LAMINATE 1 PCS",
+        "8512532310295": "REGULAR PAD 1 PCS",
+        "8500532310186": "LARGE PAD 1 PCS",
+        "6267207001641": "REGULAR SPIRAL 2 IN 1",
+        "6267207001665": "JUMBO SPIRAL 2 IN 1",
+        "230062603912": "REGULAR SPIRAL 1 PCS",
+        "6267207001658": "JUMBO SPIRAL 1 PCS",
+        "4684000000190": "JUMBO SPIRAL 4 IN 1",
+        "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+        "6971432358721": "FANCY NYLON SCRUBBER",
+        "4684000000992": "NAIL SAVER 3 IN 1",
+        "4684000001005": "LARGE LAMINATE 3 IN 1",
+        "925100018864": "SILVER CLASSIC BODY RAZOR",
+        "5489754856234": "MICRO FIBER 1 PCS"
+    };
     if (PRODUCTS[bc]) document.getElementById('spin-item').value = PRODUCTS[bc];
     updateSPInPreview();
 }
@@ -1966,7 +2118,7 @@ function updateSPInPreview() {
     if (el) el.textContent = 'Total Pcs: ' + total;
 }
 
-function saveSPStockIn() {
+async function saveSPStockIn() {
     const item = document.getElementById('spin-item').value.trim();
     const barcode = document.getElementById('spin-barcode').value.trim() || 'N/A';
     const pcsPerCtn = parseFloat(document.getElementById('spin-pcsperctn').value) || 0;
@@ -1981,31 +2133,21 @@ function saveSPStockIn() {
     if (totalPcs <= 0) { showNotification('Enter quantity in Ctn or Extra Pcs!', 'error'); return; }
     
     if (editingSPInId !== null) {
+        const { error } = await sb.from('sp_stock_in').update({ date, vendor, item_name: item, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: totalPcs, price, total: totalPcs * price }).eq('sr_no', editingSPInId);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = spStockIn.findIndex(s => s.id === editingSPInId);
-        if (idx > -1) {
-            spStockIn[idx] = { ...spStockIn[idx], date, vendor, item, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total: totalPcs * price };
-        }
+        if (idx > -1) spStockIn[idx] = { ...spStockIn[idx], date, vendor, item, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total: totalPcs * price };
         editingSPInId = null;
         document.querySelector('#page-sp-in .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock In';
         showNotification('SP Stock In updated!', 'success');
     } else {
-        spStockIn.push({
-            id: Date.now(),
-            date,
-            vendor,
-            item,
-            barcode,
-            pcsPerCtn,
-            ctn,
-            extra,
-            totalPcs,
-            price,
-            total: totalPcs * price
-        });
+        const srNo = Date.now();
+        const { error } = await sb.from('sp_stock_in').insert({ sr_no: srNo, date, vendor, item_name: item, barcode, pcs_per_ctn: pcsPerCtn, ctn, extra, total_pcs: totalPcs, price, total: totalPcs * price });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        spStockIn.push({ id: srNo, date, vendor, item, barcode, pcsPerCtn, ctn, extra, totalPcs, price, total: totalPcs * price });
         showNotification('SP Stock In saved!', 'success');
     }
     
-    saveAllData();
     renderSPIn();
     updateBadges();
     clearSPInForm();
@@ -2057,10 +2199,11 @@ function editSPIn(id) {
     window.scrollTo(0, 0);
 }
 
-function deleteSPIn(id) {
+async function deleteSPIn(id) {
     if (!confirm('Delete this entry?')) return;
+    const { error } = await sb.from('sp_stock_in').delete().eq('sr_no', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     spStockIn = spStockIn.filter(s => s.id !== id);
-    saveAllData();
     renderSPIn();
     updateBadges();
     showNotification('Entry deleted!', 'success');
@@ -2108,14 +2251,14 @@ function spoutBarcodeInput() {
             }
         } else if (PRODUCTS[bc]) {
             document.getElementById('spout-item').value = PRODUCTS[bc];
-            info.innerHTML = `<span class="badge badge-warning">⚠ No stock found</span>`;
+            info.innerHTML = `<span class="badge badge-warning">⚠ No stock found</span>";
         } else {
             info.innerHTML = '';
         }
     }
 }
 
-function saveSPStockOut() {
+async function saveSPStockOut() {
     const store = document.getElementById('spout-store').value.trim();
     const barcode = document.getElementById('spout-barcode').value.trim();
     const item = document.getElementById('spout-item').value.trim();
@@ -2135,29 +2278,21 @@ function saveSPStockOut() {
     }
     
     if (editingSPOutId !== null) {
+        const { error } = await sb.from('sp_stock_out').update({ date, store, barcode, item_name: item, qty, price, total: qty * price }).eq('sr_no', editingSPOutId);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = spStockOut.findIndex(s => s.id === editingSPOutId);
-        if (idx > -1) {
-            spStockOut[idx] = { ...spStockOut[idx], date, store, barcode, item, qty, price, total: qty * price };
-        }
+        if (idx > -1) spStockOut[idx] = { ...spStockOut[idx], date, store, barcode, item, qty, price, total: qty * price };
         editingSPOutId = null;
         document.querySelector('#page-sp-out .btn-primary').innerHTML = '<i class="fas fa-save"></i> Save Stock Out';
         showNotification('SP Stock Out updated!', 'success');
     } else {
-        spStockOut.push({
-            id: Date.now(),
-            date,
-            store,
-            barcode,
-            item,
-            qty,
-            price,
-            total: qty * price,
-            invoiceTimestamp: null
-        });
+        const srNo = Date.now();
+        const { error } = await sb.from('sp_stock_out').insert({ sr_no: srNo, date, store, barcode, item_name: item, qty, price, total: qty * price });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        spStockOut.push({ id: srNo, date, store, barcode, item, qty, price, total: qty * price, invoiceTimestamp: null });
         showNotification('SP Stock Out saved!', 'success');
     }
     
-    saveAllData();
     renderSPOut();
     updateBadges();
     clearSPOutForm();
@@ -2212,10 +2347,11 @@ function editSPOut(id) {
     window.scrollTo(0, 0);
 }
 
-function deleteSPOut(id) {
+async function deleteSPOut(id) {
     if (!confirm('Delete this entry?')) return;
+    const { error } = await sb.from('sp_stock_out').delete().eq('sr_no', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     spStockOut = spStockOut.filter(s => s.id !== id);
-    saveAllData();
     renderSPOut();
     updateBadges();
     showNotification('Entry deleted!', 'success');
@@ -2288,7 +2424,7 @@ function printSPBalance() {
 // ============================================================
 // LEDGER (Gulzar & Kashif)
 // ============================================================
-function addLedgerEntry(person) {
+async function addLedgerEntry(person) {
     const date = document.getElementById(person + '-date').value;
     const credit = parseFloat(document.getElementById(person + '-credit').value) || 0;
     const debit = parseFloat(document.getElementById(person + '-debit').value) || 0;
@@ -2301,24 +2437,27 @@ function addLedgerEntry(person) {
     }
     
     const ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
+    const table = person === 'gulzar' ? 'gulzar_ledger' : 'kashif_ledger';
     
     if (editingLedgerId[person] !== null) {
+        const { error } = await sb.from(table).update({ date, credit, debit, note }).eq('id', editingLedgerId[person]);
+        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
         const idx = ledger.findIndex(e => e.id === editingLedgerId[person]);
-        if (idx > -1) {
-            ledger[idx] = { ...ledger[idx], date, credit, debit, note };
-        }
+        if (idx > -1) ledger[idx] = { ...ledger[idx], date, credit, debit, note };
         editingLedgerId[person] = null;
         document.querySelector(`#page-${person} .btn-primary`).innerHTML = '<i class="fas fa-save"></i> Save Entry';
         showNotification('Entry updated!', 'success');
     } else {
-        ledger.push({ id: Date.now(), date, credit, debit, note });
+        const id = Date.now();
+        const { error } = await sb.from(table).insert({ id, date, credit, debit, note });
+        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        ledger.push({ id, date, credit, debit, note });
         showNotification('Entry saved!', 'success');
     }
     
     if (person === 'gulzar') gulzarLedger = ledger;
     else kashifLedger = ledger;
     
-    saveAllData();
     loadLedger(person);
     clearLedgerForm(person);
 }
@@ -2414,13 +2553,15 @@ function editLedgerEntry(person, id) {
     window.scrollTo(0, 0);
 }
 
-function deleteLedgerEntry(person, id) {
+async function deleteLedgerEntry(person, id) {
     if (!confirm('Delete this entry?')) return;
+    const table = person === 'gulzar' ? 'gulzar_ledger' : 'kashif_ledger';
+    const { error } = await sb.from(table).delete().eq('id', id);
+    if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     let ledger = person === 'gulzar' ? gulzarLedger : kashifLedger;
     ledger = ledger.filter(e => e.id !== id);
     if (person === 'gulzar') gulzarLedger = ledger;
     else kashifLedger = ledger;
-    saveAllData();
     loadLedger(person);
     showNotification('Entry deleted!', 'success');
 }
@@ -2549,7 +2690,7 @@ function addSalaryEmployeeRow() {
     if (!salaryData[month]) salaryData[month] = [];
     salaryData[month].push({ name: '', salary: 0, advance: 0, note: '' });
     renderSalaryTable(month);
-    saveAllData();
+    saveSalaryData();
 }
 
 function updateSalRow(month, idx, field, value) {
@@ -2568,7 +2709,7 @@ function updateSalRow(month, idx, field, value) {
 function removeSalRow(month, idx) {
     salaryData[month].splice(idx, 1);
     renderSalaryTable(month);
-    saveAllData();
+    saveSalaryData();
 }
 
 function updateSalaryTotals(month) {
@@ -2579,11 +2720,19 @@ function updateSalaryTotals(month) {
     document.getElementById('sal-total-advance').innerText = 'Rs. ' + totalAdvance.toFixed(2);
 }
 
-function saveSalaryMonth() {
+async function saveSalaryMonth() {
     const month = document.getElementById('sal-month')?.value;
     if (!month) { showNotification('Select month first!', 'error'); return; }
-    saveAllData();
+    await saveSalaryData();
     showNotification('Salary month saved!', 'success');
+}
+
+async function saveSalaryData() {
+    const rows = Object.entries(salaryData).map(([month, data]) => ({ month, rows: data }));
+    for (const entry of rows) {
+        const { error } = await sb.from('salary_data').upsert(entry, { onConflict: 'month' });
+        if (error) console.error('Salary save error:', error);
+    }
 }
 
 function renderSalarySheet() {
@@ -2679,7 +2828,6 @@ function restoreData(event) {
                 gulzarLedger = data.gulzarLedger || [];
                 kashifLedger = data.kashifLedger || [];
                 salaryData = data.salaryData || {};
-                saveAllData();
                 location.reload();
                 showNotification('Restore successful!', 'success');
             } else {
@@ -2707,7 +2855,7 @@ function shareWhatsApp() {
 function shareWhatsAppTax() {
     const data = taxInvoiceData;
     if (!data) { showNotification('No tax invoice to share!', 'error'); return; }
-    const msg = `🏪 *KRT TRADERS*%0A📄 *TAX INVOICE*%0A📋 #${data.invoiceNo}%0A👤 Customer: ${data.customerName}%0A💰 Total: Rs. ${data.totalAmount.toFixed(2)}%0A%0AThank you for your business!`;
+    const msg = `🏪 *KRT TRADERS*%0A📄 *TAX INVOICE*%0A📋 #${data.invoice_no}%0A👤 Customer: ${data.customer_name}%0A💰 Total: Rs. ${data.total_amount}%0A%0AThank you for your business!`;
     window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
@@ -2781,5 +2929,5 @@ document.addEventListener('keydown', function(e) {
 // ============================================================
 console.log('🏪 KRT TRADERS ERP System v4.0 Loaded!');
 console.log('🔑 Password: admin123');
-console.log('📦 Data Mode: LocalStorage ONLY');
-console.log('📊 Data loaded from browser LocalStorage');
+console.log('☁️ Data Mode: Supabase (Online)');
+console.log('📊 Data loaded from Supabase Cloud');
