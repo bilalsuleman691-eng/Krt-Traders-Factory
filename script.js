@@ -1,6 +1,6 @@
 // ============================================================
-// KRT TRADERS ERP - COMPLETE FIXED
-// Version: 4.0 - ALL ISSUES FIXED
+// KRT TRADERS ERP - COMPLETE JAVASCRIPT
+// Version: 4.0 - ALL FIXED
 // ============================================================
 
 // ============================================================
@@ -18,7 +18,7 @@ const CONFIG = {
 };
 
 // ============================================================
-// PRODUCTS & CATEGORIES
+// PRODUCTS DATABASE
 // ============================================================
 const PRODUCTS = {
     "6957404902857": "SPONGE SCRUB 2 IN 1",
@@ -50,16 +50,20 @@ const PRODUCTS = {
     "5489754856234": "MICRO FIBER 1 PCS"
 };
 
+// ============================================================
+// ITEM CATEGORIES - FIXED (No "Other")
+// ============================================================
 const ITEM_CATEGORIES = {
     'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
     'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
     'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
     'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
     'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
+    'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
     'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
     'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
     'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-    'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
+    'MULTI COLOR FANCY FOAM 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 0 },
     'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
     'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
     'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
@@ -70,6 +74,7 @@ const ITEM_CATEGORIES = {
     'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
     'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
+    'FANCY HANDLE 3 IN 1 SILVER COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
     'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
@@ -79,7 +84,12 @@ const ITEM_CATEGORIES = {
 };
 
 function getItemCategory(itemName) {
-    return ITEM_CATEGORIES[itemName] || { category: 'Other', hsCode: '0000', weight: 0 };
+    if (!itemName) return { category: 'Fancy', hsCode: '3926.9099', weight: 0 };
+    if (ITEM_CATEGORIES[itemName]) return ITEM_CATEGORIES[itemName];
+    for (const key of Object.keys(ITEM_CATEGORIES)) {
+        if (itemName.includes(key) || key.includes(itemName)) return ITEM_CATEGORIES[key];
+    }
+    return { category: 'Fancy', hsCode: '3926.9099', weight: 0 };
 }
 
 // ============================================================
@@ -87,14 +97,13 @@ function getItemCategory(itemName) {
 // ============================================================
 let storeRates = [], invoices = [], taxInvoices = [], stockIn = [], stockOut = [];
 let spStockIn = [], spStockOut = [], gulzarLedger = [], kashifLedger = [], salaryData = {};
-let invoiceCounter = 0, editingInvoiceTs = null;
+let invoiceCounter = 0, editingRateId = null, editingInvoiceTs = null;
 let editingStockInId = null, editingStockOutId = null, editingSPInId = null, editingSPOutId = null;
 let editingLedgerId = { gulzar: null, kashif: null };
 let manualInvoiceNumber = '', currentPage = 'dashboard', chartInstance = null, taxInvoiceData = null;
-let editingRateId = null;
 
 // ============================================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================================
 function setSyncStatus(ok, text) {
     const dot = document.getElementById('sync-dot');
@@ -115,9 +124,6 @@ function showNotification(message, type = 'success') {
 function showLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'flex'; }
 function hideLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'none'; }
 
-// ============================================================
-// GET SP BALANCE
-// ============================================================
 function getSPBalance(barcode) {
     const totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
     const totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
@@ -129,7 +135,7 @@ function checkDuplicateInvoice(invoiceNo, excludeId = null) {
 }
 
 // ============================================================
-// LOAD DATA FROM SUPABASE
+// LOAD DATA
 // ============================================================
 async function loadAllData() {
     try {
@@ -147,85 +153,19 @@ async function loadAllData() {
             sb.from('kashif_ledger').select('*').order('id'),
             sb.from('salary_data').select('*').order('month')
         ]);
-        
         storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
-        
-        invoices = (invRes.data || []).map(r => ({ 
-            id: r.timestamp, 
-            invoiceNo: r.invoice_no, 
-            customerName: r.customer_name, 
-            storeName: r.store_name,
-            ntn: r.ntn || '', 
-            strn: r.strn || '', 
-            address: r.address || '', 
-            date: r.date, 
-            items: r.items || [],
-            discountPercent: Number(r.discount_percent) || 0, 
-            discountAmt: parseFloat(r.discount_amt) || 0,
-            subtotal: parseFloat(r.sub_total) || 0, 
-            afterDiscount: parseFloat(r.after_discount) || 0,
-            gstRate: Number(r.gst_rate) || 18, 
-            gstAmt: parseFloat(r.gst_amt) || 0,
-            finalTotal: parseFloat(r.final_total) || 0
-        }));
-        
-        taxInvoices = (taxInvRes.data || []).map(r => ({
-            id: r.timestamp, 
-            invoiceNo: r.invoice_no, 
-            customerName: r.customer_name, 
-            storeName: r.store_name,
-            ntn: r.ntn || '', 
-            strn: r.strn || '', 
-            address: r.address || '', 
-            date: r.date, 
-            categories: r.categories || [],
-            totalAmount: parseFloat(r.total_amount) || 0, 
-            totalGst: parseFloat(r.total_gst) || 0,
-            totalGross: parseFloat(r.total_gross) || 0, 
-            discountPercent: Number(r.discount_percent) || 0,
-            cashInvoiceId: r.cash_invoice_timestamp
-        }));
-        
+        invoices = (invRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [], discountPercent: Number(r.discount_percent) || 0, discountAmt: parseFloat(r.discount_amt) || 0, subtotal: parseFloat(r.sub_total) || 0, afterDiscount: parseFloat(r.after_discount) || 0, gstRate: Number(r.gst_rate) || 18, gstAmt: parseFloat(r.gst_amt) || 0, finalTotal: parseFloat(r.final_total) || 0 }));
+        taxInvoices = (taxInvRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [], totalAmount: parseFloat(r.total_amount) || 0, totalGst: parseFloat(r.total_gst) || 0, totalGross: parseFloat(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0, cashInvoiceId: r.cash_invoice_timestamp }));
         stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
-        
-        spStockIn = (spinRes.data || []).map(r => ({ 
-            id: r.sr_no, 
-            date: r.date, 
-            vendor: r.vendor, 
-            item: r.item_name, 
-            barcode: r.barcode, 
-            pcsPerCtn: Number(r.pcs_per_ctn) || 0, 
-            ctn: Number(r.ctn) || 0, 
-            extra: Number(r.extra) || 0, 
-            totalPcs: Number(r.total_pcs) || 0, 
-            price: Number(r.price) || 0, 
-            total: Number(r.total) || 0 
-        }));
-        
-        spStockOut = (spoutRes.data || []).map(r => ({ 
-            id: r.sr_no, 
-            date: r.date, 
-            store: r.store, 
-            barcode: r.barcode, 
-            item: r.item_name, 
-            qty: Number(r.qty), 
-            price: Number(r.price) || 0, 
-            total: Number(r.total) || 0, 
-            invoiceTimestamp: r.invoice_timestamp || null 
-        }));
-        
+        spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
+        spStockOut = (spoutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, store: r.store, barcode: r.barcode, item: r.item_name, qty: Number(r.qty), price: Number(r.price) || 0, total: Number(r.total) || 0, invoiceTimestamp: r.invoice_timestamp || null }));
         gulzarLedger = (gulRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
         kashifLedger = (kasRes.data || []).map(r => ({ id: r.id, date: r.date, credit: Number(r.credit), debit: Number(r.debit), note: r.note || '' }));
-        
         salaryData = {};
         (salRes.data || []).forEach(r => { salaryData[r.month] = r.rows || []; });
-        
         invoiceCounter = invoices.length;
         console.log('✅ Data loaded from Supabase!');
-        console.log('📊 Invoices:', invoices.length);
-        console.log('📊 SP Stock In:', spStockIn.length);
-        console.log('📊 SP Stock Out:', spStockOut.length);
         setSyncStatus(true, 'Synced ✔');
         hideLoading();
         showNotification('Data loaded from Supabase!', 'success');
@@ -397,7 +337,7 @@ function updateDashboardChart() {
 }
 
 // ============================================================
-// STORE RATES
+// STORE RATES - CRUD
 // ============================================================
 function srBarcodeInput() {
     const bc = document.getElementById('sr-barcode').value.trim();
@@ -652,7 +592,6 @@ async function saveInvoiceNow() {
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
         if (qty > 0 && rate > 0) {
-            // CHECK SP STOCK BALANCE
             const balance = getSPBalance(barcode);
             if (balance < qty) {
                 hasError = true;
@@ -683,7 +622,6 @@ async function saveInvoiceNow() {
     
     let invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     
-    // DUPLICATE CHECK
     if (editingInvoiceTs === null) {
         const existing = checkDuplicateInvoice(invoiceNo);
         if (existing) {
@@ -713,25 +651,19 @@ async function saveInvoiceNow() {
         final_total: finalTotal.toFixed(2) 
     };
     
-    // ============================================================
-    // EDIT MODE - Clean up old data
-    // ============================================================
     if (editingInvoiceTs !== null) {
-        // 1. Delete old SP Stock Out entries
         const oldSP = spStockOut.filter(e => e.invoiceTimestamp === editingInvoiceTs);
         for (const sp of oldSP) {
             await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
         }
         spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== editingInvoiceTs);
         
-        // 2. Delete old Tax Invoice
         const oldTax = taxInvoices.find(i => i.cashInvoiceId === editingInvoiceTs);
         if (oldTax) {
             await sb.from('tax_invoices').delete().eq('timestamp', oldTax.id);
             taxInvoices = taxInvoices.filter(i => i.id !== oldTax.id);
         }
         
-        // 3. Update Cash Invoice
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
         if (error) {
             showNotification('Error updating: ' + error.message, 'error');
@@ -743,11 +675,7 @@ async function saveInvoiceNow() {
         editingInvoiceTs = null;
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('✅ Invoice updated!', 'success');
-        
     } else {
-        // ============================================================
-        // NEW INVOICE MODE
-        // ============================================================
         const { error } = await sb.from('invoices').insert(invoiceData);
         if (error) {
             showNotification('Error saving: ' + error.message, 'error');
@@ -758,9 +686,6 @@ async function saveInvoiceNow() {
         showNotification('✅ Invoice saved!', 'success');
     }
     
-    // ============================================================
-    // INSERT NEW SP STOCK OUT
-    // ============================================================
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -776,9 +701,7 @@ async function saveInvoiceNow() {
                 invoice_timestamp: ts
             };
             const { error } = await sb.from('sp_stock_out').insert(spRow);
-            if (error) {
-                console.error('SP Insert Error:', error);
-            } else {
+            if (!error) {
                 spStockOut.push({
                     id: srNo,
                     date: spRow.date,
@@ -790,30 +713,13 @@ async function saveInvoiceNow() {
                     total: spRow.total,
                     invoiceTimestamp: ts
                 });
-                console.log('✅ SP Stock Out inserted:', spRow.item_name, spRow.qty);
             }
         }
     }
     
-    // ============================================================
-    // GENERATE NEW TAX INVOICE
-    // ============================================================
     await generateAndSaveTaxInvoice(
-        ts,
-        discount,
-        items,
-        store,
-        customer,
-        ntn,
-        strn,
-        address,
-        date,
-        invoiceNo,
-        finalTotal,
-        taxRate,
-        taxAmt,
-        subtotal,
-        discountAmt
+        ts, discount, items, store, customer, ntn, strn, address,
+        date, invoiceNo, finalTotal, taxRate, taxAmt, subtotal, discountAmt
     );
     
     renderInvoiceHistory();
@@ -827,11 +733,10 @@ async function saveInvoiceNow() {
 }
 
 // ============================================================
-// GENERATE TAX INVOICE
+// GENERATE TAX INVOICE - FIXED
 // ============================================================
 async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, finalTotal, taxRate, taxAmt, subTotal, discountAmt) {
     
-    // Check if tax invoice already exists
     const existingTax = taxInvoices.find(i => i.cashInvoiceId === cashTimestamp);
     if (existingTax) {
         await sb.from('tax_invoices').delete().eq('timestamp', existingTax.id);
@@ -841,14 +746,27 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
     const categories = {};
     const disc = discountPercent || 0;
     
-    // Group items by category with discount applied
     items.forEach(item => {
         const itemName = item.item || item.barcode;
         const catInfo = getItemCategory(itemName);
-        const key = catInfo.category;
+        let key = catInfo.category;
+        
+        if (key === 'Other') {
+            if (itemName.includes('HANDLE') || itemName.includes('FANCY') || itemName.includes('BATH') || itemName.includes('SCRUBBER')) {
+                key = 'Fancy';
+            } else if (itemName.includes('FOAM') || itemName.includes('PAD') || itemName.includes('LAMINATE') || itemName.includes('NAIL')) {
+                key = 'Foam';
+            } else if (itemName.includes('SPIRAL') || itemName.includes('SCRUB')) {
+                key = 'Steel';
+            } else if (itemName.includes('MICRO') || itemName.includes('FIBER')) {
+                key = 'Micro';
+            } else {
+                key = 'Fancy';
+            }
+        }
+        
         const qty = parseFloat(item.qty) || 0;
         const rate = parseFloat(item.rate) || 0;
-        
         const totalBeforeDiscount = qty * rate;
         const discAmtItem = totalBeforeDiscount * (disc / 100);
         const totalAfterDiscount = totalBeforeDiscount - discAmtItem;
@@ -856,45 +774,45 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         if (!categories[key]) {
             categories[key] = {
                 category: key,
-                hsCode: catInfo.hsCode,
+                hsCode: catInfo.hsCode || '0000',
                 totalPcs: 0,
                 totalGram: 0,
                 totalKg: 0,
                 totalSheet: 0,
                 totalAmount: 0,
-                weight: catInfo.weight || 0,
-                items: []
+                weight: catInfo.weight || 0
             };
         }
         
         categories[key].totalPcs += qty;
         categories[key].totalAmount += totalAfterDiscount;
         
-        if (catInfo.weight > 0) {
+        if (catInfo.weight > 0 && (key === 'Foam' || key === 'Steel')) {
             categories[key].totalGram += (qty * catInfo.weight);
             categories[key].totalKg = categories[key].totalGram / 1000;
-            categories[key].totalSheet = categories[key].totalGram / 1400;
+            if (key === 'Foam') {
+                categories[key].totalSheet = categories[key].totalGram / 1400;
+            }
         }
     });
     
-    // Convert to array with rates
     const categoryList = Object.keys(categories).map(key => {
         const cat = categories[key];
-        const totalAmount = cat.totalAmount || 0;
-        const totalPcs = cat.totalPcs || 0;
-        const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
-        
         return {
             category: key,
-            totalPcs: totalPcs,
+            totalPcs: cat.totalPcs,
             totalGram: cat.totalGram || 0,
             totalKg: cat.totalKg || 0,
             totalSheet: cat.totalSheet || 0,
-            totalAmount: totalAmount,
-            avgRatePerPcs: avgRatePerPcs,
+            totalAmount: cat.totalAmount,
+            avgRatePerPcs: cat.totalPcs > 0 ? cat.totalAmount / cat.totalPcs : 0,
             hsCode: cat.hsCode || '0000'
         };
     });
+    
+    const grossAmount = subTotal - discountAmt;
+    const gstAmount = grossAmount * (taxRate / 100);
+    const netAmount = grossAmount + gstAmount;
     
     const taxInvoiceData = { 
         timestamp: Date.now(), 
@@ -906,9 +824,9 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
         address: customerAddress || '', 
         date: date, 
         categories: categoryList, 
-        total_amount: finalTotal.toFixed(2), 
-        total_gst: taxAmt.toFixed(2), 
-        total_gross: finalTotal.toFixed(2), 
+        total_amount: netAmount.toFixed(2), 
+        total_gst: gstAmount.toFixed(2), 
+        total_gross: grossAmount.toFixed(2), 
         discount_percent: disc, 
         cash_invoice_timestamp: cashTimestamp 
     };
@@ -931,18 +849,15 @@ async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, 
     };
     
     const { error } = await sb.from('tax_invoices').insert(row);
-    if (error) {
-        console.error('Tax Invoice Insert Error:', error);
-    } else {
+    if (!error) {
         taxInvoices.push(taxInvoiceData);
         renderTaxInvoice(taxInvoiceData);
         console.log('✅ Tax Invoice generated:', invoiceNo + '-TAX');
+    } else {
+        console.error('Tax Invoice Insert Error:', error);
     }
 }
 
-// ============================================================
-// GENERATE TAX INVOICE FROM CASH
-// ============================================================
 async function generateTaxInvoiceFromCash() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
@@ -981,21 +896,8 @@ async function generateTaxInvoiceFromCash() {
     const ts = editingInvoiceTs || Date.now();
     
     await generateAndSaveTaxInvoice(
-        ts,
-        discount,
-        items,
-        store,
-        customer,
-        ntn,
-        strn,
-        address,
-        date,
-        invoiceNo,
-        finalTotal,
-        taxRate,
-        taxAmt,
-        subtotal,
-        discountAmt
+        ts, discount, items, store, customer, ntn, strn, address,
+        date, invoiceNo, finalTotal, taxRate, taxAmt, subtotal, discountAmt
     );
     
     showNotification('Tax Invoice generated!', 'success');
@@ -1010,19 +912,80 @@ function renderTaxInvoice(data) {
         container.innerHTML = `<div class="tax-invoice-placeholder"><i class="fas fa-file-invoice" style="font-size:48px;color:var(--text-light);"></i><p style="margin-top:12px;color:var(--text-light);">No Tax Invoice generated yet.</p></div>`;
         return;
     }
-    const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor', 'Other': 'Other Items' };
-    const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444', 'Other': '#64748b' };
+    
+    const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+    const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444' };
+    
     let rows = '';
-    let grandTotal = 0;
     data.categories.forEach(cat => {
         if (cat.totalPcs === 0) return;
         const catName = labels[cat.category] || cat.category;
         const exclTax = cat.totalAmount / 1.18;
         const gst = exclTax * 0.18;
-        grandTotal += cat.totalAmount;
-        rows += `<tr><td>${cat.totalPcs}</td><td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td><td>${cat.hsCode}</td><td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1400).toFixed(3) : '-'}</td><td>${cat.weight > 0 ? (cat.totalPcs * cat.weight / 1000).toFixed(3) : '-'}</td><td>${cat.avgRate.toFixed(2)}</td><td>Rs. ${exclTax.toFixed(2)}</td><td>Rs. ${gst.toFixed(2)}</td><td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td></tr>`;
+        rows += `<tr><td>${cat.totalPcs}</td><td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td><td>${cat.hsCode}</td><td>${cat.totalSheet > 0 ? cat.totalSheet.toFixed(3) : '-'}</td><td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td><td>${cat.avgRatePerPcs.toFixed(2)}</td><td>Rs. ${exclTax.toFixed(2)}</td><td>Rs. ${gst.toFixed(2)}</td><td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td></tr>`;
     });
-    container.innerHTML = `<div class="tax-invoice-display"><div class="header"><h1>KRT TRADERS</h1><p class="sub-title">Deals in all kinds of cleaning item and general products</p><p class="invoice-title">SALES TAX INVOICE</p><p class="copy-type">Original — Duplicate</p></div><div class="info-grid"><div><strong>Invoice #:</strong> ${data.invoice_no}</div><div><strong>Date:</strong> ${data.date}</div><div><strong>Discount:</strong> ${data.discount_percent}%</div></div><div class="buyer-grid"><div class="buyer-box"><span class="box-title">Supplier</span><div class="box-name">KRT TRADERS</div><div class="box-detail">NTN: 2995454-1</div><div class="box-detail">STRN: 300299545411</div><div class="box-detail">Address: Lahore, Pakistan</div></div><div class="buyer-box"><span class="box-title">Buyer</span><div class="box-name">${data.customer_name}</div><div class="box-detail">NTN: ${data.ntn || '-'}</div><div class="box-detail">STRN: ${data.strn || '-'}</div><div class="box-detail">Address: ${data.address || '-'}</div></div></div><div class="table-wrap"><table><thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead><tbody>${rows}<tr class="total-row"><td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td><td>Rs. ${(data.total_amount / 1.18).toFixed(2)}</td><td>Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</td><td><strong>Rs. ${data.total_amount}</strong></td></tr></tbody></table></div><div class="totals-grid"><div><div><strong>Total Amount (After Discount):</strong> Rs. ${data.total_amount}</div><div><strong>Excluding Tax:</strong> Rs. ${(data.total_amount / 1.18).toFixed(2)}</div><div><strong>GST @ 18%:</strong> Rs. ${(data.total_amount - data.total_amount / 1.18).toFixed(2)}</div><div><strong>Gross Amount:</strong> Rs. ${data.total_amount}</div></div><div style="text-align:right;"><div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(data.total_amount * data.discount_percent / 100).toFixed(2)}</div><div><strong>Sub Total:</strong> Rs. ${(data.total_amount / (1 - data.discount_percent/100)).toFixed(2)}</div><div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${data.total_amount}</div></div></div><div class="signature-section"><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div><div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div></div><div class="footer-note"><p>Generated by KRT TRADERS ERP System | Thank you for your business!</p></div></div>`;
+    
+    const gross = parseFloat(data.total_gross) || 0;
+    const gstAmt = parseFloat(data.total_gst) || 0;
+    const net = parseFloat(data.total_amount) || 0;
+    
+    container.innerHTML = `
+        <div class="tax-invoice-display">
+            <div class="header">
+                <h1>KRT TRADERS</h1>
+                <p class="sub-title">Deals in all kinds of cleaning item and general products</p>
+                <p class="invoice-title">SALES TAX INVOICE</p>
+                <p class="copy-type">Original — Duplicate</p>
+            </div>
+            <div class="info-grid">
+                <div><strong>Invoice #:</strong> ${data.invoice_no}</div>
+                <div><strong>Date:</strong> ${data.date}</div>
+                <div><strong>Discount:</strong> ${data.discount_percent}%</div>
+            </div>
+            <div class="buyer-grid">
+                <div class="buyer-box">
+                    <span class="box-title">Supplier</span>
+                    <div class="box-name">KRT TRADERS</div>
+                    <div class="box-detail">NTN: 2995454-1</div>
+                    <div class="box-detail">STRN: 300299545411</div>
+                    <div class="box-detail">Address: Lahore, Pakistan</div>
+                </div>
+                <div class="buyer-box">
+                    <span class="box-title">Buyer</span>
+                    <div class="box-name">${data.customer_name}</div>
+                    <div class="box-detail">NTN: ${data.ntn || '-'}</div>
+                    <div class="box-detail">STRN: ${data.strn || '-'}</div>
+                    <div class="box-detail">Address: ${data.address || '-'}</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead>
+                    <tbody>${rows}<tr class="total-row"><td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td><td>Rs. ${(gross / 1.18).toFixed(2)}</td><td>Rs. ${gstAmt.toFixed(2)}</td><td><strong>Rs. ${gross.toFixed(2)}</strong></td></tr></tbody>
+                </table>
+            </div>
+            <div class="totals-grid">
+                <div>
+                    <div><strong>Total Amount (After Discount):</strong> Rs. ${gross.toFixed(2)}</div>
+                    <div><strong>Excluding Tax:</strong> Rs. ${(gross / 1.18).toFixed(2)}</div>
+                    <div><strong>GST @ 18%:</strong> Rs. ${gstAmt.toFixed(2)}</div>
+                    <div><strong>Gross Amount:</strong> Rs. ${gross.toFixed(2)}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div><strong>Discount (${data.discount_percent}%):</strong> - Rs. ${(gross * data.discount_percent / 100).toFixed(2)}</div>
+                    <div style="font-size:20px;font-weight:800;color:#22c99a;"><strong>Net Amount:</strong> Rs. ${net.toFixed(2)}</div>
+                </div>
+            </div>
+            <div class="signature-section">
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div>
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div>
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div>
+            </div>
+            <div class="footer-note">
+                <p>Generated by KRT TRADERS ERP System | Thank you for your business!</p>
+            </div>
+        </div>
+    `;
     taxInvoiceData = data;
 }
 
@@ -1039,7 +1002,20 @@ function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${(inv.subtotal || 0).toFixed(2)}</p><p><strong>Discount (${inv.discountPercent || 0}%):</strong> - Rs. ${(inv.discountAmt || 0).toFixed(2)}</p><p><strong>GST (${inv.gstRate || 18}%):</strong> Rs. ${(inv.gstAmt || 0).toFixed(2)}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title>
+    <style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+    </head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div>
+    <div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div>
+    <div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div>
+    <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>
+    ${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="total"><p><strong>Sub Total:</strong> Rs. ${(inv.subtotal || 0).toFixed(2)}</p>
+    <p><strong>Discount (${inv.discountPercent || 0}%):</strong> - Rs. ${(inv.discountAmt || 0).toFixed(2)}</p>
+    <p><strong>GST (${inv.gstRate || 18}%):</strong> Rs. ${(inv.gstAmt || 0).toFixed(2)}</p>
+    <p class="final"><strong>FINAL TOTAL:</strong> Rs. ${(inv.finalTotal || 0).toFixed(2)}</p></div>
+    <div class="footer"><p>Thank you for your business!</p></div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -1047,7 +1023,21 @@ function printTaxInvoice() {
     const content = document.getElementById('tax-invoice-container')?.innerHTML;
     if (!content || content.includes('No Tax Invoice')) { showNotification('No tax invoice to print!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1000,height=800');
-    w.document.write(`<!DOCTYPE html><html><head><title>Tax Invoice</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.tax-invoice-display{max-width:1100px;margin:0 auto}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}.header h1{font-size:28px;color:#22c99a}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}.buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}.buyer-box .box-title{font-weight:700;color:#22c99a;display:block}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}td{padding:6px 10px;border-bottom:1px solid #eee}.total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}.totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}.signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}.signature-section .sig-box{text-align:center}.signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}.signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}.footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}.no-print{display:none !important}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Tax Invoice</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:12px;margin:20px;background:#fff}
+    .tax-invoice-display{max-width:1100px;margin:0 auto}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:18px}
+    .header h1{font-size:28px;color:#22c99a}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
+    .buyer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:10px 0;border-bottom:1px solid #ddd;margin-bottom:14px}
+    .buyer-box{background:#f8f9fa;padding:12px 16px;border-radius:6px}.buyer-box .box-title{font-weight:700;color:#22c99a;display:block}
+    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11px}th{background:#22c99a;color:#fff;padding:8px 10px;text-align:left}
+    td{padding:6px 10px;border-bottom:1px solid #eee}.total-row{font-weight:700;border-top:3px solid #22c99a;background:#e8f5f0}
+    .totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:12px 0;border-top:2px solid #ddd;margin-top:8px}
+    .signature-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding-top:16px;border-top:2px solid #ddd;margin-top:10px}
+    .signature-section .sig-box{text-align:center}.signature-section .sig-box .sig-line{border-top:2px solid #333;padding-top:4px;width:80%;margin:0 auto}
+    .signature-section .sig-box .sig-label{font-size:10px;color:#666;display:block;margin-top:4px}
+    .footer-note{text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:12px}
+    .no-print{display:none !important}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -1225,8 +1215,8 @@ function generateMonthlyReport() {
             if (key === 'Foam' && info.weight > 0) catData[key].totalSheet += (qty * info.weight) / 1400;
             if (key === 'Steel' && info.weight > 0) catData[key].totalKg += (qty * info.weight) / 1000;
         });
-        const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor', 'Other': 'Other Items' };
-        const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444', 'Other': '#64748b' };
+        const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+        const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444' };
         let rows = '', totalExcl = 0, totalGst = 0;
         Object.values(catData).forEach(c => {
             if (c.totalPcs === 0) return;
@@ -1254,12 +1244,53 @@ function printMonthlyReport() {
     const content = document.getElementById('monthly-report-container')?.innerHTML;
     if (!content || content.includes('Select a month')) { showNotification('Generate a report first!', 'error'); return; }
     const w = window.open('', '_blank', 'width=1100,height=800');
-    w.document.write(`<!DOCTYPE html><html><head><title>Monthly Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:11px;margin:10px;background:#fff}.monthly-report-wrapper{max-width:1300px;margin:0 auto}.report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}.report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}.report-brand{display:flex;align-items:center;gap:15px}.report-brand h2{font-size:22px;color:#fff}.report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}.report-meta{display:flex;gap:15px;flex-wrap:wrap}.meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}.meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}.meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}.invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}.invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}.invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}.invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}.discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}.invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}.table-wrap-modern{overflow-x:auto;padding:0}.table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}.table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}.table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}.table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}.category-cell{display:flex;align-items:center;gap:6px}.category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}.category-name{font-weight:500;font-size:10px}.badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}.hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}.amount-cell{font-weight:500}.amount-cell-bold{font-weight:700;color:#0a3d2a}.gst-cell{font-weight:600;color:#d97706}.total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}.total-row-modern td{padding:6px 8px;font-weight:700}.total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}.total-amount{color:#0a3d2a;font-size:12px}.invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}.footer-left{font-size:10px;color:#555}.footer-right .final-total{font-size:13px;font-weight:600}.footer-right .final-total strong{color:#0a3d2a;font-size:15px}.report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}.footer-brand{color:rgba(255,255,255,0.5);font-size:12px}.footer-stats{display:flex;gap:20px}.footer-stats .stat-item{text-align:center}.footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}.footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}.footer-stats .stat-number.grand{color:#22c99a}.footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0.1in;padding:0}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Monthly Report</title>
+    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;font-size:11px;margin:10px;background:#fff}
+    .monthly-report-wrapper{max-width:1300px;margin:0 auto}.report-header-modern{background:#1a3c6e;padding:20px 30px;border-bottom:4px solid #22c99a;color:#fff}
+    .report-header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+    .report-brand{display:flex;align-items:center;gap:15px}.report-brand h2{font-size:22px;color:#fff}
+    .report-brand span{color:rgba(255,255,255,0.6);font-size:12px;display:block}
+    .report-meta{display:flex;gap:15px;flex-wrap:wrap}.meta-item{background:rgba(255,255,255,0.08);padding:5px 12px;border-radius:6px;text-align:right;min-width:80px}
+    .meta-item .meta-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.5);display:block}
+    .meta-item .meta-value{font-size:14px;font-weight:700;color:#fff;display:block}
+    .invoice-card-modern{margin:12px 16px;border:1px solid #ddd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
+    .invoice-card-header{background:#f8fafc;padding:10px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .invoice-title-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .invoice-number-badge{font-size:14px;font-weight:700;color:#0a3d2a;background:#e8f5f0;padding:3px 12px;border-radius:6px}
+    .invoice-date-badge{font-size:11px;color:#555;background:#f1f5f9;padding:3px 10px;border-radius:4px}
+    .discount-badge{font-size:11px;font-weight:700;color:#fff;background:#d4a017;padding:2px 10px;border-radius:20px}
+    .invoice-party-section{font-size:11px;color:#333;display:flex;gap:12px;flex-wrap:wrap}
+    .table-wrap-modern{overflow-x:auto;padding:0}.table-wrap-modern table{width:100%;border-collapse:collapse;font-size:9px;min-width:100%}
+    .table-wrap-modern table thead th{background:#1a3c6e;color:#fff;padding:5px 8px;font-size:8px;text-transform:uppercase;border:1px solid #1a3c6e}
+    .table-wrap-modern table tbody td{padding:4px 8px;border:1px solid #ccc}
+    .table-wrap-modern table tbody tr:nth-child(even) td{background:#f9fafc}
+    .category-cell{display:flex;align-items:center;gap:6px}
+    .category-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+    .category-name{font-weight:500;font-size:10px}
+    .badge-count{background:#e8ecf1;padding:1px 8px;border-radius:20px;font-size:9px;font-weight:600;display:inline-block}
+    .hs-code{font-family:monospace;font-size:8px;background:#f1f5f9;padding:1px 6px;border-radius:3px;color:#555}
+    .amount-cell{font-weight:500}.amount-cell-bold{font-weight:700;color:#0a3d2a}
+    .gst-cell{font-weight:600;color:#d97706}
+    .total-row-modern{background:#e8f5f0;border-top:2px solid #0a3d2a}.total-row-modern td{padding:6px 8px;font-weight:700}
+    .total-label{color:#0a3d2a;font-size:11px;display:flex;align-items:center;gap:5px}
+    .total-amount{color:#0a3d2a;font-size:12px}
+    .invoice-card-footer{background:#fafbfc;padding:6px 16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+    .footer-left{font-size:10px;color:#555}
+    .footer-right .final-total{font-size:13px;font-weight:600}.footer-right .final-total strong{color:#0a3d2a;font-size:15px}
+    .report-footer-modern{background:#1a2332;padding:15px 25px;border-top:3px solid #22c99a;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:#fff}
+    .footer-brand{color:rgba(255,255,255,0.5);font-size:12px}
+    .footer-stats{display:flex;gap:20px}.footer-stats .stat-item{text-align:center}
+    .footer-stats .stat-label{font-size:8px;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block}
+    .footer-stats .stat-number{font-size:18px;font-weight:800;color:#fff;display:block}
+    .footer-stats .stat-number.grand{color:#22c99a}
+    .footer-copy{font-size:10px;color:rgba(255,255,255,0.3)}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0.1in;padding:0}
+    </style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
 // ============================================================
-// STOCK IN
+// STOCK IN - CRUD
 // ============================================================
 function inBarcodeInput() {
     const bc = document.getElementById('in-barcode').value.trim();
@@ -1345,7 +1376,7 @@ function exportStockIn() {
 }
 
 // ============================================================
-// STOCK OUT
+// STOCK OUT - CRUD
 // ============================================================
 function updateStockOutDropdown() {
     const select = document.getElementById('out-item-select');
@@ -1483,7 +1514,7 @@ function calcBalance() {
 function printStockBalance() { window.print(); }
 
 // ============================================================
-// SP STOCK IN
+// SP STOCK IN - CRUD
 // ============================================================
 function spinBarcodeInput() {
     const bc = document.getElementById('spin-barcode').value.trim();
@@ -1571,7 +1602,7 @@ async function deleteSPIn(id) {
 function clearSPInForm() { ['spin-vendor', 'spin-barcode', 'spin-item', 'spin-pcsperctn', 'spin-ctn', 'spin-extra', 'spin-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); updateSPInPreview(); showNotification('Form cleared', 'info'); }
 
 // ============================================================
-// SP STOCK OUT
+// SP STOCK OUT - CRUD
 // ============================================================
 function updateSPStoreList() {
     const stores = [...new Set(spStockOut.map(s => s.store))];
@@ -1798,7 +1829,14 @@ function printLedger(person) {
     const totalCredit = ledger.reduce((s, e) => s + e.credit, 0);
     const totalDebit = ledger.reduce((s, e) => s + e.debit, 0);
     const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(`<!DOCTYPE html><html><head><title>${name} Ledger</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}h2{text-align:center;color:#22c99a;font-size:24px}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}.header p{color:#666;font-size:14px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}.summary-box{text-align:center;padding:8px;border-radius:6px}.summary-box.credit{background:#e8f5f0;color:#22c99a}.summary-box.debit{background:#fee2e2;color:#ef4444}.summary-box.balance{background:#fef3c7;color:#f59e0b}.summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}.summary-box .value{font-size:20px;font-weight:800;display:block}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}td{padding:6px 12px;border-bottom:1px solid #ddd}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h2>KRT TRADERS</h2><p><strong>${name}</strong> — Ledger Statement</p></div><div class="summary"><div class="summary-box credit"><span class="label">Total Credit</span><span class="value">Rs. ${totalCredit.toFixed(2)}</span></div><div class="summary-box debit"><span class="label">Total Debit</span><span class="value">Rs. ${totalDebit.toFixed(2)}</span></div><div class="summary-box balance"><span class="label">Net Balance</span><span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span></div></div><table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>${ledger.map((e, i, arr) => { const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0); return `<tr><td>${e.date}</td><td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td><td>${e.note}</td></tr>`; }).join('')}</tbody></table><div class="footer"><p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p></div><script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>${name} Ledger</title>
+    <style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}h2{text-align:center;color:#22c99a;font-size:24px}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:10px;margin-bottom:16px}.header p{color:#666;font-size:14px}.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0;padding:12px;background:#f8f9fa;border-radius:8px}.summary-box{text-align:center;padding:8px;border-radius:6px}.summary-box.credit{background:#e8f5f0;color:#22c99a}.summary-box.debit{background:#fee2e2;color:#ef4444}.summary-box.balance{background:#fef3c7;color:#f59e0b}.summary-box .label{font-size:10px;text-transform:uppercase;display:block;color:#666}.summary-box .value{font-size:20px;font-weight:800;display:block}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#22c99a;color:#fff;padding:8px 12px;text-align:left}td{padding:6px 12px;border-bottom:1px solid #ddd}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body><div class="header"><h2>KRT TRADERS</h2><p><strong>${name}</strong> — Ledger Statement</p></div>
+    <div class="summary"><div class="summary-box credit"><span class="label">Total Credit</span><span class="value">Rs. ${totalCredit.toFixed(2)}</span></div><div class="summary-box debit"><span class="label">Total Debit</span><span class="value">Rs. ${totalDebit.toFixed(2)}</span></div><div class="summary-box balance"><span class="label">Net Balance</span><span class="value">Rs. ${(totalCredit - totalDebit).toFixed(2)}</span></div></div>
+    <table><thead><tr><th>Date</th><th>Credit</th><th>Debit</th><th>Running Balance</th><th>Note</th></tr></thead><tbody>
+    ${ledger.map((e, i, arr) => { const running = arr.slice(0, i+1).reduce((s, x) => s + x.credit - x.debit, 0); return `<tr><td>${e.date}</td><td style="color:#22c99a;font-weight:600;">${e.credit > 0 ? 'Rs. ' + e.credit.toFixed(2) : '-'}</td><td style="color:#ef4444;font-weight:600;">${e.debit > 0 ? 'Rs. ' + e.debit.toFixed(2) : '-'}</td><td style="font-weight:700;color:#f59e0b;">Rs. ${running.toFixed(2)}</td><td>${e.note}</td></tr>`; }).join('')}
+    </tbody></table><div class="footer"><p>Generated by KRT TRADERS ERP System | © ${new Date().getFullYear()} All rights reserved</p></div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>`);
     w.document.close();
 }
 
