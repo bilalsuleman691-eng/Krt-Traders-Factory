@@ -1,6 +1,6 @@
 // ============================================================
-// KRT TRADERS ERP SYSTEM - COMPLETE JAVASCRIPT
-// Version: 4.0 - Supabase Mode (Online)
+// KRT TRADERS ERP - COMPLETE JAVASCRIPT
+// Version: 4.0 - FIXED (NO tax_rate COLUMN)
 // ============================================================
 
 // ============================================================
@@ -10,9 +10,6 @@ const SUPABASE_URL = "https://skuheucjlmuqtdmovugp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ONscpGwZaU3LdZaF_-WgAg_9Fd22Wtf";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ============================================================
-// CONFIG
-// ============================================================
 const CONFIG = {
     APP_PASSWORD: 'admin123',
     TAX_RATE: 18,
@@ -21,22 +18,35 @@ const CONFIG = {
 };
 
 // ============================================================
-// PRODUCT DATABASE & CATEGORIES
+// PRODUCTS & CATEGORIES
 // ============================================================
 const PRODUCTS = {
-    "6957404902857": "SPONGE SCRUB 2 IN 1", "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
-    "6971432358486": "FANCY HANDLE 2 IN 1", "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
-    "9031582648886": "FANCY HANDLE 3 IN 1", "9031582691028": "FANCY HANDLE 1 PCS",
-    "9035484809734": "COLOR SPONGE 6 COLOR", "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
-    "40883779": "BATH BELT", "925100017805": "REGULAR LAMINATE 2 IN 1",
-    "925100017812": "REGULAR LAMINATE 1 PCS", "925100017652": "NAIL SAVER 1 PCS",
-    "925100017799": "NAIL SAVER 2 IN 1", "2215414451340": "LARGE LAMINATE 1 PCS",
-    "8512532310295": "REGULAR PAD 1 PCS", "8500532310186": "LARGE PAD 1 PCS",
-    "6267207001641": "REGULAR SPIRAL 2 IN 1", "6267207001665": "JUMBO SPIRAL 2 IN 1",
-    "230062603912": "REGULAR SPIRAL 1 PCS", "6267207001658": "JUMBO SPIRAL 1 PCS",
-    "4684000000190": "JUMBO SPIRAL 4 IN 1", "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
-    "6971432358721": "FANCY NYLON SCRUBBER", "4684000000992": "NAIL SAVER 3 IN 1",
-    "4684000001005": "LARGE LAMINATE 3 IN 1", "925100018864": "SILVER CLASSIC BODY RAZOR",
+    "6957404902857": "SPONGE SCRUB 2 IN 1",
+    "8512532310967": "JUMBO SPIRAL 1 PCS 45 GRAM",
+    "6971432358486": "FANCY HANDLE 2 IN 1",
+    "6971432358769": "FANCY HANDLE 3 IN 1 SILVER COLOR",
+    "9031582648886": "FANCY HANDLE 3 IN 1",
+    "9031582691028": "FANCY HANDLE 1 PCS",
+    "9035484809734": "COLOR SPONGE 6 COLOR",
+    "6956589300113": "MULTI COLOR FANCY FOAM 3 IN 1",
+    "40883779": "BATH BELT",
+    "925100017805": "REGULAR LAMINATE 2 IN 1",
+    "925100017812": "REGULAR LAMINATE 1 PCS",
+    "925100017652": "NAIL SAVER 1 PCS",
+    "925100017799": "NAIL SAVER 2 IN 1",
+    "2215414451340": "LARGE LAMINATE 1 PCS",
+    "8512532310295": "REGULAR PAD 1 PCS",
+    "8500532310186": "LARGE PAD 1 PCS",
+    "6267207001641": "REGULAR SPIRAL 2 IN 1",
+    "6267207001665": "JUMBO SPIRAL 2 IN 1",
+    "230062603912": "REGULAR SPIRAL 1 PCS",
+    "6267207001658": "JUMBO SPIRAL 1 PCS",
+    "4684000000190": "JUMBO SPIRAL 4 IN 1",
+    "4684000000183": "MICRO FIBER CLOTH 4 IN 1",
+    "6971432358721": "FANCY NYLON SCRUBBER",
+    "4684000000992": "NAIL SAVER 3 IN 1",
+    "4684000001005": "LARGE LAMINATE 3 IN 1",
+    "925100018864": "SILVER CLASSIC BODY RAZOR",
     "5489754856234": "MICRO FIBER 1 PCS"
 };
 
@@ -124,8 +134,21 @@ async function loadAllData() {
             sb.from('salary_data').select('*').order('month')
         ]);
         storeRates = (ratesRes.data || []).map(r => ({ id: r.id, store: r.store, barcode: r.barcode, item: r.item, rate: Number(r.rate) }));
-        invoices = (invRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [], discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0', subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0', taxRate: Number(r.tax_rate) || 18, taxAmt: r.total_gst || '0', finalTotal: r.final_total || '0' }));
-        taxInvoices = (taxInvRes.data || []).map(r => ({ id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name, ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [], totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0, totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0, cashInvoiceId: r.cash_invoice_timestamp }));
+        invoices = (invRes.data || []).map(r => ({ 
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, items: r.items || [],
+            discountPercent: Number(r.discount_percent) || 0, discountAmt: r.discount_amt || '0',
+            subtotal: r.sub_total || '0', afterDiscount: r.after_discount || '0',
+            gstRate: Number(r.gst_rate) || 18, gstAmt: r.gst_amt || '0',
+            finalTotal: r.final_total || '0'
+        }));
+        taxInvoices = (taxInvRes.data || []).map(r => ({
+            id: r.timestamp, invoiceNo: r.invoice_no, customerName: r.customer_name, storeName: r.store_name,
+            ntn: r.ntn || '', strn: r.strn || '', address: r.address || '', date: r.date, categories: r.categories || [],
+            totalAmount: Number(r.total_amount) || 0, totalGst: Number(r.total_gst) || 0,
+            totalGross: Number(r.total_gross) || 0, discountPercent: Number(r.discount_percent) || 0,
+            cashInvoiceId: r.cash_invoice_timestamp
+        }));
         stockIn = (sinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         stockOut = (soutRes.data || []).map(r => ({ id: r.sr_no, date: r.date, customer: r.customer, item: r.item_name, barcode: r.barcode, qty: Number(r.qty), price: Number(r.price), total: Number(r.total) }));
         spStockIn = (spinRes.data || []).map(r => ({ id: r.sr_no, date: r.date, vendor: r.vendor, item: r.item_name, barcode: r.barcode, pcsPerCtn: Number(r.pcs_per_ctn) || 0, ctn: Number(r.ctn) || 0, extra: Number(r.extra) || 0, totalPcs: Number(r.total_pcs) || 0, price: Number(r.price) || 0, total: Number(r.total) || 0 }));
@@ -537,7 +560,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE
+// SAVE INVOICE - FIXED (NO tax_rate COLUMN)
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -565,7 +588,24 @@ async function saveInvoiceNow() {
     const finalTotal = afterDiscount + taxAmt;
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
     const ts = editingInvoiceTs || Date.now();
-    const invoiceData = { timestamp: ts, invoice_no: invoiceNo, customer_name: customer, store_name: store, ntn: ntn || '', strn: strn || '', address: address || '', date: date, items: items, discount_percent: discount, discount_amt: discountAmt.toFixed(2), sub_total: subtotal.toFixed(2), after_discount: afterDiscount.toFixed(2), tax_rate: taxRate, total_gst: taxAmt.toFixed(2), final_total: finalTotal.toFixed(2) };
+    const invoiceData = { 
+        timestamp: ts, 
+        invoice_no: invoiceNo, 
+        customer_name: customer, 
+        store_name: store, 
+        ntn: ntn || '', 
+        strn: strn || '', 
+        address: address || '', 
+        date: date, 
+        items: items, 
+        discount_percent: discount, 
+        discount_amt: discountAmt.toFixed(2), 
+        sub_total: subtotal.toFixed(2), 
+        after_discount: afterDiscount.toFixed(2), 
+        gst_rate: taxRate, 
+        gst_amt: taxAmt.toFixed(2), 
+        final_total: finalTotal.toFixed(2) 
+    };
     if (editingInvoiceTs !== null) {
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
         if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
@@ -627,7 +667,22 @@ async function generateTaxInvoiceFromCash() {
         categories[key].totalAmount += amount;
     });
     const categoryList = Object.values(categories).map(c => ({ ...c, avgRate: c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0 }));
-    const taxInvoiceData = { timestamp: Date.now(), invoice_no: invoiceNo + '-TAX', customer_name: customer, store_name: store, ntn: ntn || '', strn: strn || '', address: address || '', date: date, categories: categoryList, total_amount: finalTotal.toFixed(2), total_gst: taxAmt.toFixed(2), total_gross: afterDiscount.toFixed(2), discount_percent: discount, cash_invoice_timestamp: editingInvoiceTs || Date.now() };
+    const taxInvoiceData = { 
+        timestamp: Date.now(), 
+        invoice_no: invoiceNo + '-TAX', 
+        customer_name: customer, 
+        store_name: store, 
+        ntn: ntn || '', 
+        strn: strn || '', 
+        address: address || '', 
+        date: date, 
+        categories: categoryList, 
+        total_amount: finalTotal.toFixed(2), 
+        total_gst: taxAmt.toFixed(2), 
+        total_gross: afterDiscount.toFixed(2), 
+        discount_percent: discount, 
+        cash_invoice_timestamp: editingInvoiceTs || Date.now() 
+    };
     const { error } = await sb.from('tax_invoices').insert(taxInvoiceData);
     if (error) { showNotification('Error generating tax invoice: ' + error.message, 'error'); return; }
     taxInvoices.push({ ...taxInvoiceData, id: taxInvoiceData.timestamp });
@@ -673,7 +728,7 @@ function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p><p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p><p><strong>GST (${inv.taxRate}%):</strong> Rs. ${inv.taxAmt}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title><style>body{font-family:Arial;font-size:12px;margin:20px;background:#fff}.header{text-align:center;border-bottom:3px solid #22c99a;padding-bottom:14px;margin-bottom:16px}.header h1{color:#22c99a;font-size:24px}.info{display:flex;justify-content:space-between;margin:10px 0}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#22c99a;color:#fff;padding:8px;text-align:left}td{padding:6px 8px;border-bottom:1px solid #ddd}.total{text-align:right;margin-top:10px;font-size:14px}.final{font-size:18px;font-weight:800;color:#22c99a}.footer{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999}@media print{th{background:#22c99a !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><h1>KRT TRADERS</h1><p>CASH INVOICE</p></div><div class="info"><span><strong>Invoice:</strong> ${inv.invoiceNo}</span><span><strong>Date:</strong> ${inv.date}</span></div><div class="info"><span><strong>Customer:</strong> ${inv.customerName}</span><span><strong>Store:</strong> ${inv.storeName || '-'}</span></div><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${(inv.items || []).map((item, i) => `<tr><td>${i+1}</td><td>${item.item || item.barcode || '-'}</td><td>${item.qty}</td><td>Rs. ${item.rate.toFixed(2)}</td><td>Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="total"><p><strong>Sub Total:</strong> Rs. ${inv.subtotal}</p><p><strong>Discount (${inv.discountPercent}%):</strong> - Rs. ${inv.discountAmt}</p><p><strong>GST (${inv.gstRate}%):</strong> Rs. ${inv.gstAmt}</p><p class="final"><strong>FINAL TOTAL:</strong> Rs. ${inv.finalTotal}</p></div><div class="footer"><p>Thank you for your business!</p></div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
     w.document.close();
 }
 
@@ -688,7 +743,7 @@ function printTaxInvoice() {
 function printModal() { const id = window._modalInvId; if (id) printInvoiceById(id); }
 
 // ============================================================
-// INVOICE HISTORY - COMPLETE CRUD
+// INVOICE HISTORY
 // ============================================================
 function renderInvoiceHistory() {
     const from = document.getElementById('inv-hist-from')?.value || '';
@@ -711,7 +766,7 @@ function viewInvoice(id) {
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     const body = document.getElementById('inv-modal-body');
     if (!body) return;
-    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent}%</span><span><strong>GST:</strong> ${inv.taxRate}%</span><span><strong>Final:</strong> Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
+    body.innerHTML = `<div style="padding:10px 0;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;"><div><strong>Invoice #:</strong> ${inv.invoiceNo}</div><div><strong>Date:</strong> ${inv.date}</div><div><strong>Customer:</strong> ${inv.customerName}</div><div><strong>Store:</strong> ${inv.storeName || '-'}</div><div><strong>NTN:</strong> ${inv.ntn || '-'}</div><div><strong>STRN:</strong> ${inv.strn || '-'}</div></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f1f5f9;"><th style="padding:8px;border:1px solid #ddd;">Item</th><th style="padding:8px;border:1px solid #ddd;">Qty</th><th style="padding:8px;border:1px solid #ddd;">Rate</th><th style="padding:8px;border:1px solid #ddd;">Total</th></tr></thead><tbody>${(inv.items || []).map(item => `<tr><td style="padding:6px 8px;border:1px solid #ddd;">${item.item || item.barcode || '-'}</td><td style="padding:6px 8px;border:1px solid #ddd;">${item.qty}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${item.rate.toFixed(2)}</td><td style="padding:6px 8px;border:1px solid #ddd;">Rs. ${(item.qty * item.rate).toFixed(2)}</td></tr>`).join('')}<tr style="font-weight:bold;background:#e8f5f0;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:right;">Total:</td><td style="padding:8px;border:1px solid #ddd;">Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</td></tr></tbody></table><div style="margin-top:10px;display:flex;gap:15px;flex-wrap:wrap;"><span><strong>Discount:</strong> ${inv.discountPercent}%</span><span><strong>GST:</strong> ${inv.gstRate}%</span><span><strong>Final:</strong> Rs. ${parseFloat(inv.finalTotal || 0).toFixed(2)}</span></div></div>`;
     document.getElementById('modal-del-btn').onclick = () => deleteInvoice(id);
     document.getElementById('inv-modal').classList.add('open');
     window._modalInvId = id;
@@ -732,7 +787,7 @@ function loadInvoiceToForm(id) {
     document.getElementById('inv-customer-address').value = inv.address || '';
     document.getElementById('inv-date').value = inv.date || '';
     document.getElementById('inv-discount').value = inv.discountPercent || 0;
-    document.getElementById('inv-tax-rate').value = inv.taxRate || 18;
+    document.getElementById('inv-tax-rate').value = inv.gstRate || 18;
     document.getElementById('inv-number').value = inv.invoiceNo || '';
     manualInvoiceNumber = inv.invoiceNo || '';
     onInvStoreChange(inv.storeName || '');
@@ -774,7 +829,7 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY - COMPLETE CRUD
+// TAX HISTORY
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from')?.value || '';
@@ -793,6 +848,7 @@ function renderTaxHistory() {
 }
 
 function viewTaxInvoice(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); showPage('tax-invoice'); }
+
 function printTaxInvoiceById(id) { const inv = taxInvoices.find(i => i.id === id); if (!inv) { showNotification('Tax invoice not found', 'error'); return; } renderTaxInvoice(inv); setTimeout(() => printTaxInvoice(), 300); }
 
 async function deleteTaxInvoice(id) {
