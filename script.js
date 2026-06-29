@@ -1,6 +1,6 @@
 // ============================================================
 // KRT TRADERS ERP - COMPLETE JAVASCRIPT
-// Version: 4.0 - FIXED (NO tax_rate COLUMN)
+// Version: 4.0 - All Requirements Fixed
 // ============================================================
 
 // ============================================================
@@ -113,6 +113,22 @@ function showNotification(message, type = 'success') {
 
 function showLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'flex'; }
 function hideLoading() { const el = document.getElementById('loading-overlay'); if (el) el.style.display = 'none'; }
+
+// ============================================================
+// GET SP BALANCE - Check stock availability
+// ============================================================
+function getSPBalance(barcode) {
+    const totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.totalPcs, 0);
+    const totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.qty, 0);
+    return totalIn - totalOut;
+}
+
+// ============================================================
+// CHECK DUPLICATE INVOICE NUMBER
+// ============================================================
+function checkDuplicateInvoice(invoiceNo, excludeId = null) {
+    return invoices.find(inv => inv.invoiceNo === invoiceNo && (excludeId === null || inv.id !== excludeId));
+}
 
 // ============================================================
 // LOAD DATA FROM SUPABASE
@@ -560,7 +576,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - FIXED (NO tax_rate COLUMN)
+// SAVE INVOICE - COMPLETE WITH ALL REQUIREMENTS
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -569,25 +585,64 @@ async function saveInvoiceNow() {
     const ntn = document.getElementById('inv-customer-ntn').value.trim();
     const strn = document.getElementById('inv-customer-strn').value.trim();
     const address = document.getElementById('inv-customer-address').value.trim();
-    if (!customer || !date) { showNotification('Customer name and date are required!', 'error'); return; }
+    
+    if (!customer || !date) {
+        showNotification('Customer name and date are required!', 'error');
+        return;
+    }
+    
     const items = [];
+    let hasError = false;
+    let errorMessage = '';
+    
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
         const item = row.querySelector('.inv-item').value || '';
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
-        if (qty > 0 && rate > 0) items.push({ barcode, item, qty, rate, total: qty * rate });
+        if (qty > 0 && rate > 0) {
+            // CHECK SP STOCK BALANCE
+            const balance = getSPBalance(barcode);
+            if (balance < qty) {
+                hasError = true;
+                errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${balance} Pcs`;
+                return;
+            }
+            items.push({ barcode, item, qty, rate, total: qty * rate });
+        }
     });
-    if (items.length === 0) { showNotification('Add at least one item!', 'error'); return; }
+    
+    if (hasError) {
+        showNotification(errorMessage, 'error');
+        return;
+    }
+    
+    if (items.length === 0) {
+        showNotification('Add at least one item!', 'error');
+        return;
+    }
+    
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
-    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
+    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
     const afterDiscount = subtotal - discountAmt;
     const taxAmt = (afterDiscount * taxRate) / 100;
     const finalTotal = afterDiscount + taxAmt;
-    const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
+    
+    let invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
+    
+    // DUPLICATE CHECK
+    if (editingInvoiceTs === null) {
+        const existing = checkDuplicateInvoice(invoiceNo);
+        if (existing) {
+            showNotification('❌ Invoice number already exists! Please change it.', 'error');
+            return;
+        }
+    }
+    
     const ts = editingInvoiceTs || Date.now();
+    
     const invoiceData = { 
         timestamp: ts, 
         invoice_no: invoiceNo, 
@@ -606,21 +661,109 @@ async function saveInvoiceNow() {
         gst_amt: taxAmt.toFixed(2), 
         final_total: finalTotal.toFixed(2) 
     };
+    
+    // ============================================================
+    // EDIT MODE - Clean up old data
+    // ============================================================
     if (editingInvoiceTs !== null) {
+        // 1. Delete old SP Stock Out entries
+        const oldSP = spStockOut.filter(e => e.invoiceTimestamp === editingInvoiceTs);
+        for (const sp of oldSP) {
+            await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
+        }
+        spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== editingInvoiceTs);
+        
+        // 2. Delete old Tax Invoice
+        const oldTax = taxInvoices.find(i => i.cashInvoiceId === editingInvoiceTs);
+        if (oldTax) {
+            await sb.from('tax_invoices').delete().eq('timestamp', oldTax.id);
+            taxInvoices = taxInvoices.filter(i => i.id !== oldTax.id);
+        }
+        
+        // 3. Update Cash Invoice
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
-        if (error) { showNotification('Error updating: ' + error.message, 'error'); return; }
+        if (error) {
+            showNotification('Error updating: ' + error.message, 'error');
+            return;
+        }
         const idx = invoices.findIndex(inv => inv.id === editingInvoiceTs);
-        if (idx > -1) invoices[idx] = { ...invoices[idx], ...invoiceData };
+        if (idx > -1) invoices[idx] = { ...invoiceData, id: ts };
+        
         editingInvoiceTs = null;
         document.getElementById('inv-cancel-btn').style.display = 'none';
-        showNotification('Invoice updated!', 'success');
+        showNotification('✅ Invoice updated!', 'success');
+        
     } else {
+        // ============================================================
+        // NEW INVOICE MODE
+        // ============================================================
         const { error } = await sb.from('invoices').insert(invoiceData);
-        if (error) { showNotification('Error saving: ' + error.message, 'error'); return; }
+        if (error) {
+            showNotification('Error saving: ' + error.message, 'error');
+            return;
+        }
         invoices.push({ ...invoiceData, id: ts });
         invoiceCounter++;
-        showNotification('Invoice saved!', 'success');
+        showNotification('✅ Invoice saved!', 'success');
     }
+    
+    // ============================================================
+    // INSERT NEW SP STOCK OUT
+    // ============================================================
+    for (const item of items) {
+        if (item.barcode && item.qty > 0) {
+            const srNo = Date.now() + Math.floor(Math.random() * 1000);
+            const spRow = {
+                sr_no: srNo,
+                date: date,
+                store: store || customer,
+                barcode: item.barcode,
+                item_name: item.item || PRODUCTS[item.barcode] || item.barcode,
+                qty: item.qty,
+                price: item.rate,
+                total: item.qty * item.rate,
+                invoice_timestamp: ts
+            };
+            const { error } = await sb.from('sp_stock_out').insert(spRow);
+            if (error) {
+                console.error('SP Insert Error:', error);
+            } else {
+                spStockOut.push({
+                    id: srNo,
+                    date: spRow.date,
+                    store: spRow.store,
+                    barcode: spRow.barcode,
+                    item: spRow.item_name,
+                    qty: spRow.qty,
+                    price: spRow.price,
+                    total: spRow.total,
+                    invoiceTimestamp: ts
+                });
+            }
+        }
+    }
+    
+    // ============================================================
+    // GENERATE NEW TAX INVOICE
+    // ============================================================
+    await generateAndSaveTaxInvoice(
+        ts,
+        discount,
+        items,
+        store,
+        customer,
+        ntn,
+        strn,
+        address,
+        date,
+        invoiceNo,
+        finalTotal,
+        taxRate,
+        taxAmt,
+        subtotal,
+        discountAmt
+    );
+    
     renderInvoiceHistory();
     updateBadges();
     loadDashboard();
@@ -631,6 +774,120 @@ async function saveInvoiceNow() {
 // ============================================================
 // GENERATE TAX INVOICE
 // ============================================================
+async function generateAndSaveTaxInvoice(cashTimestamp, discountPercent, items, storeName, customerName, customerNtn, customerStrn, customerAddress, date, invoiceNo, finalTotal, taxRate, taxAmt, subTotal, discountAmt) {
+    
+    // Check if tax invoice already exists
+    const existingTax = taxInvoices.find(i => i.cashInvoiceId === cashTimestamp);
+    if (existingTax) {
+        await sb.from('tax_invoices').delete().eq('timestamp', existingTax.id);
+        taxInvoices = taxInvoices.filter(i => i.id !== existingTax.id);
+    }
+    
+    const categories = {};
+    const disc = discountPercent || 0;
+    const taxRateFinal = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
+    
+    // Group items by category with discount applied
+    items.forEach(item => {
+        const itemName = item.item || item.barcode;
+        const catInfo = getItemCategory(itemName);
+        const key = catInfo.category;
+        const qty = parseFloat(item.qty) || 0;
+        const rate = parseFloat(item.rate) || 0;
+        
+        const totalBeforeDiscount = qty * rate;
+        const discAmtItem = totalBeforeDiscount * (disc / 100);
+        const totalAfterDiscount = totalBeforeDiscount - discAmtItem;
+        
+        if (!categories[key]) {
+            categories[key] = {
+                category: key,
+                hsCode: catInfo.hsCode,
+                totalPcs: 0,
+                totalGram: 0,
+                totalKg: 0,
+                totalSheet: 0,
+                totalAmount: 0,
+                weight: catInfo.weight || 0,
+                items: []
+            };
+        }
+        
+        categories[key].totalPcs += qty;
+        categories[key].totalAmount += totalAfterDiscount;
+        
+        if (catInfo.weight > 0) {
+            categories[key].totalGram += (qty * catInfo.weight);
+            categories[key].totalKg = categories[key].totalGram / 1000;
+            categories[key].totalSheet = categories[key].totalGram / 1400;
+        }
+    });
+    
+    // Convert to array with rates
+    const categoryList = Object.keys(categories).map(key => {
+        const cat = categories[key];
+        const totalAmount = cat.totalAmount || 0;
+        const totalPcs = cat.totalPcs || 0;
+        const avgRatePerPcs = totalPcs > 0 ? totalAmount / totalPcs : 0;
+        
+        return {
+            category: key,
+            totalPcs: totalPcs,
+            totalGram: cat.totalGram || 0,
+            totalKg: cat.totalKg || 0,
+            totalSheet: cat.totalSheet || 0,
+            totalAmount: totalAmount,
+            avgRatePerPcs: avgRatePerPcs,
+            hsCode: cat.hsCode || '0000'
+        };
+    });
+    
+    const taxInvoiceData = { 
+        timestamp: Date.now(), 
+        invoice_no: invoiceNo + '-TAX', 
+        store_name: storeName, 
+        customer_name: customerName, 
+        ntn: customerNtn || '', 
+        strn: customerStrn || '', 
+        address: customerAddress || '', 
+        date: date, 
+        categories: categoryList, 
+        total_amount: finalTotal.toFixed(2), 
+        total_gst: taxAmt.toFixed(2), 
+        total_gross: finalTotal.toFixed(2), 
+        discount_percent: disc, 
+        cash_invoice_timestamp: cashTimestamp 
+    };
+    
+    const row = {
+        timestamp: taxInvoiceData.timestamp,
+        invoice_no: taxInvoiceData.invoice_no,
+        store_name: taxInvoiceData.store_name,
+        customer_name: taxInvoiceData.customer_name,
+        ntn: taxInvoiceData.ntn,
+        strn: taxInvoiceData.strn,
+        address: taxInvoiceData.address,
+        date: taxInvoiceData.date,
+        categories: taxInvoiceData.categories,
+        total_amount: taxInvoiceData.total_amount,
+        total_gst: taxInvoiceData.total_gst,
+        total_gross: taxInvoiceData.total_gross,
+        discount_percent: taxInvoiceData.discount_percent,
+        cash_invoice_timestamp: taxInvoiceData.cash_invoice_timestamp
+    };
+    
+    const { error } = await sb.from('tax_invoices').insert(row);
+    if (error) {
+        console.error('Tax Invoice Insert Error:', error);
+    } else {
+        taxInvoices.push(taxInvoiceData);
+        renderTaxInvoice(taxInvoiceData);
+    }
+}
+
+// ============================================================
+// GENERATE TAX INVOICE FROM CASH
+// ============================================================
 async function generateTaxInvoiceFromCash() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
@@ -638,7 +895,12 @@ async function generateTaxInvoiceFromCash() {
     const ntn = document.getElementById('inv-customer-ntn').value.trim();
     const strn = document.getElementById('inv-customer-strn').value.trim();
     const address = document.getElementById('inv-customer-address').value.trim();
-    if (!customer) { showNotification('Please fill customer name first', 'error'); return; }
+    
+    if (!customer) {
+        showNotification('Please fill customer name first', 'error');
+        return;
+    }
+    
     const items = [];
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
@@ -647,47 +909,41 @@ async function generateTaxInvoiceFromCash() {
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
         if (qty > 0 && rate > 0) items.push({ barcode, item, qty, rate, total: qty * rate });
     });
-    if (items.length === 0) { showNotification('Add items first!', 'error'); return; }
+    
+    if (items.length === 0) {
+        showNotification('Add items first!', 'error');
+        return;
+    }
+    
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
-    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 0;
+    const taxRate = parseFloat(document.getElementById('inv-tax-rate').value) || 18;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
     const afterDiscount = subtotal - discountAmt;
     const taxAmt = (afterDiscount * taxRate) / 100;
     const finalTotal = afterDiscount + taxAmt;
     const invoiceNo = manualInvoiceNumber || 'INV-' + String(invoices.length + 1).padStart(3, '0');
-    const categories = {};
-    items.forEach(item => {
-        const name = item.item || item.barcode;
-        const info = getItemCategory(name);
-        const key = info.category;
-        if (!categories[key]) { categories[key] = { category: key, hsCode: info.hsCode, totalPcs: 0, totalAmount: 0, weight: info.weight || 0 }; }
-        categories[key].totalPcs += item.qty;
-        const amount = item.total * (1 - discount / 100);
-        categories[key].totalAmount += amount;
-    });
-    const categoryList = Object.values(categories).map(c => ({ ...c, avgRate: c.totalPcs > 0 ? c.totalAmount / c.totalPcs : 0 }));
-    const taxInvoiceData = { 
-        timestamp: Date.now(), 
-        invoice_no: invoiceNo + '-TAX', 
-        customer_name: customer, 
-        store_name: store, 
-        ntn: ntn || '', 
-        strn: strn || '', 
-        address: address || '', 
-        date: date, 
-        categories: categoryList, 
-        total_amount: finalTotal.toFixed(2), 
-        total_gst: taxAmt.toFixed(2), 
-        total_gross: afterDiscount.toFixed(2), 
-        discount_percent: discount, 
-        cash_invoice_timestamp: editingInvoiceTs || Date.now() 
-    };
-    const { error } = await sb.from('tax_invoices').insert(taxInvoiceData);
-    if (error) { showNotification('Error generating tax invoice: ' + error.message, 'error'); return; }
-    taxInvoices.push({ ...taxInvoiceData, id: taxInvoiceData.timestamp });
+    const ts = editingInvoiceTs || Date.now();
+    
+    await generateAndSaveTaxInvoice(
+        ts,
+        discount,
+        items,
+        store,
+        customer,
+        ntn,
+        strn,
+        address,
+        date,
+        invoiceNo,
+        finalTotal,
+        taxRate,
+        taxAmt,
+        subtotal,
+        discountAmt
+    );
+    
     showNotification('Tax Invoice generated!', 'success');
-    renderTaxInvoice(taxInvoiceData);
     updateBadges();
     showPage('tax-invoice');
 }
@@ -743,7 +999,7 @@ function printTaxInvoice() {
 function printModal() { const id = window._modalInvId; if (id) printInvoiceById(id); }
 
 // ============================================================
-// INVOICE HISTORY
+// INVOICE HISTORY - COMPLETE CRUD
 // ============================================================
 function renderInvoiceHistory() {
     const from = document.getElementById('inv-hist-from')?.value || '';
@@ -805,6 +1061,12 @@ async function deleteInvoice(id) {
     if (error) { showNotification('Error deleting: ' + error.message, 'error'); return; }
     invoices = invoices.filter(inv => inv.id !== id);
     taxInvoices = taxInvoices.filter(inv => inv.cashInvoiceId !== id);
+    // Delete SP Stock Out
+    const spToDelete = spStockOut.filter(e => e.invoiceTimestamp === id);
+    for (const sp of spToDelete) {
+        await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
+    }
+    spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== id);
     renderInvoiceHistory();
     loadDashboard();
     updateBadges();
@@ -829,7 +1091,7 @@ function exportInvoiceHistory() {
 }
 
 // ============================================================
-// TAX HISTORY
+// TAX HISTORY - COMPLETE CRUD
 // ============================================================
 function renderTaxHistory() {
     const from = document.getElementById('tax-hist-from')?.value || '';
@@ -1261,12 +1523,6 @@ function updateSPStoreList() {
     const stores = [...new Set(spStockOut.map(s => s.store))];
     const list = document.getElementById('spout-store-list');
     if (list) list.innerHTML = stores.map(s => `<option value="${s}">`).join('');
-}
-
-function getSPBalance(barcode) {
-    const totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.totalPcs, 0);
-    const totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + s.qty, 0);
-    return totalIn - totalOut;
 }
 
 function spoutBarcodeInput() {
