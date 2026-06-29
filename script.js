@@ -1084,15 +1084,12 @@ function printInvoice() {
     else showNotification('No invoice to print!', 'error');
 }
 
-// ============================================================
-// PRINT CASH INVOICE - FIXED TOTAL (CALCULATES FROM ITEMS)
-// ============================================================
 function printInvoiceById(id) {
     const inv = invoices.find(i => i.id === id);
     if (!inv) { showNotification('Invoice not found', 'error'); return; }
     
     // ============================================================
-    // CALCULATE TOTALS DIRECTLY FROM ITEMS
+    // CRITICAL FIX: CALCULATE TOTALS DIRECTLY FROM ITEMS
     // ============================================================
     let subtotal = 0;
     const items = inv.items || [];
@@ -1106,7 +1103,9 @@ function printInvoiceById(id) {
     const discountAmt = (subtotal * discountPercent) / 100;
     const finalTotal = subtotal - discountAmt;
     
+    // Debug log to check values
     console.log('📊 Invoice Print - Subtotal:', subtotal, 'Discount:', discountAmt, 'Final:', finalTotal);
+    console.log('📊 Invoice Data:', inv);
     
     const w = window.open('', '_blank', 'width=800,height=600');
     w.document.write(`<!DOCTYPE html><html><head><title>${inv.invoiceNo}</title>
