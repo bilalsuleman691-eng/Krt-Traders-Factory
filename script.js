@@ -588,10 +588,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - FIXED FOR UPDATES (STOCK CHECK)
-// ============================================================
-// ============================================================
-// SAVE INVOICE - FIXED FOR UPDATES (STOCK CHECK)
+// SAVE INVOICE - FINAL FIXED (NO getSPBalance DEPENDENCY)
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -631,17 +628,21 @@ async function saveInvoiceNow() {
             // ============================================================
             // STEP 2: CHECK STOCK - EXCLUDING CURRENT INVOICE
             // ============================================================
+            // Total IN from SP Stock In
             let totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
+            
+            // Total OUT from SP Stock Out (ALL invoices)
             let totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
             
             // If updating, subtract the old quantity for this invoice
             if (existingSPQuantities[barcode]) {
-                totalOut = totalOut - existingSPQuantities[barcode];
-                console.log(`📊 ${barcode}: Old=${existingSPQuantities[barcode]}, Total Out (excluding this)=${totalOut}`);
+                const oldQty = existingSPQuantities[barcode];
+                totalOut = totalOut - oldQty;
+                console.log(`📊 ${barcode}: Old=${oldQty}, Total Out (excluding this)=${totalOut}`);
             }
             
             const availableBalance = totalIn - totalOut;
-            console.log(`📊 ${barcode}: Available=${availableBalance}, Requested=${qty}`);
+            console.log(`📊 ${barcode}: Total In=${totalIn}, Total Out=${totalOut}, Available=${availableBalance}, Requested=${qty}`);
             
             if (availableBalance < qty) {
                 hasError = true;
