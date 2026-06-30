@@ -588,7 +588,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - COMPLETE
+// SAVE INVOICE - FIXED FOR UPDATES
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -603,9 +603,22 @@ async function saveInvoiceNow() {
         return;
     }
     
+    // ============================================================
+    // STEP 1: GET ITEMS FROM FORM
+    // ============================================================
     const items = [];
     let hasError = false;
     let errorMessage = '';
+    
+    // Get existing SP entries for this invoice (if updating)
+    let existingSPQuantities = {};
+    if (editingInvoiceTs !== null) {
+        const existingEntries = spStockOut.filter(e => e.invoiceTimestamp === editingInvoiceTs);
+        existingEntries.forEach(e => {
+            existingSPQuantities[e.barcode] = (existingSPQuantities[e.barcode] || 0) + e.qty;
+        });
+        console.log('📦 Existing SP quantities for this invoice:', existingSPQuantities);
+    }
     
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
@@ -613,10 +626,24 @@ async function saveInvoiceNow() {
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
         if (qty > 0 && rate > 0) {
-            const balance = getSPBalance(barcode);
-            if (balance < qty) {
+            // ============================================================
+            // STEP 2: CHECK STOCK - EXCLUDING CURRENT INVOICE
+            // ============================================================
+            let totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
+            let totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
+            
+            // If updating, subtract the old quantity for this invoice
+            if (existingSPQuantities[barcode]) {
+                totalOut = totalOut - existingSPQuantities[barcode];
+                console.log(`📊 Barcode ${barcode}: Old qty = ${existingSPQuantities[barcode]}, Total Out (excluding current) = ${totalOut}`);
+            }
+            
+            const availableBalance = totalIn - totalOut;
+            console.log(`📊 Barcode ${barcode}: Available = ${availableBalance}, Requested = ${qty}`);
+            
+            if (availableBalance < qty) {
                 hasError = true;
-                errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${balance} Pcs`;
+                errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${availableBalance} Pcs (Requested: ${qty})`;
                 return;
             }
             items.push({ barcode, item, qty, rate, total: qty * rate });
@@ -633,6 +660,9 @@ async function saveInvoiceNow() {
         return;
     }
     
+    // ============================================================
+    // STEP 3: CALCULATE TOTALS
+    // ============================================================
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
@@ -650,6 +680,9 @@ async function saveInvoiceNow() {
     
     const ts = editingInvoiceTs || Date.now();
     
+    // ============================================================
+    // STEP 4: PREPARE INVOICE DATA
+    // ============================================================
     const invoiceData = { 
         timestamp: ts, 
         invoice_no: invoiceNo, 
@@ -661,25 +694,31 @@ async function saveInvoiceNow() {
         date: date, 
         items: items, 
         discount_percent: discount, 
-        discount_amt: discountAmt.toFixed(2), 
-        sub_total: subtotal.toFixed(2), 
-        gross_amount: grossAmount.toFixed(2),
-        final_total: grossAmount.toFixed(2)
+        discount_amt: discountAmt, // Store as number
+        sub_total: subtotal, // Store as number
+        gross_amount: grossAmount, // Store as number
+        final_total: grossAmount // Store as number
     };
     
+    // ============================================================
+    // STEP 5: HANDLE UPDATE
+    // ============================================================
     if (editingInvoiceTs !== null) {
+        // Delete old SP entries (stock check already passed)
         const oldSP = spStockOut.filter(e => e.invoiceTimestamp === editingInvoiceTs);
         for (const sp of oldSP) {
             await sb.from('sp_stock_out').delete().eq('sr_no', sp.id);
         }
         spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== editingInvoiceTs);
         
+        // Delete old tax invoice
         const oldTax = taxInvoices.find(i => i.cashInvoiceId === editingInvoiceTs);
         if (oldTax) {
             await sb.from('tax_invoices').delete().eq('timestamp', oldTax.id);
             taxInvoices = taxInvoices.filter(i => i.id !== oldTax.id);
         }
         
+        // Update invoice
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
         if (error) {
             showNotification('Error updating: ' + error.message, 'error');
@@ -692,6 +731,9 @@ async function saveInvoiceNow() {
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('✅ Invoice updated!', 'success');
     } else {
+        // ============================================================
+        // STEP 6: HANDLE NEW INVOICE
+        // ============================================================
         const { error } = await sb.from('invoices').insert(invoiceData);
         if (error) {
             showNotification('Error saving: ' + error.message, 'error');
@@ -702,7 +744,9 @@ async function saveInvoiceNow() {
         showNotification('✅ Invoice saved!', 'success');
     }
     
-    // SP STOCK OUT
+    // ============================================================
+    // STEP 7: CREATE NEW SP STOCK OUT ENTRIES
+    // ============================================================
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -734,12 +778,17 @@ async function saveInvoiceNow() {
         }
     }
     
-    // GENERATE TAX INVOICE
+    // ============================================================
+    // STEP 8: GENERATE TAX INVOICE
+    // ============================================================
     await generateAndSaveTaxInvoice(
         ts, discount, items, store, customer, ntn, strn, address,
         date, invoiceNo, grossAmount
     );
     
+    // ============================================================
+    // STEP 9: REFRESH UI
+    // ============================================================
     renderInvoiceHistory();
     renderTaxHistory();
     renderSPOut();
@@ -749,7 +798,6 @@ async function saveInvoiceNow() {
     updateInvoiceNumber();
     showNotification('✅ Invoice saved successfully!', 'success');
 }
-
 // ============================================================
 // GENERATE TAX INVOICE - WITH TOTALS
 // ============================================================
