@@ -588,7 +588,7 @@ function clearInvoiceForm() {
 function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById('inv-cancel-btn').style.display = 'none'; clearInvoiceForm(); showNotification('Edit cancelled', 'info'); }
 
 // ============================================================
-// SAVE INVOICE - SMART STOCK CHECK (FIXED)
+// SAVE INVOICE - FULLY FIXED (SMART STOCK CHECK)
 // ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
@@ -603,87 +603,103 @@ async function saveInvoiceNow() {
         return;
     }
     
+    // ============================================================
+    // STEP 1: Get existing items from current invoice (if editing)
+    // ============================================================
     const items = [];
     let hasError = false;
     let errorMessage = '';
     
-    // ============================================================
-    // FIX: Get existing items for this invoice (if updating)
-    // ============================================================
-    let existingItems = {};
+    let existingItemsMap = {};
+    let existingInvoiceItems = [];
+    
     if (editingInvoiceTs !== null) {
         const existingInvoice = invoices.find(inv => inv.id === editingInvoiceTs);
         if (existingInvoice && existingInvoice.items) {
-            existingInvoice.items.forEach(item => {
-                existingItems[item.barcode] = item.qty;
+            existingInvoiceItems = existingInvoice.items;
+            existingInvoiceItems.forEach(item => {
+                existingItemsMap[item.barcode] = {
+                    qty: item.qty,
+                    rate: item.rate,
+                    item: item.item
+                };
             });
+            console.log('📦 Existing items in this invoice:', existingItemsMap);
         }
-        console.log('📦 Existing items in this invoice:', existingItems);
     }
     
+    // ============================================================
+    // STEP 2: Collect form items and smart stock check
+    // ============================================================
     document.querySelectorAll('#inv-body tr').forEach(row => {
         const barcode = row.querySelector('.inv-barcode').value || '';
         const item = row.querySelector('.inv-item').value || '';
         const qty = parseFloat(row.querySelector('.inv-qty').value) || 0;
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
+        
         if (qty > 0 && rate > 0) {
             // ============================================================
-            // SMART FIX: Stock check ONLY if:
-            // 1. New invoice (editingInvoiceTs === null)
-            // 2. OR New item being added (not in existing items)
-            // 3. OR Quantity is being INCREASED
+            // SMART STOCK CHECK LOGIC
             // ============================================================
-            let shouldCheckStock = true;
+            let shouldCheckStock = false;
+            let checkQty = 0;
+            let isNewItem = false;
             let oldQty = 0;
             
-            if (editingInvoiceTs !== null) {
-                // Agar item pehle se exist karta hai
-                if (existingItems[barcode] !== undefined) {
-                    oldQty = existingItems[barcode];
-                    // Agar quantity increase nahi ho rahi (same ya decrease hai)
-                    if (qty <= oldQty) {
-                        shouldCheckStock = false;
-                        console.log(`✅ ${barcode}: Qty ${oldQty} → ${qty} (same/decreased), NO stock check needed`);
+            if (editingInvoiceTs === null) {
+                // NEW INVOICE: Full stock check
+                shouldCheckStock = true;
+                checkQty = qty;
+                console.log(`🆕 New invoice: ${barcode} - Full stock check (${qty})`);
+            } else {
+                // EDITING INVOICE
+                if (existingItemsMap[barcode]) {
+                    // Item already exists in this invoice
+                    oldQty = existingItemsMap[barcode].qty;
+                    
+                    if (qty > oldQty) {
+                        // Quantity INCREASED: Check ONLY extra quantity
+                        shouldCheckStock = true;
+                        checkQty = qty - oldQty;
+                        console.log(`📈 ${barcode}: Increased from ${oldQty} to ${qty} - Check extra ${checkQty}`);
                     } else {
-                        // Quantity increase ho rahi hai, sirf extra quantity check karein
-                        const extraQty = qty - oldQty;
-                        console.log(`📊 ${barcode}: Qty increased from ${oldQty} to ${qty} (extra ${extraQty}), checking stock for extra only`);
-                        
-                        let totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
-                        let totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
-                        // Stock out mein se current invoice ki quantity subtract karein (kyunke yeh already deducted hai)
-                        totalOut = totalOut - oldQty;
-                        const available = totalIn - totalOut;
-                        
-                        if (extraQty > available) {
-                            hasError = true;
-                            errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${available} Pcs (Need extra: ${extraQty})`;
-                            return;
-                        }
-                        // Extra stock available hai, proceed
+                        // Quantity SAME or DECREASED: NO stock check needed
                         shouldCheckStock = false;
+                        console.log(`✅ ${barcode}: ${oldQty} → ${qty} (same/decreased) - NO stock check`);
                     }
-                }
-                // Agar naya item add ho raha hai (existing mein nahi hai)
-                else {
-                    console.log(`📊 ${barcode}: New item being added, checking stock`);
-                    // Naye item ke liye full stock check karein
-                    const balance = getSPBalance(barcode);
-                    if (balance < qty) {
-                        hasError = true;
-                        errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${balance} Pcs`;
-                        return;
-                    }
-                    shouldCheckStock = false;
+                } else {
+                    // NEW ITEM added during edit: Full stock check
+                    shouldCheckStock = true;
+                    checkQty = qty;
+                    isNewItem = true;
+                    console.log(`🆕 ${barcode}: New item added - Full stock check (${qty})`);
                 }
             }
             
-            // Agar new invoice hai toh full stock check karein
-            if (editingInvoiceTs === null) {
-                const balance = getSPBalance(barcode);
-                if (balance < qty) {
+            // ============================================================
+            // STEP 3: Execute stock check if needed
+            // ============================================================
+            if (shouldCheckStock) {
+                // Calculate available stock (excluding current invoice if editing)
+                let totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
+                let totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
+                
+                // If editing, exclude this invoice's old quantity from totalOut
+                if (editingInvoiceTs !== null && oldQty > 0) {
+                    totalOut = totalOut - oldQty;
+                    console.log(`📊 ${barcode}: Excluding old qty ${oldQty}, Total Out = ${totalOut}`);
+                }
+                
+                const available = totalIn - totalOut;
+                console.log(`📊 ${barcode}: Available = ${available}, Need = ${checkQty}`);
+                
+                if (available < checkQty) {
                     hasError = true;
-                    errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${balance} Pcs`;
+                    if (isNewItem) {
+                        errorMessage = `❌ ${item || barcode} - Insufficient stock! Available: ${available} Pcs`;
+                    } else {
+                        errorMessage = `❌ ${item || barcode} - Need extra ${checkQty} Pcs but only ${available} available!`;
+                    }
                     return;
                 }
             }
@@ -702,6 +718,9 @@ async function saveInvoiceNow() {
         return;
     }
     
+    // ============================================================
+    // STEP 4: Calculate totals
+    // ============================================================
     const discount = parseFloat(document.getElementById('inv-discount').value) || 0;
     const subtotal = items.reduce((s, item) => s + item.total, 0);
     const discountAmt = (subtotal * discount) / 100;
@@ -719,6 +738,9 @@ async function saveInvoiceNow() {
     
     const ts = editingInvoiceTs || Date.now();
     
+    // ============================================================
+    // STEP 5: Prepare invoice data
+    // ============================================================
     const invoiceData = { 
         timestamp: ts, 
         invoice_no: invoiceNo, 
@@ -736,6 +758,9 @@ async function saveInvoiceNow() {
         final_total: grossAmount
     };
     
+    // ============================================================
+    // STEP 6: Handle Update (Delete old entries)
+    // ============================================================
     if (editingInvoiceTs !== null) {
         // Delete old SP entries
         const oldSP = spStockOut.filter(e => e.invoiceTimestamp === editingInvoiceTs);
@@ -744,12 +769,14 @@ async function saveInvoiceNow() {
         }
         spStockOut = spStockOut.filter(e => e.invoiceTimestamp !== editingInvoiceTs);
         
+        // Delete old tax invoice
         const oldTax = taxInvoices.find(i => i.cashInvoiceId === editingInvoiceTs);
         if (oldTax) {
             await sb.from('tax_invoices').delete().eq('timestamp', oldTax.id);
             taxInvoices = taxInvoices.filter(i => i.id !== oldTax.id);
         }
         
+        // Update invoice
         const { error } = await sb.from('invoices').update(invoiceData).eq('timestamp', ts);
         if (error) {
             showNotification('Error updating: ' + error.message, 'error');
@@ -762,6 +789,9 @@ async function saveInvoiceNow() {
         document.getElementById('inv-cancel-btn').style.display = 'none';
         showNotification('✅ Invoice updated!', 'success');
     } else {
+        // ============================================================
+        // STEP 7: Handle New Invoice
+        // ============================================================
         const { error } = await sb.from('invoices').insert(invoiceData);
         if (error) {
             showNotification('Error saving: ' + error.message, 'error');
@@ -772,7 +802,9 @@ async function saveInvoiceNow() {
         showNotification('✅ Invoice saved!', 'success');
     }
     
-    // SP STOCK OUT - Create new entries
+    // ============================================================
+    // STEP 8: Create new SP Stock Out entries
+    // ============================================================
     for (const item of items) {
         if (item.barcode && item.qty > 0) {
             const srNo = Date.now() + Math.floor(Math.random() * 1000);
@@ -804,11 +836,17 @@ async function saveInvoiceNow() {
         }
     }
     
+    // ============================================================
+    // STEP 9: Generate Tax Invoice
+    // ============================================================
     await generateAndSaveTaxInvoice(
         ts, discount, items, store, customer, ntn, strn, address,
         date, invoiceNo, grossAmount
     );
     
+    // ============================================================
+    // STEP 10: Refresh UI
+    // ============================================================
     renderInvoiceHistory();
     renderTaxHistory();
     renderSPOut();
