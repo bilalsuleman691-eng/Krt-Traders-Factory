@@ -590,6 +590,9 @@ function cancelInvoiceEdit() { editingInvoiceTs = null; document.getElementById(
 // ============================================================
 // SAVE INVOICE - FIXED FOR UPDATES (STOCK CHECK)
 // ============================================================
+// ============================================================
+// SAVE INVOICE - FIXED FOR UPDATES (STOCK CHECK)
+// ============================================================
 async function saveInvoiceNow() {
     const customer = document.getElementById('inv-customer').value.trim();
     const date = document.getElementById('inv-date').value;
@@ -616,7 +619,7 @@ async function saveInvoiceNow() {
         existingEntries.forEach(e => {
             existingSPQuantities[e.barcode] = (existingSPQuantities[e.barcode] || 0) + e.qty;
         });
-        console.log('📦 Existing SP for this invoice:', existingSPQuantities);
+        console.log('📦 Existing SP quantities for this invoice:', existingSPQuantities);
     }
     
     document.querySelectorAll('#inv-body tr').forEach(row => {
@@ -626,7 +629,7 @@ async function saveInvoiceNow() {
         const rate = parseFloat(row.querySelector('.inv-rate').value) || 0;
         if (qty > 0 && rate > 0) {
             // ============================================================
-            // STEP 2: CALCULATE AVAILABLE BALANCE (EXCLUDING CURRENT INVOICE)
+            // STEP 2: CHECK STOCK - EXCLUDING CURRENT INVOICE
             // ============================================================
             let totalIn = spStockIn.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.totalPcs || 0), 0);
             let totalOut = spStockOut.filter(s => s.barcode === barcode).reduce((sum, s) => sum + (s.qty || 0), 0);
