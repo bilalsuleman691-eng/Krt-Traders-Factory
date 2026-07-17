@@ -1476,12 +1476,45 @@ function printTaxInvoiceById(id) {
         return; 
     }
     
-    // Tax invoice ka HTML banayein
-    const printContent = document.getElementById('tax-invoice-container')?.innerHTML;
-    if (!printContent) {
-        showNotification('No content to print!', 'error');
-        return;
-    }
+    // Tax invoice ka HTML generate karein direct data se
+    const labels = { 'Foam': 'Abrasive Sheet', 'Steel': 'Stainless Steel', 'Fancy': 'Home Consumption', 'Micro': 'Micro Fiber', 'Razor': 'Classic Razor' };
+    const colors = { 'Foam': '#22c99a', 'Steel': '#3b82f6', 'Fancy': '#8b5cf6', 'Micro': '#f59e0b', 'Razor': '#ef4444' };
+    
+    // Calculate totals
+    let totalExclTax = 0;
+    let totalGst = 0;
+    let totalAmount = 0;
+    let rows = '';
+    
+    (inv.categories || []).forEach(cat => {
+        if (cat.totalPcs === 0) return;
+        const catName = labels[cat.category] || cat.category;
+        const exclTax = cat.totalAmount / 1.18;
+        const gst = exclTax * 0.18;
+        totalExclTax += exclTax;
+        totalGst += gst;
+        totalAmount += cat.totalAmount;
+        
+        rows += `<tr>
+            <td>${cat.totalPcs}</td>
+            <td><span style="color:${colors[cat.category] || '#64748b'};font-weight:600;">${catName}</span></td>
+            <td>${cat.hsCode}</td>
+            <td>${cat.totalSheet > 0 ? cat.totalSheet.toFixed(3) : '-'}</td>
+            <td>${cat.totalKg > 0 ? cat.totalKg.toFixed(3) : '-'}</td>
+            <td>${cat.avgRatePerPcs ? cat.avgRatePerPcs.toFixed(2) : '0.00'}</td>
+            <td>Rs. ${exclTax.toFixed(2)}</td>
+            <td>Rs. ${gst.toFixed(2)}</td>
+            <td><strong>Rs. ${cat.totalAmount.toFixed(2)}</strong></td>
+        </tr>`;
+    });
+    
+    // Get values from invoice data
+    const gross = parseFloat(inv.gross_amount) || totalAmount;
+    const excludingTax = parseFloat(inv.excluding_tax) || (totalAmount / 1.18);
+    const gstAmount = parseFloat(inv.gst_amount) || (totalAmount - excludingTax);
+    const netAmount = parseFloat(inv.net_amount) || totalAmount;
+    const disc = parseFloat(inv.discount_percent) || 0;
+    const discAmt = (gross * disc) / 100;
     
     // Naya window open karein sirf tax invoice ke liye
     const w = window.open('', '_blank', 'width=900,height=700');
@@ -1507,11 +1540,7 @@ function printTaxInvoiceById(id) {
             .table-wrap { overflow-x:auto; margin:12px 0; }
             table { width:100%; border-collapse:collapse; font-size:10px; }
             th { background:#1a3c6e; color:#fff; padding:6px 8px; text-align:left; border:1px solid #1a3c6e; }
-            th.center { text-align:center; }
-            th.right { text-align:right; }
             td { padding:5px 8px; border:1px solid #ddd; }
-            td.center { text-align:center; }
-            td.right { text-align:right; }
             .total-row { background:#e8f5f0; font-weight:700; }
             .total-row td { font-weight:700; border-top:2px solid #0a3d2a; }
             .totals-grid { display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px; margin-top:15px; padding-top:15px; border-top:2px solid #ddd; }
@@ -1530,7 +1559,73 @@ function printTaxInvoiceById(id) {
         </style>
     </head>
     <body>
-        ${printContent}
+        <div class="tax-invoice-display">
+            <div class="header">
+                <h1>KRT TRADERS</h1>
+                <p class="sub-title">Deals in all kinds of cleaning item and general products</p>
+                <p class="invoice-title">SALES TAX INVOICE</p>
+                <p class="copy-type">Original — Duplicate</p>
+            </div>
+            <div class="info-grid">
+                <div><strong>Invoice #:</strong> ${inv.invoice_no}</div>
+                <div><strong>Date:</strong> ${inv.date}</div>
+                <div><strong>Discount:</strong> ${disc}%</div>
+            </div>
+            <div class="buyer-grid">
+                <div class="buyer-box">
+                    <span class="box-title">Supplier</span>
+                    <div class="box-name">KRT TRADERS</div>
+                    <div class="box-detail">NTN: 2995454-1</div>
+                    <div class="box-detail">STRN: 300299545411</div>
+                    <div class="box-detail">Address: Lahore, Pakistan</div>
+                </div>
+                <div class="buyer-box">
+                    <span class="box-title">Buyer</span>
+                    <div class="box-name">${inv.customer_name || '-'}</div>
+                    <div class="box-detail">NTN: ${inv.ntn || '-'}</div>
+                    <div class="box-detail">STRN: ${inv.strn || '-'}</div>
+                    <div class="box-detail">Address: ${inv.address || '-'}</div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Qty</th><th>Category</th><th>HS Code</th><th>Sheet</th><th>KG</th><th>Rate/Pcs</th><th>Excl. Tax</th><th>GST 18%</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        ${rows}
+                        <tr class="total-row">
+                            <td colspan="6" style="text-align:right;font-weight:bold;">TOTAL</td>
+                            <td><strong>Rs. ${totalExclTax.toFixed(2)}</strong></td>
+                            <td><strong>Rs. ${totalGst.toFixed(2)}</strong></td>
+                            <td><strong>Rs. ${totalAmount.toFixed(2)}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="totals-grid">
+                <div>
+                    <div><strong>Gross Amount:</strong> Rs. ${gross.toFixed(2)}</div>
+                    <div><strong>Excluding Tax:</strong> Rs. ${excludingTax.toFixed(2)}</div>
+                    <div><strong>GST @ 18%:</strong> Rs. ${gstAmount.toFixed(2)}</div>
+                    <div style="margin-top:6px;color:#666;font-size:12px;">
+                        (Excl. Tax + GST = ${excludingTax.toFixed(2)} + ${gstAmount.toFixed(2)} = ${netAmount.toFixed(2)})
+                    </div>
+                </div>
+                <div style="text-align:right;border-left:2px solid #ddd;padding-left:20px;">
+                    <div><strong>Discount (${disc}%):</strong> - Rs. ${discAmt.toFixed(2)}</div>
+                    <div style="font-size:24px;font-weight:800;color:#22c99a;margin-top:8px;border-top:2px solid #22c99a;padding-top:8px;">
+                        <strong>Net Amount:</strong> Rs. ${netAmount.toFixed(2)}
+                    </div>
+                </div>
+            </div>
+            <div class="signature-section">
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Receiver's Signature</span></div>
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Authorized Signature</span></div>
+                <div class="sig-box"><div class="sig-line"></div><span class="sig-label">Company Stamp</span></div>
+            </div>
+            <div class="footer-note">
+                <p>Generated by KRT TRADERS ERP System | Thank you for your business!</p>
+            </div>
+        </div>
         <script>
             window.onload = function() {
                 setTimeout(function() { window.print(); }, 500);
