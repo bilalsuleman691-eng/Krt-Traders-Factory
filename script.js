@@ -54,41 +54,134 @@ const PRODUCTS = {
     "925100018864": "SILVER CLASSIC BODY RAZOR",
     "6971432356031": "FANCY HANDLE 3 IN 1 NEW",
     "5321543216365": "BATH BELT NEW",
+    "6921494200186": "SPONGE SCRUB 4 IN 1",
     "5489754856234": "MICRO FIBER 1 PCS"
 };
 
 // ============================================================
 // ITEM CATEGORIES
 // ============================================================
-const ITEM_CATEGORIES = {
-    'NAIL SAVER 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5.9 },
-    'NAIL SAVER 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 11.8 },
-    'REGULAR LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-    'REGULAR LAMINATE 2 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 10 },
-    'LARGE LAMINATE 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 6 },
-    'LARGE LAMINATE 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 15 },
-    'REGULAR PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 5 },
-    'LARGE PAD 1 PCS': { category: 'Foam', hsCode: '6805.2000', weight: 13 },
-    'NAIL SAVER 3 IN 1': { category: 'Foam', hsCode: '6805.2000', weight: 17.7 },
-    'REGULAR SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 15 },
-    'REGULAR SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-    'JUMBO SPIRAL 1 PCS': { category: 'Steel', hsCode: '7223.0000', weight: 30 },
-    'JUMBO SPIRAL 1 PCS 45 GRAM': { category: 'Steel', hsCode: '7223.0000', weight: 45 },
-    'JUMBO SPIRAL 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 60 },
-    'JUMBO SPIRAL 4 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 104 },
-    'SPONGE SCRUB 2 IN 1': { category: 'Steel', hsCode: '7223.0000', weight: 10 },
-    'MICRO FIBER 1 PCS': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'MICRO FIBER CLOTH 4 IN 1': { category: 'Micro', hsCode: '6307.1030', weight: 0 },
-    'FANCY HANDLE 3 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY HANDLE 3 IN 1 SILVER COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY HANDLE 1 PCS': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY HANDLE 2 IN 1': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'BATH BELT': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'FANCY NYLON SCRUBBER': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'COLOR SPONGE 6 COLOR': { category: 'Fancy', hsCode: '3926.9099', weight: 0 },
-    'SILVER CLASSIC BODY RAZOR': { category: 'Razor', hsCode: '8212.9000', weight: 0 }
-};
 
+const ITEM_CATEGORIES = {
+
+    // ABRASIVE SHEET / FOAM / PAD / LAMINATE
+    "NAIL SAVER 1 PCS": {
+        category: "Foam", hsCode: "6805.2000", weight: 5.9
+    },
+    "NAIL SAVER 2 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 11.8
+    },
+    "NAIL SAVER 3 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 17.7
+    },
+    "REGULAR LAMINATE 1 PCS": {
+        category: "Foam", hsCode: "6805.2000", weight: 5
+    },
+    "REGULAR LAMINATE 2 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 10
+    },
+    "LARGE LAMINATE 1 PCS": {
+        category: "Foam", hsCode: "6805.2000", weight: 6
+    },
+    "LARGE LAMINATE 3 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 15
+    },
+    "REGULAR PAD 1 PCS": {
+        category: "Foam", hsCode: "6805.2000", weight: 5
+    },
+    "LARGE PAD 1 PCS": {
+        category: "Foam", hsCode: "6805.2000", weight: 13
+    },
+    "LARGE PAD 3 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 0
+    },
+    "REGULAR PAD 3 IN 1": {
+        category: "Foam", hsCode: "6805.2000", weight: 0
+    },
+
+    // STAINLESS STEEL / SPIRAL
+    "REGULAR SPIRAL 1 PCS": {
+        category: "Steel", hsCode: "7223.0000", weight: 15
+    },
+    "REGULAR SPIRAL 2 IN 1": {
+        category: "Steel", hsCode: "7223.0000", weight: 30
+    },
+    "JUMBO SPIRAL 1 PCS": {
+        category: "Steel", hsCode: "7223.0000", weight: 30
+    },
+    "JUMBO SPIRAL 1 PCS 45 GRAM": {
+        category: "Steel", hsCode: "7223.0000", weight: 45
+    },
+    "JUMBO SPIRAL 2 IN 1": {
+        category: "Steel", hsCode: "7223.0000", weight: 60
+    },
+    "JUMBO SPIRAL 4 IN 1": {
+        category: "Steel", hsCode: "7223.0000", weight: 104
+    },
+    "SPONGE SCRUB 2 IN 1": {
+        category: "Steel", hsCode: "7223.0000", weight: 10
+    },
+    "SPONGE SCRUB 4 IN 1": {
+        category: "Steel", hsCode: "7223.0000", weight: 0
+    },
+
+    // HOME CONSUMPTION / FANCY
+    "FANCY HANDLE 1 PCS": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "FANCY HANDLE 2 IN 1": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "FANCY HANDLE 3 IN 1": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "FANCY HANDLE 3 IN 1 SILVER COLOR": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "FANCY HANDLE 3 IN 1 NEW": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "FANCY NYLON SCRUBBER": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "BATH BELT": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "BATH BELT NEW": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "BATH PHOOL": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "COLOR SPONGE 6 COLOR": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "MULTI COLOR FANCY FOAM 3 IN 1": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+
+    // MICRO FIBER / ULTRA WIPE
+    "MICRO FIBER 1 PCS": {
+        category: "Micro", hsCode: "6307.1030", weight: 0
+    },
+    "MICRO FIBER CLOTH 4 IN 1": {
+        category: "Micro", hsCode: "6307.1030", weight: 0
+    },
+    "MICRO FIBER 8 IN 1": {
+        category: "Micro", hsCode: "6307.1030", weight: 0
+    },
+    "ULTRA WIPE SPONGE CLOTH 3 IN 1": {
+        category: "Micro", hsCode: "6307.1030", weight: 0
+    },
+    "ULTRA WIPE SPONGE CLOTH 3 IN 1 NEW": {
+        category: "Micro", hsCode: "6307.1030", weight: 0
+    },
+
+    // CLASSIC BODY RAZOR / RAZOR
+    "SILVER CLASSIC BODY RAZOR": {
+        category: "Razor", hsCode: "8212.9000", weight: 0
+    }
+};
 function getItemCategory(itemName) {
     if (!itemName) return { category: 'Fancy', hsCode: '3926.9099', weight: 0 };
     if (ITEM_CATEGORIES[itemName]) return ITEM_CATEGORIES[itemName];
