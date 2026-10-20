@@ -121,9 +121,7 @@ const ITEM_CATEGORIES = {
     "SPONGE SCRUB 2 IN 1": {
         category: "Steel", hsCode: "7223.0000", weight: 10
     },
-    "SPONGE SCRUB 4 IN 1": {
-        category: "Steel", hsCode: "7223.0000", weight: 0
-    },
+    
 
     // HOME CONSUMPTION / FANCY
     "FANCY HANDLE 1 PCS": {
@@ -157,6 +155,9 @@ const ITEM_CATEGORIES = {
         category: "Fancy", hsCode: "3926.9099", weight: 0
     },
     "MULTI COLOR FANCY FOAM 3 IN 1": {
+        category: "Fancy", hsCode: "3926.9099", weight: 0
+    },
+    "SPONGE SCRUB 4 IN 1": {
         category: "Fancy", hsCode: "3926.9099", weight: 0
     },
 
